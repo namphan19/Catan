@@ -9,7 +9,7 @@ import { cost, err, expect, player, setPhase, updateLargestForce } from './helpe
 
 type A<T extends string> = Extract<Action, { t: T }>;
 
-export const PLAYABLE = ['guard', 'freeRoads', 'harvest', 'claim'];
+// The playable card set lives in config as `playableCards` (D21), so extensions can add cards.
 
 export const buyCard: ActionDef = {
   validate(ctx, a) {
@@ -41,7 +41,8 @@ export const playCard: ActionDef = {
     const { state, graph, rules } = ctx;
     const e = expect(state, a, ['preRoll', 'main']);
     if (e) return e;
-    if (!PLAYABLE.includes(a.card)) return err('NOT_PLAYABLE', `${String(a.card)} cannot be played.`);
+    if (!rules.config.playableCards.includes(a.card))
+      return err('NOT_PLAYABLE', `${String(a.card)} cannot be played.`);
     const p = player(state, a.player);
     if (!p.cards.includes(a.card))
       return p.newCards.includes(a.card)
@@ -56,6 +57,8 @@ export const playCard: ActionDef = {
         return err('NO_ROAD_SPOT', 'You have nowhere to build a road.');
     }
     if (a.card === 'harvest') {
+      // D19: with 0 cards in the bank harvest cannot be played (the card is not wasted).
+      if (bagTotal(state.bank.hand) === 0) return err('BANK_EMPTY', 'The bank has no cards to harvest.');
       const want = a.resources;
       const n = harvestAmount(ctx);
       if (!Array.isArray(want) || want.length !== n || !want.every((r) => rs.includes(r)))
@@ -124,7 +127,7 @@ export const playCard: ActionDef = {
             for (let j = i; j < rs.length; j++)
               out.push({ t: 'playCard', player: id, card, resources: [rs[i], rs[j]] });
         } else if (n === 1) for (const r of rs) out.push({ t: 'playCard', player: id, card, resources: [r] });
-        else if (n === 0) out.push({ t: 'playCard', player: id, card, resources: [] });
+        // n === 0 means the bank is empty (D19): harvest is not listed.
       } else if (card === 'claim') {
         for (const r of rs) out.push({ t: 'playCard', player: id, card, resource: r });
       } else out.push({ t: 'playCard', player: id, card });

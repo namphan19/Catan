@@ -44,6 +44,8 @@ export function actors(state: GameState): PlayerId[] {
       return ph.queue.length ? [ph.queue[0]] : [];
     case 'over':
       return [];
+    case 'ext':
+      return ph.actors ?? [state.turn.current];
     default:
       return [state.turn.current];
   }
@@ -88,11 +90,15 @@ export function updateLongestRoute(ctx: ApplyCtx): void {
   }
 }
 
-/** Largest force: first to reach min guards, then only a strictly larger count takes it. */
+/** Largest force: first to reach min (counting the configured force cards), then only a strictly
+ *  larger count takes it. The counted card ids come from config (D21), not hardcoded. */
 export function updateLargestForce(ctx: ApplyCtx, id: PlayerId): void {
   const { state } = ctx;
-  const { min } = ctx.rules.config.awards.largestForce;
-  const count = (p: PlayerId) => player(state, p).played.guard ?? 0;
+  const { min, cards } = ctx.rules.config.awards.largestForce;
+  const count = (p: PlayerId) => {
+    const played = player(state, p).played;
+    return cards.reduce((s, c) => s + (played[c] ?? 0), 0);
+  };
   const holder = state.awards.largestForce ?? null;
   if (holder === id || count(id) < min) return;
   if (holder && count(holder) >= count(id)) return;
@@ -131,8 +137,9 @@ export function releaseNewCards(p: PlayerState): void {
   p.newCards = [];
 }
 
-/** Bounded enumeration of sub-bags of exactly n cards from a hand (for discard legal moves). */
-export function subBags(hand: Bag, resources: readonly string[], n: number, limit = 200): Bag[] {
+/** Bounded enumeration of sub-bags of exactly n cards from a hand (for discard legal moves).
+ *  The list is capped at `limit` (default 5000) entries; discardAction.legal() documents the cap. */
+export function subBags(hand: Bag, resources: readonly string[], n: number, limit = 5000): Bag[] {
   const out: Bag[] = [];
   const rs = resources.filter((r) => (hand[r] ?? 0) > 0);
   const cur: Bag = {};

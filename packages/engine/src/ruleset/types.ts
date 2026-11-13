@@ -39,7 +39,13 @@ export interface RulesConfig {
   specificHarborRate: number;
   /** Numbers that may not be on adjacent hexes. */
   hotNumbers: number[];
-  awards: { longestRoute: { min: number; vp: number }; largestForce: { min: number; vp: number } };
+  awards: {
+    longestRoute: { min: number; vp: number };
+    /** cards: played card ids that count toward the award (D21: extensions add theirs). */
+    largestForce: { min: number; vp: number; cards: string[] };
+  };
+  /** Card ids that may be played via playCard (D21: extensions register new ones here). */
+  playableCards: string[];
   vpToWin: number;
   freeRoadsCount: number;
   harvestCount: number;

@@ -38,6 +38,13 @@ const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
  * View for one player (or a spectator with null). Hidden: the seed and RNG state (they would reveal
  * the deck order and future dice), the deck order, other players' hands and cards (counts only),
  * and state.ext (extension rulesets must add their own redaction before exposing anything there).
+ *
+ * Deliberately public (D18): discards are face up. The `log` contains every action including
+ * `discard` with its bag, and the `discarded` events are not redacted by getEventsView — every
+ * viewer sees which cards each player discarded.
+ *
+ * Reveal-all: once there is a winner, every player entry includes hand, cards, newCards and vp
+ * (all hands are revealed, not just the viewer's).
  */
 export function getPlayerView(state: GameState, viewer: PlayerId | null): PlayerView {
   const { seed: _seed, ...init } = state.init;
@@ -73,9 +80,10 @@ export function getPlayerView(state: GameState, viewer: PlayerId | null): Player
   });
 }
 
-/** Redact events for a viewer: stolen resources and bought cards are private. */
+/** Redact events for a viewer: stolen resources and bought cards are private (discards stay public, D18).
+ *  The returned array is a fresh deep copy: mutating it never affects the caller's input array. */
 export function getEventsView(events: GameEvent[], viewer: PlayerId | null): GameEvent[] {
-  return events.map((ev) => {
+  return clone(events).map((ev) => {
     if (ev.e === 'stole' && viewer !== ev.from && viewer !== ev.to) return { ...ev, resource: undefined };
     if (ev.e === 'cardBought' && viewer !== ev.player) return { ...ev, card: undefined };
     return ev;

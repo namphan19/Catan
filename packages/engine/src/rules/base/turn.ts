@@ -81,6 +81,9 @@ export const discard: ActionDef = {
   },
   legal(ctx, id) {
     const { state, rules } = ctx;
+    // Enumerates every sub-bag of exactly `owed` cards. With very large hands the list may be
+    // capped (subBags limit, default 5000); validateAction is the authority — any specific bag
+    // combination is legal even if it is not listed here.
     if (state.phase.k !== 'discard' || expect(state, { t: 'discard', player: id, bag: {} }, ['discard']))
       return [];
     const owed = state.phase.owed[id] ?? 0;
@@ -162,7 +165,7 @@ export const endTurn: ActionDef = {
     releaseNewCards(player(state, a.player));
     if (state.phase.k === 'extraBuild') {
       const queue = state.phase.queue.slice(1);
-      if (queue.length) state.phase = { k: 'extraBuild', queue };
+      if (queue.length) setPhase(ctx, { k: 'extraBuild', queue });
       else startTurn(ctx, nextSeat(state, state.turn.current));
       return;
     }

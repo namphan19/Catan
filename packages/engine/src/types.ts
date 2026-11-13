@@ -77,7 +77,8 @@ export type Phase =
   | { k: 'freeRoads'; left: number }
   | { k: 'extraBuild'; queue: PlayerId[] }
   | { k: 'over' }
-  | { k: 'ext'; id: string; data: unknown };
+  /** Extension window. `actors` optionally names who may act (default: turn.current). */
+  | { k: 'ext'; id: string; data: unknown; actors?: PlayerId[] };
 
 export interface GameInit {
   seed: string;

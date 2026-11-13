@@ -47,8 +47,12 @@ export const baseConfig: RulesConfig = {
   genericHarborRate: 3,
   specificHarborRate: 2,
   hotNumbers: [6, 8],
-  awards: { longestRoute: { min: 5, vp: 2 }, largestForce: { min: 3, vp: 2 } },
+  awards: {
+    longestRoute: { min: 5, vp: 2 },
+    largestForce: { min: 3, vp: 2, cards: ['guard'] },
+  },
   vpToWin: 10,
   freeRoadsCount: 2,
   harvestCount: 2,
+  playableCards: ['guard', 'freeRoads', 'harvest', 'claim'],
 };

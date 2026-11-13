@@ -98,6 +98,8 @@ export const respondTrade: ActionDef = {
     if (!hasPlayer(state, a.player)) return err('UNKNOWN_PLAYER', `Unknown player ${String(a.player)}.`);
     if (state.phase.k !== 'main' || !state.trade) return err('NO_TRADE', 'There is no open trade offer.');
     if (a.player === state.trade.from) return err('OWN_OFFER', 'You cannot respond to your own offer.');
+    // D20: each player responds once per offer; a new offer resets the responses.
+    if (state.trade.responses[a.player]) return err('ALREADY_RESPONDED', 'You already responded to this offer.');
     if (typeof a.accept !== 'boolean') return err('BAD_ARGS', 'accept must be true or false.');
     if (a.accept && !bagHas(player(state, a.player).hand, state.trade.get))
       return err('NOT_ENOUGH', 'You do not have the requested cards.');
