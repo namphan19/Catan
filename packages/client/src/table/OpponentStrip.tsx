@@ -20,7 +20,7 @@ export function OpponentStrip({ view }: { view: PlayerView }) {
             style={{ '--seat': playerColor(p.id) } as React.CSSProperties}
           >
             <div className="seat-head" style={{ color: playerColor(p.id) }}>
-              <Emblem id={playerEmblem(p.id)} size={16} />
+              <Emblem id={playerEmblem(p.id)} size={16} color={playerColor(p.id)} />
               <span className="seat-name">{name(p.id)}</span>
               {p.id === view.viewer && <span className="seat-you">({t('you')})</span>}
               {p.id === view.turn.current && (

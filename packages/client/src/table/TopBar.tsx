@@ -35,7 +35,7 @@ export function TopBar({ view }: { view: PlayerView }) {
           const vp = p.vp ?? p.publicVP;
           return (
             <li key={p.id} className={`vp-chip${p.id === view.viewer ? ' me' : ''}`} style={{ borderColor: playerColor(p.id) }}>
-              <Emblem id={playerEmblem(p.id)} size={16} />
+              <Emblem id={playerEmblem(p.id)} size={16} color={playerColor(p.id)} />
               <span className="vp-name">{name(p.id)}</span>
               <span className="vp-score" aria-label={`${t('vpShort')} ${vp}`}>
                 {vp}

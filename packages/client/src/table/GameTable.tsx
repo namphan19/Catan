@@ -193,7 +193,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
               🏆 {t('winner_title', { name: name(view.winner) })}
             </p>
             <p className="winner-vp">
-              <Emblem id={playerEmblem(view.winner)} size={28} />
+              <Emblem id={playerEmblem(view.winner)} size={28} color={playerColor(view.winner)} />
               <span style={{ color: playerColor(view.winner) }}>
                 {name(view.winner)}
               </span>{' '}

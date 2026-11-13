@@ -285,7 +285,7 @@ function OffererMode({ view, legal, onAction }: { view: PlayerView; legal: Actio
                     : t('side_pending');
             return (
               <li key={p.id} style={{ borderColor: playerColor(p.id) }}>
-                <Emblem id={playerEmblem(p.id)} size={14} /> {name(p.id)}:{' '}
+                <Emblem id={playerEmblem(p.id)} size={14} color={playerColor(p.id)} /> {name(p.id)}:{' '}
                 <span className={`resp-${r?.response ?? 'pending'}`}>{label}</span>
                 {c && (
                   <Button variant="primary" onClick={() => onAction(c)}>

@@ -35,7 +35,7 @@ export function StealDialog({ legal, onAction, onClose }: StealDialogProps) {
                   onClick={() => onAction(a)}
                   style={{ borderColor: playerColor(target) }}
                 >
-                  <Emblem id={playerEmblem(target)} size={18} />
+                  <Emblem id={playerEmblem(target)} size={18} color={playerColor(target)} />
                   {name(target)}
                 </Button>
               </li>

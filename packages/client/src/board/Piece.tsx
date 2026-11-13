@@ -1,28 +1,89 @@
-// Roads, buildings and the blocker. Art first (contract assets use fill="currentColor", the
-// wrapping <g> carries the player colour); a vector fallback is drawn when the file is missing.
+// Roads, buildings and the blocker.
+//
+// BUG (pieces rendered BLACK): the art used to be drawn with <image href="/assets/...">,
+// but an SVG loaded through <image> is an isolated document, so its fill="currentColor"
+// never saw the player colour from the wrapping <g style={{color}}> and fell back to
+// black. The art is now inlined (see pieceArt.ts): real SVG elements in this document,
+// so currentColor resolves to the player colour while the art's 2 px ink outline stays.
+// A vector fallback is still drawn when the art markup fails to load/parse.
+//
+// Colour-blind safety (docs/UI.md): colour is never the only signal — every settlement
+// and city also carries the owner's emblem in a small parchment seal.
 import type { EdgeId, Graph, Pieces, PlayerId, VertexId } from '@hexgame/engine';
-import { assetUrl, useAssets } from './assets';
 import { edgeGeom, hexCenter, SIZE, vertexPos } from './geom';
-import { playerColor } from '../ui/colors';
+import { playerColor, playerEmblem, EMBLEM_GLYPHS } from '../ui/colors';
+import { EMBLEM_ART, PIECE_ART, type Art } from './pieceArt';
 
 const INK = 'var(--ink)';
 
+/** Nested inline <svg> showing one art file's markup; inherits colour from its parent. */
+function InlineArt({
+  art,
+  x,
+  y,
+  width,
+  height,
+  className,
+}: {
+  art: Art;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      x={x}
+      y={y}
+      width={width}
+      height={height}
+      viewBox={art.viewBox}
+      className={className}
+      dangerouslySetInnerHTML={{ __html: art.inner }}
+    />
+  );
+}
+
+/**
+ * The owner's emblem in a small parchment seal (ink on parchment reads on every player
+ * colour and every terrain). Falls back to the emblem glyph when the emblem art is
+ * missing — still never colour alone.
+ */
+function EmblemSeal({ cx, cy, r, emblem }: { cx: number; cy: number; r: number; emblem: string }) {
+  const art = EMBLEM_ART[emblem] ?? null;
+  const e = r * 1.4;
+  return (
+    <g className="piece-emblem">
+      <circle cx={cx} cy={cy} r={r} fill="var(--parchment)" stroke={INK} strokeWidth={1.4} />
+      <g style={{ color: INK }}>
+        {art ? (
+          <InlineArt art={art} x={cx - e / 2} y={cy - e / 2} width={e} height={e} />
+        ) : (
+          <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" className="piece-emblem-glyph">
+            {EMBLEM_GLYPHS[emblem] ?? '•'}
+          </text>
+        )}
+      </g>
+    </g>
+  );
+}
+
 export function Road({ edge, player, graph }: { edge: EdgeId; player: PlayerId; graph: Graph }) {
-  const path = assetUrl('piece', 'road');
-  const ok = useAssets([path])[path];
   const color = playerColor(player);
   const { a, b, mid, angle, len } = edgeGeom(graph, edge);
   const w = len * 0.94;
   const h = (w * 14) / 60;
-  if (ok) {
+  const art = PIECE_ART.road ?? null;
+  if (art) {
     return (
       <g transform={`translate(${mid.x} ${mid.y}) rotate(${angle})`} style={{ color }}>
-        <image href={path} x={-w / 2} y={-h / 2} width={w} height={h} />
+        <InlineArt art={art} x={-w / 2} y={-h / 2} width={w} height={h} className="piece-body piece-road" />
       </g>
     );
   }
   return (
-    <g>
+    <g className="piece-road">
       <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={INK} strokeWidth={SIZE * 0.26} strokeLinecap="round" />
       <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={color} strokeWidth={SIZE * 0.17} strokeLinecap="round" />
     </g>
@@ -32,18 +93,28 @@ export function Road({ edge, player, graph }: { edge: EdgeId; player: PlayerId; 
 export function Building({ v, kind, player }: { v: VertexId; kind: string; player: PlayerId }) {
   const color = playerColor(player);
   const p = vertexPos(v);
-  if (kind === 'city') return <CityImage v={v} color={color} p={p} />;
-  return <SettlementImage v={v} color={color} p={p} />;
+  if (kind === 'city') return <CityImage v={v} player={player} color={color} p={p} />;
+  return <SettlementImage v={v} player={player} color={color} p={p} />;
 }
 
-function SettlementImage({ v, color, p }: { v: VertexId; color: string; p: { x: number; y: number } }) {
-  const path = assetUrl('piece', 'settlement');
-  const ok = useAssets([path])[path];
+function SettlementImage({
+  v,
+  player,
+  color,
+  p,
+}: {
+  v: VertexId;
+  player: PlayerId;
+  color: string;
+  p: { x: number; y: number };
+}) {
   const s = SIZE * 0.6;
-  if (ok) {
+  const art = PIECE_ART.settlement ?? null;
+  if (art) {
     return (
       <g transform={`translate(${p.x} ${p.y})`} style={{ color }}>
-        <image href={path} x={-s / 2} y={-s / 2} width={s} height={s} />
+        <InlineArt art={art} x={-s / 2} y={-s / 2} width={s} height={s} className="piece-body piece-settlement" />
+        <EmblemSeal cx={s * 0.3} cy={s * 0.32} r={s * 0.18} emblem={playerEmblem(player)} />
         <title>{v}</title>
       </g>
     );
@@ -59,19 +130,30 @@ function SettlementImage({ v, color, p }: { v: VertexId; color: string; p: { x: 
         stroke={INK}
         strokeWidth={2}
       />
+      <EmblemSeal cx={s * 0.26} cy={s * 0.26} r={s * 0.16} emblem={playerEmblem(player)} />
       <title>{v}</title>
     </g>
   );
 }
 
-function CityImage({ v, color, p }: { v: VertexId; color: string; p: { x: number; y: number } }) {
-  const path = assetUrl('piece', 'city');
-  const ok = useAssets([path])[path];
+function CityImage({
+  v,
+  player,
+  color,
+  p,
+}: {
+  v: VertexId;
+  player: PlayerId;
+  color: string;
+  p: { x: number; y: number };
+}) {
   const s = SIZE * 0.82;
-  if (ok) {
+  const art = PIECE_ART.city ?? null;
+  if (art) {
     return (
       <g transform={`translate(${p.x} ${p.y})`} style={{ color }}>
-        <image href={path} x={-s / 2} y={-s / 2} width={s} height={s} />
+        <InlineArt art={art} x={-s / 2} y={-s / 2} width={s} height={s} className="piece-body piece-city" />
+        <EmblemSeal cx={s * 0.32} cy={s * 0.3} r={s * 0.15} emblem={playerEmblem(player)} />
         <title>{v}</title>
       </g>
     );
@@ -88,21 +170,24 @@ function CityImage({ v, color, p }: { v: VertexId; color: string; p: { x: number
         strokeWidth={2}
       />
       <line x1={-w / 2} y1={hh / 6} x2={w / 2} y2={hh / 6} stroke={INK} strokeWidth={2} />
+      <EmblemSeal cx={s * 0.26} cy={s * 0.26} r={s * 0.14} emblem={playerEmblem(player)} />
       <title>{v}</title>
     </g>
   );
 }
 
 export function Blocker({ hexId }: { hexId: string }) {
-  const path = assetUrl('piece', 'blocker');
-  const ok = useAssets([path])[path];
+  const art = PIECE_ART.blocker ?? null;
   const c = hexCenter(hexId);
   const h = SIZE * 0.85;
   const w = (h * 40) / 56;
   return (
     <g className="blocker" transform={`translate(${c.x} ${c.y})`}>
-      {ok ? (
-        <image href={path} x={-w / 2} y={-h / 2} width={w} height={h} />
+      {art ? (
+        // The blocker is neutral: pinned to the ink colour (it used to render black).
+        <g style={{ color: INK }}>
+          <InlineArt art={art} x={-w / 2} y={-h / 2} width={w} height={h} className="piece-body piece-blocker" />
+        </g>
       ) : (
         <>
           <circle r={SIZE * 0.3} fill={INK} stroke="var(--gold)" strokeWidth={3} />

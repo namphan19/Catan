@@ -64,7 +64,7 @@ function TradeTab({ view }: { view: PlayerView }) {
               r?.response === 'accept' ? 'yes' : r?.response === 'decline' ? 'no' : r ? 'counter' : 'pending';
             return (
               <li key={p.id} style={{ borderColor: playerColor(p.id) }}>
-                <Emblem id={playerEmblem(p.id)} size={14} /> {name(p.id)}:{' '}
+                <Emblem id={playerEmblem(p.id)} size={14} color={playerColor(p.id)} /> {name(p.id)}:{' '}
                 <span className={`resp-${state}`}>
                   {r?.response === 'accept'
                     ? t('side_accepted')
