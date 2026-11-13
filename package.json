@@ -6,7 +6,9 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "fuzz": "pnpm --filter @hexgame/engine fuzz",
-    "dev": "pnpm --filter @hexgame/client dev"
+    "dev": "pnpm --filter @hexgame/client dev",
+    "build": "pnpm --filter @hexgame/client build",
+    "start": "pnpm --filter @hexgame/server start"
   },
   "devDependencies": {
     "@types/node": "22.10.1",

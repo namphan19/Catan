@@ -159,6 +159,17 @@ export class Hub {
     }
   }
 
+  /** Persist every started room (graceful shutdown, docs/PROTOCOL.md). */
+  persistAll(): void {
+    for (const room of this.rooms.values()) {
+      try {
+        this.persist(room);
+      } catch (e) {
+        console.error(`[room] persist failed for ${room.code}: ${String(e)}`);
+      }
+    }
+  }
+
   /** Restore started games from the store after a server restart. Returns the room count. */
   restore(): number {
     if (!this.store) return 0;

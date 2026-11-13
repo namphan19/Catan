@@ -2,10 +2,21 @@
 // endpoint on the same port (docs/PROTOCOL.md). Run with `pnpm --filter @hexgame/server start`.
 import * as fs from 'node:fs';
 import * as http from 'node:http';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { Hub, type HubOptions } from './rooms';
+import {
+  extractClientIp,
+  isClientDistReady,
+  parseEnv,
+  DEFAULT_HOST,
+  DEFAULT_MAX_CONNECTIONS,
+  DEFAULT_MAX_CONNECTIONS_PER_IP,
+  DEFAULT_PORT,
+  type EnvConfig,
+} from './env';
 import {
   MAX_FRAME_BYTES,
   PING_INTERVAL_MS,
@@ -18,15 +29,10 @@ import type { ServerMsg } from './protocol';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
-export interface ServerOptions {
-  port?: number;
-  clientDist?: string;
-  dataDir?: string;
+export interface ServerOptions extends Partial<Omit<EnvConfig, 'trustProxy'>> {
   hub?: HubOptions;
-  /** Max concurrent WebSocket connections (docs/PROTOCOL.md: 200). */
-  maxConnections?: number;
-  /** Max concurrent WebSocket connections per client IP (docs/PROTOCOL.md: 10). */
-  maxConnectionsPerIp?: number;
+  /** Trust X-Forwarded-For for client IPs (TRUST_PROXY=1; only behind a reverse proxy). */
+  trustProxy?: boolean;
 }
 
 export interface ServerHandle {
@@ -34,11 +40,12 @@ export interface ServerHandle {
   hub: Hub;
   /** The WebSocket server; exposed for tests and supervision. */
   wss: WebSocketServer;
+  /** Stop accepting new connections (graceful shutdown step 1). */
+  stop(): void;
+  /** Close all sockets: WebSockets are terminated, HTTP connections dropped (step 3). */
+  closeSockets(): Promise<void>;
   close(): Promise<void>;
 }
-
-export const DEFAULT_MAX_CONNECTIONS = 200;
-export const DEFAULT_MAX_CONNECTIONS_PER_IP = 10;
 
 class WsConn implements Conn {
   readonly id: number;
@@ -179,9 +186,11 @@ export function createStaticHandler(rootDir: string): (req: http.IncomingMessage
 // ---------------------------------------------------------------- server
 
 export function startServer(opts: ServerOptions = {}): Promise<ServerHandle> {
-  const port = opts.port ?? Number(process.env.PORT ?? 8080);
+  const port = opts.port ?? Number(process.env.PORT ?? DEFAULT_PORT);
+  const host = opts.host ?? process.env.HOST ?? DEFAULT_HOST;
   const clientDist = opts.clientDist ?? process.env.CLIENT_DIST ?? path.join(REPO_ROOT, 'packages', 'client', 'dist');
   const dataDir = opts.dataDir ?? process.env.DATA_DIR ?? path.join(REPO_ROOT, 'data', 'rooms');
+  const trustProxy = opts.trustProxy ?? process.env.TRUST_PROXY === '1';
   const hub = new Hub({ store: new RoomStore(dataDir), ...opts.hub });
   const restored = hub.restore();
   if (restored > 0) console.log(`[server] restored ${restored} game(s) from ${dataDir}`);
@@ -207,7 +216,7 @@ export function startServer(opts: ServerOptions = {}): Promise<ServerHandle> {
       socket.destroy();
       return;
     }
-    const ip = (socket as import('node:net').Socket).remoteAddress ?? 'unknown';
+    const ip = extractClientIp(req, trustProxy);
     if (wss.clients.size >= maxConnections || (connsPerIp.get(ip) ?? 0) >= maxConnectionsPerIp) {
       console.log(`[server] upgrade rejected (503): total ${wss.clients.size}, ip ${ip}`);
       socket.resume();
@@ -296,30 +305,129 @@ export function startServer(opts: ServerOptions = {}): Promise<ServerHandle> {
 
   return new Promise((resolve, reject) => {
     httpServer.once('error', reject);
-    httpServer.listen(port, () => {
-      console.log(`[server] listening on port ${port} (client: ${clientDist}, data: ${dataDir})`);
+    httpServer.listen(port, host, () => {
+      printListenUrls(port, host);
+      console.log(`[server] client: ${clientDist}, data: ${dataDir}, trustProxy: ${trustProxy}`);
+      let accepting = true;
+      const stopAccepting = (): void => {
+        if (!accepting) return;
+        accepting = false;
+        clearInterval(pingTimer);
+        clearInterval(sweepTimer);
+        httpServer.close();
+      };
+      const closeSockets = async (): Promise<void> => {
+        for (const ws of wss.clients) ws.terminate();
+        (httpServer as http.Server & { closeAllConnections?: () => void }).closeAllConnections?.();
+        await Promise.all([
+          new Promise<void>((res) => wss.close(() => res())),
+          new Promise<void>((res) => httpServer.close(() => res())),
+        ]);
+      };
       resolve({
         port: (httpServer.address() as { port: number }).port,
         hub,
         wss,
+        stop: stopAccepting,
+        closeSockets,
         close: async () => {
-          clearInterval(pingTimer);
-          clearInterval(sweepTimer);
-          for (const ws of wss.clients) ws.terminate();
-          await new Promise<void>((res) => wss.close(() => res()));
-          await new Promise<void>((res) => httpServer.close(() => res()));
+          stopAccepting();
+          await closeSockets();
         },
       });
     });
   });
 }
 
+/**
+ * The URLs the server is reachable on: loopback plus every non-internal IPv4
+ * address of the machine, so the host can share the LAN link.
+ */
+export function listenUrls(port: number, host: string): string[] {
+  const urls: string[] = [];
+  if (host === DEFAULT_HOST || host === '::') {
+    urls.push(`http://localhost:${port}/`);
+  } else {
+    urls.push(`http://${host}:${port}/`);
+  }
+  for (const addr of lanAddresses()) {
+    if (host === DEFAULT_HOST || host === '::' || addr === host) urls.push(`http://${addr}:${port}/`);
+  }
+  return urls;
+}
+
+/** Non-internal IPv4 addresses of this machine (os.networkInterfaces). */
+export function lanAddresses(): string[] {
+  const out: string[] = [];
+  for (const ifaces of Object.values(os.networkInterfaces())) {
+    for (const iface of ifaces ?? []) {
+      if (iface.family === 'IPv4' && !iface.internal) out.push(iface.address);
+    }
+  }
+  return out;
+}
+
+function printListenUrls(port: number, host: string): void {
+  console.log('[server] listening on:');
+  for (const url of listenUrls(port, host)) {
+    if (url.includes('localhost')) console.log(`[server]   local:   ${url}`);
+    else console.log(`[server]   network: ${url}`);
+  }
+}
+
 function main(): void {
-  const port = Number(process.env.PORT ?? 8080);
-  startServer({ port }).catch((e) => {
-    console.error(`[server] failed to start: ${String(e)}`);
-    process.exitCode = 1;
+  const parsed = parseEnv(process.env, {
+    dataDir: path.join(REPO_ROOT, 'data', 'rooms'),
+    clientDist: path.join(REPO_ROOT, 'packages', 'client', 'dist'),
   });
+  if (parsed.errors.length > 0) {
+    for (const line of parsed.errors) console.error(`[server] ${line}`);
+    process.exit(1);
+  }
+  const cfg = parsed.config;
+  if (!cfg) {
+    console.error('[server] internal error: empty env config');
+    process.exit(1);
+  }
+  if (!isClientDistReady(cfg.clientDist)) {
+    console.error(`[server] CLIENT_DIST not found at ${cfg.clientDist}`);
+    console.error('[server] Run pnpm build first');
+    process.exit(1);
+  }
+  startServer(cfg)
+    .then((handle) => {
+      installShutdownHandlers(handle);
+    })
+    .catch((e) => {
+      console.error(`[server] failed to start: ${String(e)}`);
+      process.exit(1);
+    });
+}
+
+/**
+ * Graceful shutdown on SIGINT/SIGTERM (docs/PROTOCOL.md): stop accepting new
+ * connections, persist every room, close the sockets, exit 0.
+ */
+function installShutdownHandlers(handle: ServerHandle): void {
+  let shuttingDown = false;
+  const shutdown = (signal: string): void => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`[server] ${signal} received, shutting down`);
+    void (async () => {
+      try {
+        handle.stop();
+        handle.hub.persistAll();
+        await handle.closeSockets();
+        process.exit(0);
+      } catch (e) {
+        console.error(`[server] shutdown failed: ${String(e)}`);
+        process.exit(1);
+      }
+    })();
+  };
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 }
 
 if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) main();
