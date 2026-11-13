@@ -1070,3 +1070,103 @@ button {
     padding: 16px 20px;
   }
 }
+
+/* ------------------------------------------------- online (M2) */
+
+.net-banner {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding: 8px 16px;
+  text-align: center;
+  font-weight: 600;
+  color: #fff;
+  background: #a33;
+  border-bottom: 2px solid var(--ink);
+}
+
+.net-loading {
+  padding: 24px;
+  text-align: center;
+}
+
+.online-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lobby-code-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.lobby-code {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  padding: 4px 10px 4px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: var(--paper, #fdf8ee);
+}
+
+.lobby-codeHint {
+  margin-top: 6px;
+}
+
+.lobby-seats {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.lobby-seat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lobby-seat-name {
+  font-weight: 600;
+}
+
+.lobby-ready {
+  margin-left: auto;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.dot-on {
+  background: #2a7d3b;
+  box-shadow: 0 0 0 2px #2a7d3b33;
+}
+
+.dot-off {
+  background: transparent;
+  border: 2px solid #a33;
+}
+
+.lobby-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.input-bad {
+  border-color: #a33;
+  outline-color: #a33;
+}
+

@@ -1,5 +1,5 @@
 // Home screen: new hot-seat game (3-6 players, names, seed), load a saved log,
-// join online room (placeholder for M2).
+// or go online (create / join a room on the M2 server).
 import { useState } from 'react';
 import { useI18n } from '../i18n';
 import { Button } from '../ui/Button';
@@ -10,11 +10,12 @@ import { SEAT_EMBLEMS } from '../ui/colors';
 export interface HomeScreenProps {
   onNew: (seed: string, names: string[]) => void;
   onLoad: (text: string) => void;
+  onOnline: () => void;
   onLangToggle: () => void;
   error?: string | null;
 }
 
-export function HomeScreen({ onNew, onLoad, onLangToggle, error }: HomeScreenProps) {
+export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: HomeScreenProps) {
   const { t } = useI18n();
   const [count, setCount] = useState(3);
   const [names, setNames] = useState<string[]>(['', '', '', '', '', '']);
@@ -91,7 +92,15 @@ export function HomeScreen({ onNew, onLoad, onLangToggle, error }: HomeScreenPro
       </Panel>
 
       <Panel title={t('home_joinOnline')} className="home-panel home-online">
-        <p className="hint">{t('home_joinOnline')}</p>
+        <p className="hint">{t('home_onlineHint')}</p>
+        <div className="online-buttons">
+          <Button variant="primary" onClick={onOnline}>
+            {t('home_onlineCreate')}
+          </Button>
+          <Button variant="primary" onClick={onOnline}>
+            {t('home_onlineJoin')}
+          </Button>
+        </div>
       </Panel>
 
       {error && (

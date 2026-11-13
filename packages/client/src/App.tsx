@@ -1,5 +1,6 @@
-// App root: owns the engine state, the acting viewer, and the event feed. Everything else
-// renders from redacted views and legal actions.
+// App root: routes between the home menu, the hot-seat game, and the online client.
+// The online shell renders everything from server messages (docs/PROTOCOL.md); the hot-seat
+// path owns the engine state locally. Everything else renders from redacted views.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Action, GameEvent, GameState, PlayerId } from '@hexgame/engine';
 import {
@@ -15,6 +16,9 @@ import {
 import { I18nProvider, useI18n } from './i18n';
 import { HotseatShell } from './shell/HotseatShell';
 import { HomeScreen } from './shell/HomeScreen';
+import { OnlineShell } from './shell/OnlineShell';
+
+type Mode = 'menu' | 'hotseat' | 'online';
 
 export default function App() {
   return (
@@ -26,6 +30,7 @@ export default function App() {
 
 function GameApp() {
   const { t, lang, setLang } = useI18n();
+  const [mode, setMode] = useState<Mode>('menu');
   const [state, setState] = useState<GameState | null>(null);
   const [names, setNames] = useState<Record<PlayerId, string>>({});
   const [actor, setActor] = useState<PlayerId | null>(null);
@@ -51,6 +56,7 @@ function GameApp() {
     }
   }, [state, actors, actor]);
 
+  // (hot-seat only; the online client lets the server decide who acts)
   const legal = useMemo(() => (state && actor ? getLegalActions(state, actor) : []), [state, actor]);
   const view = useMemo(() => (state && actor ? getPlayerView(state, actor) : null), [state, actor]);
   const validate = useCallback(
@@ -90,6 +96,7 @@ function GameApp() {
       setEvents(getEventsView([], null));
       setErrors([]);
       setError(null);
+      setMode('hotseat');
     } catch (e) {
       setError(String(e));
     }
@@ -118,6 +125,7 @@ function GameApp() {
       setEvents(getEventsView([], null));
       setErrors([]);
       setError(null);
+      setMode('hotseat');
     } catch (e) {
       setError(`Load failed: ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -129,6 +137,7 @@ function GameApp() {
   );
 
   const goHome = useCallback(() => {
+    setMode('menu');
     setState(null);
     setActor(null);
     setEvents([]);
@@ -136,28 +145,29 @@ function GameApp() {
     setError(null);
   }, []);
 
-  if (!state || !view) {
+  const goMenu = useCallback(() => setMode('menu'), []);
+  const goOnline = useCallback(() => setMode('online'), []);
+  const toggleLang = useCallback(() => setLang(lang === 'vi' ? 'en' : 'vi'), [lang, setLang]);
+
+  if (mode === 'online') {
+    return <OnlineShell onHome={goMenu} onLangToggle={toggleLang} />;
+  }
+
+  if (mode === 'hotseat' && state && view) {
     return (
-      <HomeScreen
-        onNew={onNew}
-        onLoad={onLoad}
-        onLangToggle={() => setLang(lang === 'vi' ? 'en' : 'vi')}
-        error={error}
+      <HotseatShell
+        names={names}
+        view={view}
+        legal={legal}
+        onAction={doAction}
+        events={events}
+        validate={validate}
+        errors={errors}
+        exportLog={exportLog}
+        onHome={goHome}
       />
     );
   }
 
-  return (
-    <HotseatShell
-      names={names}
-      view={view}
-      legal={legal}
-      onAction={doAction}
-      events={events}
-      validate={validate}
-      errors={errors}
-      exportLog={exportLog}
-      onHome={goHome}
-    />
-  );
+  return <HomeScreen onNew={onNew} onLoad={onLoad} onOnline={goOnline} onLangToggle={toggleLang} error={error} />;
 }
