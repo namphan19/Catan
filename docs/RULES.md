@@ -33,9 +33,9 @@ picks a theme. Every interpretation or choice that is not obvious is logged in `
 - A road must touch the owner's building, or the owner's road at a vertex that has no opponent building.
 
 ## 4. Setup
-Seat order p1..pN. Each player places one settlement and one road touching it, in order p1..pN, then
+A random first player is drawn with the game RNG (D1). Starting with that player, each player places one settlement and one road touching it, in order p1..pN, then
 again in reverse order pN..p1 (snake). The second settlement immediately yields one resource for each
-adjacent producing hex (if the bank has it). Then p1 starts turn 1. (D1, D2)
+adjacent producing hex (if the bank has it). Then the first player starts turn 1. (D1, D2)
 
 ## 5. Turn
 1. **Before rolling** the player may play one guard card.
@@ -52,11 +52,12 @@ adjacent producing hex (if the bank has it). Then p1 starts turn 1. (D1, D2)
 - **Bank:** 4 identical resources for 1 of another kind; 3:1 with a generic harbor; 2:1 for the
   harbor's resource with a specific harbor. A harbor counts if the player has a building on one of its
   two vertices. Several cards may be taken at once (e.g. 8 -> 2). (D5)
-- **Players:** the active player offers a bundle for a bundle; other players accept or decline; the
-  active player confirms with one acceptor. Both sides must be non-empty and use different resources;
+- **Players:** the active player offers a bundle for a bundle; other players accept, decline or make a
+  counteroffer and may change their answer; the active player confirms with one of them (D20). Both sides must be non-empty and use different resources;
   gifts are not possible. Players do not trade with each other when it is not their turn. (D6)
 
 ## 7. Cards
+- Only resource cards count for the 7-card limit and can be stolen; cards (and relics) never do.
 - Bought cards cannot be played in the turn (or build window) they were bought. One card per turn.
 - **guard:** move the blocker and steal as on a 7 (no discards). Counts towards largest force.
 - **freeRoads:** place 2 roads for free (fewer if out of pieces or spots). Not playable with no legal spot.
@@ -64,10 +65,12 @@ adjacent producing hex (if the bank has it). Then p1 starts turn 1. (D1, D2)
 - **claim:** name a resource; every other player gives you all of it.
 - **relic:** 1 VP, kept hidden, never played.
 
-## 8. Extra build phase (5-6 players)
-After the active player ends the turn, each other player in seat order (starting left of the active
-player) gets one build window: they may build roads, settlements, cities and buy cards - no trading
-and no playing cards. Then the next player starts their turn. (D8, D9)
+## 8. Five and six players: paired players (default)
+Each turn has two players. Player 1 (the active player) plays a normal turn. If player 1 has not won,
+player 2 - the third seat to the left of player 1 - takes an action phase: build, buy cards, trade with the
+bank or harbors (not with players) and play at most one card. Player 2 wins immediately on reaching the
+VP target. Then the next seat becomes player 1. (D8, D9, D11)
+Option largeTableMode=extraBuild: instead every other player gets a build window (build and buy only).
 
 ## 9. Awards and victory
 - **Longest route (2 VP):** the first player with a continuous route of at least 5 roads. A route is the

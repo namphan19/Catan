@@ -1,51 +1,38 @@
-# Task: minimal hot-seat dev client (packages/client)
+# Task: real web UI for Boschtan (game table, dialogs, hot-seat shell, Vietnamese)
 
-Goal: a throwaway developer client to play a full game of our hex board game on ONE screen (hot-seat).
-Ugly is fine. It must use ONLY the engine API - never re-implement any rule in the UI.
+Only write in: packages/client/src/ (and packages/client/package.json / index.html if needed).
+Do NOT write in packages/client/public/assets/ (the artist role is creating the assets there right now),
+nor in packages/engine, docs/, team/, scripts/, tools/.
+Read docs/UI.md FIRST (layout, tokens, asset contract, interaction rules, component structure) and follow it.
+Read docs/API.md and packages/engine/src/{types,engine,view}.ts by line ranges for the engine API.
 
-Only write in: packages/client/ (create it). Do NOT edit packages/engine, docs/, team/, scripts/, tools/.
+Notes on the engine (another agent is changing it in parallel - code defensively):
+- 5-6 players get a new phase { k: 'paired', player } (player 2 acts) and the existing extraBuild phase
+  may still appear; show "Người chơi 2: <name>" in the top bar for both. Just render whatever phase.k is,
+  with a readable Vietnamese label, and drive everything from getLegalActions.
+- respondTrade is getting `response: 'accept' | 'decline' | 'counter'` with give/get bags for a counter;
+  build the trade dialog so a responder can accept, decline or counter, and the active player sees all
+  responses and confirms with one. Use only fields present in the legal actions / validateAction.
+- Never re-implement rules: highlights, enabled buttons and dialog options come from getLegalActions;
+  disabled reasons from validateAction.
 
-## Engine API (already exists, read packages/engine/src/index.ts, engine.ts, view.ts, types.ts by line ranges)
-- import from "@hexgame/engine" (workspace package, add "@hexgame/engine": "workspace:*" to dependencies).
-- createGame({ seed, playerCount }) -> GameState   (playerCount 3..6; 5-6 use the large board)
-- getLegalActions(state, playerId) -> Action[]       (concrete legal actions)
-- applyAction(state, action) -> { state, events }   (throws IllegalActionError if illegal)
-- validateAction(state, action) -> { ok } | { ok:false, code, message }
-- getPlayerView(state, playerId) -> PlayerView (redacted), getEventsView(events, playerId)
-- victoryPoints(state, id, {public:false})
-- geometry helpers: hexToPixel(q, r, size), vertexToPixel(vertexId, size), getGraph(layout).edgeEnds[edgeId] -> [v1, v2]
-- state.board.hexes: {id,q,r,terrain,token?}; state.board.harbors: {edge, vertices, kind, ratio}; state.board.blocker (hex id)
-- state.pieces.buildings: {vertexId: {owner, kind}}; state.pieces.roads: {edgeId: owner}
-- state.phase.k: setup | preRoll | main | discard | moveBlocker | steal | freeRoads | extraBuild | over
+Build (replace the current dev UI; keep the "Export log" / "Load log" feature on the home screen):
+1. ui/ tokens.css (exact tokens from docs/UI.md) + Button, Panel, Dialog, Toast, Tooltip.
+2. board/ SVG board using assets from /assets/... per the contract, with a fallback shape when an image
+   fails to load (assets arrive in parallel). Zoom (wheel/buttons) + pan (drag). Highlights for legal
+   vertices / edges / hexes for the selected action; Esc cancels.
+3. table/ GameTable({ view, legal, onAction, events }) - TopBar, OpponentStrip, HandPanel, ActionBar,
+   SidePanel (Nhật ký / Đổi bài / Chi phí), winner overlay.
+4. dialogs/ DiscardDialog, StealDialog, TradeDialog (bank+harbor with best rate, player trade incl.
+   counteroffers), CardDialog (harvest pick 2, claim pick 1).
+5. shell/ HotseatShell + PassDeviceCover ("Chuyền máy cho <tên>") shown whenever the acting viewer changes.
+6. i18n/ vi.ts (default) + en.ts with a toggle; every UI string goes through it. Names for resources:
+   timber=Gỗ, clay=Đất sét, fiber=Len, grain=Lúa, stone=Đá; terrains: forest=Rừng, claypit=Hố đất sét,
+   meadow=Đồng cỏ, field=Ruộng lúa, quarry=Mỏ đá, waste=Hoang mạc; cards: guard=Hiệp sĩ,
+   freeRoads=Làm đường, harvest=Bội thu, claim=Độc quyền, relic=Thánh tích; blocker=Băng cướp.
+7. Fonts: use "Cinzel" / "EB Garamond" via @font-face pointing at /assets/fonts/... with serif fallback.
+8. Accessibility: keyboard focus on every control, emblems next to player colours, 6/8 bold red.
 
-## Requirements
-1. Stack: React 18.3.1 + react-dom 18.3.1, Vite 5.4.11, @vitejs/plugin-react 4.3.4, TypeScript 5.6.3 (pin exact versions).
-   package name "@hexgame/client", scripts: dev, build ("tsc -p tsconfig.json && vite build"), typecheck.
-   tsconfig extends ../../tsconfig.base.json with lib ["ES2022","DOM"] and jsx "react-jsx".
-   Install with the proxy: HTTP_PROXY=http://127.0.0.1:3128 HTTPS_PROXY=http://127.0.0.1:3128 pnpm install (from repo root).
-2. Start screen: player count (3-6) + seed text box -> New game. Also a "Load log" textarea that accepts JSON
-   {init, actions} and rebuilds the game via replay(init, actions); and an "Export log" button that shows
-   JSON.stringify({init: state.init, actions: state.log.map(l => l.action)}) in a textarea (no file download).
-3. SVG board: hexes coloured by terrain (forest, claypit, meadow, field, quarry, waste) with the number token
-   (6 and 8 in red), harbor markers on their edge with the kind and ratio, the blocker on its hex,
-   roads as thick lines in the owner's colour, settlements as small squares and cities as bigger shapes.
-   Use 6 colour-blind-friendly player colours.
-4. Who acts: compute actors = players whose getLegalActions is non-empty. Show tabs for each actor
-   (current player first). The selected actor's legal actions drive the UI:
-   - placeSettlement / buildCity: highlight legal vertices, click to act.
-   - placeRoad: highlight legal edges, click to act.
-   - moveBlocker: highlight legal hexes, click to act.
-   - everything else (roll, endTurn, buyCard, playCard, bankTrade, offerTrade, respondTrade, confirmTrade,
-     cancelTrade, discard, steal): a list of buttons, one per legal action, labelled readably
-     (e.g. "bank trade 4 timber -> 1 grain"). If more than 30 actions of one type, show the first 30.
-5. Side panel: for every player show the getPlayerView of the SELECTED actor (so other players' hands
-   are counts only), VP (public; own full VP), pieces left, played cards, awards (longestRoute, largestForce),
-   bank counts and deck count, current phase, turn number, last dice.
-6. Log panel: append readable lines for every event returned by applyAction (newest at top), plus errors.
-7. Winner banner when state.winner is set.
-
-## Acceptance (run these, paste the results in your report)
-- From repo root: pnpm install ; pnpm --filter @hexgame/client typecheck ; pnpm --filter @hexgame/client build  -> all exit 0.
-- No rule logic in the client: grep the client for "distance", "longest", "cost" - only display code allowed.
-- Do NOT start the dev server and leave it running. Do not run long commands (> 5 min).
-- Write files in small increments. Final report: files created, commands + results, open issues (< 40 lines).
+Acceptance (paste results): from repo root pnpm --filter @hexgame/client typecheck and build both exit 0;
+grep the client src for any rule logic ("distance", "longest", "cost" except display of config costs).
+Do not leave a dev server running. Small increments. Final report < 40 lines.

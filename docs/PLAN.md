@@ -11,9 +11,11 @@ Later: an original "advanced" expansion ruleset that plugs into the same engine 
 | Milestone | Deliverable | Status |
 |---|---|---|
 | M1 | pnpm monorepo; pure engine with base rules incl. 5-6 player extra build phase; tests; fuzzer; hot-seat dev client; docs | done (see section 7) |
-| M2 | authoritative WebSocket server (rooms, reconnect, redacted views only) | todo |
+| M2 | authoritative WebSocket server (rooms, reconnect, redacted views only) - self-hosted by the PO for colleagues | todo (next after rules) |
 | M3 | advanced expansion ruleset as a separate module (hooks only) | todo, needs PO rules |
-| M4 | bots, real UI and art (theme from PO) | todo |
+| UI | real web UI + original medieval art (docs/UI.md) | in progress |
+
+PO 2026-11-13: web only, no bots, medieval style (own art), online play for colleagues.
 
 Out of scope for M1: expansion rules, networking/rooms, bots, polished UI, deployment.
 
@@ -32,8 +34,7 @@ Contract-first: `docs/API.md` (engine API + hooks), `docs/BOARD.md` (coordinates
 | game-engine | packages/engine/src/rules/<new ruleset>/ when delegated |
 | frontend | packages/client/ |
 | backend | packages/server/ (M2) |
-| bot-ai | packages/bots/ (M4) |
-| artist | packages/client/public/assets/ (M4) |
+| artist | packages/client/public/assets/ |
 | qa | packages/engine/test/qa/, docs/qa/ |
 | reviewer | read-only |
 
