@@ -1,0 +1,261 @@
+// Entry point: one Node process serves the built client (static files) and the WebSocket
+// endpoint on the same port (docs/PROTOCOL.md). Run with `pnpm --filter @hexgame/server start`.
+import * as fs from 'node:fs';
+import * as http from 'node:http';
+import * as path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { WebSocketServer, type WebSocket } from 'ws';
+import { Hub, type HubOptions } from './rooms';
+import {
+  MAX_FRAME_BYTES,
+  PING_INTERVAL_MS,
+  PONG_TIMEOUT_MS,
+  RateLimiter,
+} from './limits';
+import { RoomStore } from './store';
+import type { Conn } from './rooms';
+import type { ServerMsg } from './protocol';
+
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+
+export interface ServerOptions {
+  port?: number;
+  clientDist?: string;
+  dataDir?: string;
+  hub?: HubOptions;
+}
+
+export interface ServerHandle {
+  port: number;
+  hub: Hub;
+  close(): Promise<void>;
+}
+
+class WsConn implements Conn {
+  readonly id: number;
+  readonly rate = new RateLimiter();
+  lastPong = Date.now();
+
+  constructor(private readonly ws: WebSocket, id: number) {
+    this.id = id;
+  }
+
+  send(msg: ServerMsg): void {
+    if (this.ws.readyState === this.ws.OPEN) this.ws.send(JSON.stringify(msg));
+  }
+
+  close(code: number, reason: string): void {
+    try {
+      this.ws.close(code, reason.slice(0, 100));
+    } catch {
+      this.ws.terminate();
+    }
+  }
+}
+
+// ---------------------------------------------------------------- static files
+
+const CONTENT_TYPES: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.avif': 'image/avif',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.otf': 'font/otf',
+  '.txt': 'text/plain; charset=utf-8',
+  '.wasm': 'application/wasm',
+  '.webmanifest': 'application/manifest+json',
+};
+
+function sendFile(res: http.ServerResponse, file: string, status = 200): void {
+  const type = CONTENT_TYPES[path.extname(file).toLowerCase()] ?? 'application/octet-stream';
+  let body: Buffer;
+  try {
+    body = fs.readFileSync(file);
+  } catch {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Not found');
+    return;
+  }
+  res.writeHead(status, { 'Content-Type': type, 'Content-Length': body.length, 'Cache-Control': 'no-cache' });
+  res.end(body);
+}
+
+/**
+ * Static handler for packages/client/dist: correct content types, no directory listing,
+ * unknown paths fall back to index.html (SPA), path traversal is rejected.
+ */
+export function createStaticHandler(rootDir: string): (req: http.IncomingMessage, res: http.ServerResponse) => void {
+  const root = path.resolve(rootDir);
+  const indexHtml = path.join(root, 'index.html');
+  return (req, res) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      res.writeHead(405, { Allow: 'GET, HEAD' });
+      res.end();
+      return;
+    }
+    let pathname: string;
+    try {
+      pathname = decodeURIComponent(new URL(req.url ?? '/', 'http://localhost').pathname);
+    } catch {
+      res.writeHead(400);
+      res.end();
+      return;
+    }
+    const resolved = path.resolve(root, `.${path.posix.normalize(pathname)}`);
+    if (resolved !== root && !resolved.startsWith(root + path.sep)) {
+      res.writeHead(403);
+      res.end();
+      return;
+    }
+    let stat: fs.Stats | undefined;
+    try {
+      stat = fs.statSync(resolved);
+    } catch {
+      stat = undefined;
+    }
+    if (stat?.isFile()) {
+      sendFile(res, resolved);
+      return;
+    }
+    // Directories are not listed; unknown paths fall back to the SPA index.
+    try {
+      if (fs.existsSync(indexHtml) && fs.statSync(indexHtml).isFile()) {
+        sendFile(res, indexHtml);
+        return;
+      }
+    } catch {
+      // fall through to 404
+    }
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Not found');
+  };
+}
+
+// ---------------------------------------------------------------- server
+
+export function startServer(opts: ServerOptions = {}): Promise<ServerHandle> {
+  const port = opts.port ?? Number(process.env.PORT ?? 8080);
+  const clientDist = opts.clientDist ?? process.env.CLIENT_DIST ?? path.join(REPO_ROOT, 'packages', 'client', 'dist');
+  const dataDir = opts.dataDir ?? process.env.DATA_DIR ?? path.join(REPO_ROOT, 'data', 'rooms');
+  const hub = new Hub({ store: new RoomStore(dataDir), ...opts.hub });
+  const restored = hub.restore();
+  if (restored > 0) console.log(`[server] restored ${restored} game(s) from ${dataDir}`);
+
+  const serveStatic = createStaticHandler(clientDist);
+  const httpServer = http.createServer(serveStatic);
+  const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_FRAME_BYTES });
+
+  // Only /ws is a WebSocket endpoint; anything else gets its socket destroyed.
+  httpServer.on('upgrade', (req, socket, head) => {
+    let pathname = '/';
+    try {
+      pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
+    } catch {
+      socket.destroy();
+      return;
+    }
+    if (pathname !== '/ws') {
+      socket.destroy();
+      return;
+    }
+    wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
+  });
+
+  wss.on('connection', (ws) => {
+    const conn = new WsConn(ws, hub.newConnId());
+    hub.attach(conn);
+    (ws as WebSocket & { _conn?: WsConn })._conn = conn;
+    ws.on('pong', () => {
+      conn.lastPong = Date.now();
+    });
+    ws.on('message', (data, isBinary) => {
+      if (isBinary) {
+        conn.send({ type: 'error', code: 'BAD_MESSAGE', message: 'Binary frames are not supported.' });
+        return;
+      }
+      // Rate limit per connection: excess gets RATE_LIMIT errors; 100 in a row closes.
+      const verdict = conn.rate.record();
+      if (verdict === 'close') {
+        conn.close(1008, 'rate limit');
+        return;
+      }
+      if (verdict === 'limited') {
+        conn.send({
+          type: 'error',
+          code: 'RATE_LIMIT',
+          message: 'Too many messages; slow down (max 20 per second).',
+        });
+        return;
+      }
+      try {
+        hub.handleMessage(conn, data.toString('utf8'));
+      } catch (e) {
+        console.error(`[server] handler error: ${String(e)}`);
+        conn.send({ type: 'error', code: 'INTERNAL', message: 'Internal server error.' });
+      }
+    });
+    ws.on('error', () => {
+      /* close follows */
+    });
+    ws.on('close', () => hub.detach(conn.id));
+  });
+
+  const pingTimer = setInterval(() => {
+    const now = Date.now();
+    for (const ws of wss.clients) {
+      const conn = (ws as WebSocket & { _conn?: WsConn })._conn;
+      if (conn) {
+        if (now - conn.lastPong > PONG_TIMEOUT_MS) {
+          conn.close(1000, 'ping timeout');
+          continue;
+        }
+        ws.ping();
+      } else {
+        ws.ping();
+      }
+    }
+  }, PING_INTERVAL_MS);
+
+  const sweepTimer = setInterval(() => hub.sweep(), 60_000);
+
+  return new Promise((resolve, reject) => {
+    httpServer.once('error', reject);
+    httpServer.listen(port, () => {
+      console.log(`[server] listening on port ${port} (client: ${clientDist}, data: ${dataDir})`);
+      resolve({
+        port: (httpServer.address() as { port: number }).port,
+        hub,
+        close: async () => {
+          clearInterval(pingTimer);
+          clearInterval(sweepTimer);
+          for (const ws of wss.clients) ws.terminate();
+          await new Promise<void>((res) => wss.close(() => res()));
+          await new Promise<void>((res) => httpServer.close(() => res()));
+        },
+      });
+    });
+  });
+}
+
+function main(): void {
+  const port = Number(process.env.PORT ?? 8080);
+  startServer({ port }).catch((e) => {
+    console.error(`[server] failed to start: ${String(e)}`);
+    process.exitCode = 1;
+  });
+}
+
+if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) main();
