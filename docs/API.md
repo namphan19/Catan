@@ -9,7 +9,7 @@ no `Date`/`Math.random`. State is plain JSON. Types: `packages/engine/src/types.
 | `createGame({ seed, playerCount, layout?, rulesets?, vpToWin?, extraBuild? })` | New game. 3-6 players (ids `p1..pN`); 5-6 default to the large layout and the extra build phase. `rulesets` defaults to `['base']`. |
 | `validateAction(state, action)` | `{ ok: true }` or `{ ok: false, code, message }` (codes like `NOT_YOUR_TURN`, `WRONG_PHASE`, `DISTANCE_RULE`, `CANNOT_AFFORD`). |
 | `applyAction(state, action)` | `{ state, events }`; never mutates the input; throws `IllegalActionError(code)` if invalid; appends to `state.log`. |
-| `getLegalActions(state, playerId)` | Concrete legal actions. Open-ended spaces are sampled: offers = all 1-for-1 offers, discards = up to 200 combinations. |
+| `getLegalActions(state, playerId)` | Concrete legal actions. Open-ended spaces are sampled: offers = all 1-for-1 offers, discards = up to 5000 combinations (validateAction is the authority). |
 | `getPlayerView(state, viewerId \| null)` | Redacted view: other players' hands/cards as counts, no seed, no rng, no deck order, no `ext`. **The server only ever sends this.** |
 | `getEventsView(events, viewerId \| null)` | Redacts private event details (stolen resource, bought card). |
 | `replay(init, actions)` | Rebuild a game from `state.init` (incl. seed) + `state.log` actions. Debug/server only. |
