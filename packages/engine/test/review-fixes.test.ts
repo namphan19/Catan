@@ -4,7 +4,7 @@ import {
   applyAction, createGame, getLegalActions, getPlayerView, getEventsView, registerRuleset,
   validateAction, type GameEvent, type GameState, type PlayerId, type Ruleset,
 } from '../src';
-import { act, blankGame, pl, setHand } from './helpers';
+import { act, blankGame, hand, pl, setHand } from './helpers';
 import { actors } from '../src/rules/base/helpers';
 
 const code = (s: GameState, a: Parameters<typeof validateAction>[1]) => {
@@ -13,20 +13,29 @@ const code = (s: GameState, a: Parameters<typeof validateAction>[1]) => {
 };
 
 describe('review fixes', () => {
-  it('item 1 (D20): a second respondTrade from the same player is ALREADY_RESPONDED; legal() agrees', () => {
+  it('item 1 (D20, replaced): responders may change their answer until confirmation', () => {
     let s = blankGame(4);
     setHand(s, 'p1', { timber: 2 });
     setHand(s, 'p2', { clay: 1 }); // so both accept and decline are legal for p2
     s = act(s, { t: 'offerTrade', player: 'p1', give: { timber: 1 }, get: { clay: 1 } });
-    // legal() lists both responses for p2 before answering.
-    expect(getLegalActions(s, 'p2').filter((a) => a.t === 'respondTrade')).toHaveLength(2);
-    s = act(s, { t: 'respondTrade', player: 'p2', accept: false });
-    expect(code(s, { t: 'respondTrade', player: 'p2', accept: true })).toBe('ALREADY_RESPONDED');
-    expect(code(s, { t: 'respondTrade', player: 'p2', accept: false })).toBe('ALREADY_RESPONDED');
-    // legal() and validate() agree: no respondTrade listed for p2 anymore.
-    expect(getLegalActions(s, 'p2').filter((a) => a.t === 'respondTrade')).toHaveLength(0);
-    // Another player may still respond.
-    expect(code(s, { t: 'respondTrade', player: 'p3', accept: false })).toBe('OK');
+    // legal() keeps listing responses for p2 (no lock): accept, decline and counter samples.
+    const resp = getLegalActions(s, 'p2').filter((a) => a.t === 'respondTrade');
+    expect(resp.length).toBeGreaterThanOrEqual(2);
+    expect(resp.some((a) => (a as { accept?: boolean }).accept === true)).toBe(true);
+    expect(resp.some((a) => (a as { accept?: boolean }).accept === false)).toBe(true);
+    s = act(s, { t: 'respondTrade', player: 'p2', accept: true });
+    // No ALREADY_RESPONDED lock any more (base p.7): the answer may be changed, and legal()
+    // keeps listing the response space (accept / decline + counter samples).
+    expect(getLegalActions(s, 'p2').filter((a) => a.t === 'respondTrade').length).toBeGreaterThanOrEqual(2);
+    s = act(s, { t: 'respondTrade', player: 'p2', response: 'counter', give: { clay: 1 }, get: { timber: 2 } });
+    expect(s.trade!.responses.p2).toEqual({ response: 'counter', give: { clay: 1 }, get: { timber: 2 } });
+    // confirmTrade executes the counter terms.
+    const r = applyAction(s, { t: 'confirmTrade', player: 'p1', with: 'p2' });
+    expect(hand(r.state, 'p1')).toMatchObject({ clay: 1, timber: 0 });
+    expect(hand(r.state, 'p2')).toMatchObject({ clay: 0, timber: 2 });
+    // Another player may still respond while the offer is open.
+    const s2 = act(s, { t: 'respondTrade', player: 'p3', accept: false });
+    expect(s2.trade!.responses.p3).toEqual({ response: 'decline' });
   });
 
   it('item 2 (D18): discards are public — p3 sees p1 discard bag in the view log and events', () => {

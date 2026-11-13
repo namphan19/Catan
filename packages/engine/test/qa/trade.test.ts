@@ -112,18 +112,30 @@ describe('player trade (RULES.md 6, D6)', () => {
     expect(s.trade!.from).toBe('p1');
   });
 
-  it('bank and player trades are only allowed in the main phase of the active player (D6, D8)', () => {
-    // RULES.md 6: "main phase of the active player only"; D8: no trades in the extra build phase.
+  it('bank trades: main phase only; the paired player may use the bank, never player trades (D8)', () => {
+    // RULES.md 6: "main phase of the active player only"; D8 (official 2025, five-six p.3):
+    // the paired player may trade with the bank/harbors but NOT with other players.
     const pre = blankGame(4, { k: 'preRoll' });
     pl(pre, 'p1').hand = { timber: 4, clay: 0, fiber: 0, grain: 0, stone: 0 };
     expect(code(pre, { t: 'bankTrade', player: 'p1', give: { timber: 4 }, get: { grain: 1 } })).toBe('WRONG_PHASE');
     expect(code(pre, { t: 'offerTrade', player: 'p1', give: { timber: 1 }, get: { grain: 1 } })).toBe('WRONG_PHASE');
 
+    // Paired mode (the 5-6 default): player 2 (third seat left of p1) may use the bank.
     let s = blankGame(5);
     s = act(s, { t: 'endTurn', player: 'p1' });
-    expect(s.phase.k).toBe('extraBuild');
-    setHand(s, 'p2', { timber: 4, grain: 4 });
-    expect(code(s, { t: 'bankTrade', player: 'p2', give: { timber: 1 }, get: { grain: 1 } })).toBe('WRONG_PHASE');
-    expect(code(s, { t: 'offerTrade', player: 'p2', give: { timber: 1 }, get: { grain: 1 } })).toBe('WRONG_PHASE');
+    expect(s.phase.k).toBe('paired');
+    const paired = (s.phase as { player: string }).player;
+    setHand(s, paired, { timber: 4, grain: 4 });
+    expect(code(s, { t: 'bankTrade', player: paired, give: { timber: 4 }, get: { grain: 1 } })).toBe('OK');
+    expect(code(s, { t: 'offerTrade', player: paired, give: { timber: 1 }, get: { grain: 1 } })).toBe('WRONG_PHASE');
+
+    // Legacy extra-build mode keeps the old restriction: no trades at all in the window.
+    const legacy = blankGame(5);
+    legacy.init.largeTableMode = 'extraBuild';
+    const leg = act(legacy, { t: 'endTurn', player: 'p1' });
+    expect(leg.phase.k).toBe('extraBuild');
+    setHand(leg, 'p2', { timber: 4, grain: 4 });
+    expect(code(leg, { t: 'bankTrade', player: 'p2', give: { timber: 1 }, get: { grain: 1 } })).toBe('WRONG_PHASE');
+    expect(code(leg, { t: 'offerTrade', player: 'p2', give: { timber: 1 }, get: { grain: 1 } })).toBe('WRONG_PHASE');
   });
 });

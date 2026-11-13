@@ -35,9 +35,8 @@ export function autoSetup(state: GameState): GameState {
 }
 
 export function setupActor(s: GameState): PlayerId {
-  if (s.phase.k !== 'setup') return s.turn.current;
-  const ids = s.players.map((p) => p.id);
-  return [...ids, ...[...ids].reverse()][s.phase.idx];
+  // Ask the engine who can act instead of assuming the snake starts at p1 (first player is random, D1).
+  return s.players.map((p) => p.id).find((id) => getLegalActions(s, id).length > 0) ?? s.turn.current;
 }
 
 /** A fresh game placed straight into a phase with an empty board (no setup), p1 to move. */

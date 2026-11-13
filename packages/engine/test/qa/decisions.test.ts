@@ -52,7 +52,7 @@ describe('D18: discards are public, stolen/bought cards stay private', () => {
   });
 });
 
-describe('D20: one response per offer', () => {
+describe('D20: responders may answer repeatedly until the offer is confirmed (base p.7)', () => {
   function scenario() {
     const s = blankGame(4);
     setHand(s, 'p1', { timber: 1 });
@@ -60,26 +60,29 @@ describe('D20: one response per offer', () => {
     return act(s, { t: 'offerTrade', player: 'p1', give: { timber: 1 }, get: { grain: 1 } });
   }
 
-  it('a second response (accept then decline) is rejected with ALREADY_RESPONDED', () => {
-    // D20: "Each player responds once per offer; the answer cannot be changed."
+  it('a responder may change their answer; the latest response stands', () => {
+    // D20 (replaced): "Responders may accept, decline or counter, and change their answer until
+    // the offer is confirmed (base p.7)." There is no ALREADY_RESPONDED lock any more.
     let s = scenario();
     s = act(s, { t: 'respondTrade', player: 'p2', accept: true });
-    expect(code(s, { t: 'respondTrade', player: 'p2', accept: false })).toBe('ALREADY_RESPONDED');
-    expect(code(s, { t: 'respondTrade', player: 'p2', accept: true })).toBe('ALREADY_RESPONDED');
-    expect(getLegalActions(s, 'p2').some((a) => a.t === 'respondTrade')).toBe(false);
-    // the first answer stands and can still be confirmed
-    expect(code(s, { t: 'confirmTrade', player: 'p1', with: 'p2' })).toBe('OK');
+    s = act(s, { t: 'respondTrade', player: 'p2', accept: false });
+    expect(s.trade!.responses).toEqual({ p2: { response: 'decline' } });
+    // legal() and validate() agree: responding stays available.
+    expect(code(s, { t: 'respondTrade', player: 'p2', accept: true })).toBe('OK');
+    expect(getLegalActions(s, 'p2').some((a) => a.t === 'respondTrade')).toBe(true);
+    // after changing to decline the original accept no longer confirms
+    expect(code(s, { t: 'confirmTrade', player: 'p1', with: 'p2' })).toBe('NOT_ACCEPTED');
   });
 
-  it('a new offer resets the responses, so a player may respond again (D20, D6)', () => {
-    // D20: "a new offer resets responses" + D6 offers are replaced.
+  it('a new offer resets the responses, so a player may respond again (D6)', () => {
+    // D6: a new offer replaces the old one, so the response list starts empty again.
     let s = scenario();
     s = act(s, { t: 'respondTrade', player: 'p2', accept: true });
     s = act(s, { t: 'offerTrade', player: 'p1', give: { timber: 1 }, get: { grain: 1 } });
     expect(s.trade!.responses).toEqual({});
     expect(code(s, { t: 'respondTrade', player: 'p2', accept: false })).toBe('OK');
     s = act(s, { t: 'respondTrade', player: 'p2', accept: false });
-    expect(s.trade!.responses).toEqual({ p2: 'decline' });
+    expect(s.trade!.responses).toEqual({ p2: { response: 'decline' } });
   });
 });
 
@@ -95,11 +98,19 @@ describe('D21: extension limits are expressed in config', () => {
   });
 });
 
-describe('build window phase events (RULES.md 8, D9)', () => {
-  it('each build-window pass emits a phase event so clients can follow the queue', () => {
-    // RULES.md 8 + D9: a window advance is a phase change (event `phase` with extraBuild).
+describe('turn-window phase events (RULES.md 8, D8/D9)', () => {
+  it('entering the paired phase emits a phase event so clients can follow (5-6 p.3)', () => {
+    // RULES.md 8 + D8: after player 1 ends the turn the paired player's phase starts.
     let s = blankGame(5);
     s = act(s, { t: 'endTurn', player: 'p1' });
+    expect(s.phase).toEqual({ k: 'paired', player: 'p4' });
+  });
+
+  it('each legacy extra-build window pass emits a phase event so clients can follow the queue', () => {
+    // RULES.md 8 + D9 (legacy extraBuild mode): a window advance is a phase change.
+    const s0 = blankGame(5);
+    s0.init.largeTableMode = 'extraBuild';
+    let s = act(s0, { t: 'endTurn', player: 'p1' });
     const r = applyAction(s, { t: 'endTurn', player: (s.phase as { queue: string[] }).queue[0] });
     expect(r.events).toContainEqual({ e: 'phase', phase: 'extraBuild' });
     expect(r.state.phase.k).toBe('extraBuild');

@@ -9,7 +9,8 @@ const bagSum = (b: Record<string, number>) => Object.values(b).reduce((a, n) => 
 describe('setup: 3 players (RULES.md 4, D1)', () => {
   it('places p1..p3 then p3..p1 and starts turn 1 with p1; supply after setup', () => {
     // RULES.md 4 (snake order) + RULES.md 1 (15 roads, 5 settlements, 4 cities per player) + D1.
-    const s = autoSetup(newGame(3));
+    // firstPlayer: 'p1' pins the D1 start seat for this scenario (default: random per seed).
+    const s = autoSetup(newGame(3, 'test-seed', { firstPlayer: 'p1' }));
     const order = s.log.filter((l) => l.action.t === 'placeSettlement').map((l) => l.action.player);
     expect(order).toEqual(['p1', 'p2', 'p3', 'p3', 'p2', 'p1']);
     expect(s.phase.k).toBe('preRoll');
@@ -96,7 +97,7 @@ describe('setup: 3 players (RULES.md 4, D1)', () => {
     // D2: "Yield is capped by what the bank has (never negative)" (RULES.md 4).
     const s = newGame(3, 'qa-yield-bank');
     s.phase = { k: 'setup', idx: 3, step: 'settlement' }; // second setup round, p3
-    s.turn = { n: 0, current: 'p3', cardPlayed: false };
+    s.turn = { n: 0, current: 'p1', cardPlayed: false }; // first player p1: third placement is p3
     const g = graphOf(s);
     let pick: { v: string; a: string; b: string } | null = null;
     for (const h of s.board.hexes) {
@@ -126,7 +127,8 @@ describe('setup: 3 players (RULES.md 4, D1)', () => {
 describe('setup: 6 players (RULES.md 4, D1)', () => {
   it('places p1..p6 then p6..p1 and starts turn 1 with p1; supply after setup', () => {
     // RULES.md 4 (snake order) + RULES.md 1 (per-player pieces) + D1.
-    const s = autoSetup(newGame(6));
+    // firstPlayer: 'p1' pins the D1 start seat for this scenario (default: random per seed).
+    const s = autoSetup(newGame(6, 'test-seed', { firstPlayer: 'p1' }));
     const order = s.log.filter((l) => l.action.t === 'placeSettlement').map((l) => l.action.player);
     expect(order).toEqual(['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p6', 'p5', 'p4', 'p3', 'p2', 'p1']);
     expect(s.phase.k).toBe('preRoll');
@@ -137,7 +139,7 @@ describe('setup: 6 players (RULES.md 4, D1)', () => {
 
   it('the second settlement yields one resource per adjacent producing hex (D2)', () => {
     // RULES.md 4 (second settlement yields) + D2 (capped by the bank).
-    const s = autoSetup(newGame(6, 'qa-yield-6'));
+    const s = autoSetup(newGame(6, 'qa-yield-6', { firstPlayer: 'p1' }));
     const g = graphOf(s);
     const second = s.log.filter((l) => l.action.t === 'placeSettlement').slice(6);
     expect(second).toHaveLength(6);

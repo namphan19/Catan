@@ -58,23 +58,34 @@ export interface PlayerState {
   supply: Record<string, number>;
 }
 
+export interface TradeResponse {
+  response: 'accept' | 'decline' | 'counter';
+  /** Counter terms only: what the responder gives / gets (base p.7 counteroffers). */
+  give?: Bag;
+  get?: Bag;
+}
+
 export interface TradeOffer {
   from: PlayerId;
   give: Bag;
   get: Bag;
-  responses: Record<PlayerId, 'accept' | 'decline'>;
+  /** Latest response per player; responders may change it until the offer is confirmed/cancelled. */
+  responses: Record<PlayerId, TradeResponse>;
 }
 
-export type Resume = 'preRoll' | 'main';
+export type Resume = 'preRoll' | 'main' | 'paired';
 
 export type Phase =
   | { k: 'setup'; idx: number; step: 'settlement' | 'road'; at?: VertexId }
   | { k: 'preRoll' }
   | { k: 'main' }
   | { k: 'discard'; owed: Record<PlayerId, number> }
-  | { k: 'moveBlocker'; resume: Resume }
-  | { k: 'steal'; from: PlayerId[]; resume: Resume }
-  | { k: 'freeRoads'; left: number }
+  /** Sub-phase of a paired turn (5-6 players): `player` is player 2 and acts alone. */
+  | { k: 'paired'; player: PlayerId }
+  /** `actor` is set only when the flow was started by the paired player (who is not turn.current). */
+  | { k: 'moveBlocker'; resume: Resume; actor?: PlayerId }
+  | { k: 'steal'; from: PlayerId[]; resume: Resume; actor?: PlayerId }
+  | { k: 'freeRoads'; left: number; actor?: PlayerId }
   | { k: 'extraBuild'; queue: PlayerId[] }
   | { k: 'over' }
   /** Extension window. `actors` optionally names who may act (default: turn.current). */
@@ -87,6 +98,10 @@ export interface GameInit {
   rulesetIds: string[];
   vpToWin: number;
   extraBuild: boolean;
+  /** 5-6 players only: official paired players, or the legacy extra build phase. */
+  largeTableMode: 'paired' | 'extraBuild';
+  /** First player (start of the setup snake and of turn 1); random per seed unless forced. */
+  firstPlayer?: PlayerId;
 }
 
 export interface TurnState {
@@ -128,7 +143,17 @@ export type BaseAction =
   | { t: 'steal'; player: PlayerId; target: PlayerId }
   | { t: 'bankTrade'; player: PlayerId; give: Bag; get: Bag }
   | { t: 'offerTrade'; player: PlayerId; give: Bag; get: Bag }
-  | { t: 'respondTrade'; player: PlayerId; accept: boolean }
+  | {
+      t: 'respondTrade';
+      player: PlayerId;
+      /** Shorthand: accept: true = accept, false = decline. Ignored when `response` is given. */
+      accept?: boolean;
+      /** Full form: accept / decline / counter (base p.7 counteroffers). */
+      response?: 'accept' | 'decline' | 'counter';
+      /** Counter terms: what the responder gives / gets. */
+      give?: Bag;
+      get?: Bag;
+    }
   | { t: 'confirmTrade'; player: PlayerId; with: PlayerId }
   | { t: 'cancelTrade'; player: PlayerId }
   | { t: 'buyCard'; player: PlayerId }
@@ -153,7 +178,13 @@ export type GameEvent =
   | { e: 'stole'; from: PlayerId; to: PlayerId; resource?: ResourceId }
   | { e: 'traded'; a: PlayerId; b: PlayerId | 'bank'; aGave: Bag; bGave: Bag }
   | { e: 'tradeOffered'; player: PlayerId; give: Bag; get: Bag }
-  | { e: 'tradeResponse'; player: PlayerId; accept: boolean }
+  | {
+      e: 'tradeResponse';
+      player: PlayerId;
+      response: 'accept' | 'decline' | 'counter';
+      /** Kept for older clients: true only when response === 'accept'. */
+      accept: boolean;
+    }
   | { e: 'tradeCancelled'; player: PlayerId }
   | { e: 'cardBought'; player: PlayerId; card?: CardId }
   | { e: 'cardPlayed'; player: PlayerId; card: CardId; detail?: unknown }

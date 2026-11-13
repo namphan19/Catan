@@ -1,10 +1,14 @@
 // bankTrade (4:1, harbors 3:1 / 2:1) and player trades (offer -> responses -> confirm with one).
-import type { Action, Bag } from '../../types';
+// base p.7: the other players may accept, decline or make a counteroffer, and may change their
+// answer until the offer is confirmed or cancelled (replaces decision D20).
+import type { Action, Bag, TradeResponse } from '../../types';
 import type { ActionDef, Ctx } from '../../ruleset/types';
 import { bagAdd, bagClean, bagHas, bagSub, bagTotal, bagValid } from '../../bag';
 import { err, expect, hasPlayer, player, tradeRate } from './helpers';
 
 type A<T extends string> = Extract<Action, { t: T }>;
+
+type RespondAction = A<'respondTrade'>;
 
 function nonEmptyBags(ctx: Ctx, give: unknown, get: unknown) {
   const rs = ctx.rules.config.resources;
@@ -16,11 +20,19 @@ function nonEmptyBags(ctx: Ctx, give: unknown, get: unknown) {
   return null;
 }
 
+/** Normalize the action's response: an explicit `response` wins over the `accept` shorthand. */
+function normalizeResponse(a: RespondAction): { response: TradeResponse['response']; give?: Bag; get?: Bag } | null {
+  if (a.response) return { response: a.response, give: a.give, get: a.get };
+  if (typeof a.accept === 'boolean') return { response: a.accept ? 'accept' : 'decline' };
+  return null;
+}
+
 export const bankTrade: ActionDef = {
   validate(ctx, action) {
     const a = action as A<'bankTrade'>;
     const { state } = ctx;
-    const e = expect(state, a, ['main']) ?? nonEmptyBags(ctx, a.give, a.get);
+    // base p.7: bank/ports trades are allowed in the action phase, including the paired phase.
+    const e = expect(state, a, ['main', 'paired']) ?? nonEmptyBags(ctx, a.give, a.get);
     if (e) return e;
     const give = bagClean(a.give);
     const kinds = Object.keys(give);
@@ -47,7 +59,7 @@ export const bankTrade: ActionDef = {
   },
   legal(ctx, id) {
     const { state, rules } = ctx;
-    if (expect(state, { t: 'bankTrade', player: id, give: {}, get: {} }, ['main'])) return [];
+    if (expect(state, { t: 'bankTrade', player: id, give: {}, get: {} }, ['main', 'paired'])) return [];
     const hand = player(state, id).hand;
     const out: Action[] = [];
     for (const r of rules.config.resources) {
@@ -98,25 +110,53 @@ export const respondTrade: ActionDef = {
     if (!hasPlayer(state, a.player)) return err('UNKNOWN_PLAYER', `Unknown player ${String(a.player)}.`);
     if (state.phase.k !== 'main' || !state.trade) return err('NO_TRADE', 'There is no open trade offer.');
     if (a.player === state.trade.from) return err('OWN_OFFER', 'You cannot respond to your own offer.');
-    // D20: each player responds once per offer; a new offer resets the responses.
-    if (state.trade.responses[a.player]) return err('ALREADY_RESPONDED', 'You already responded to this offer.');
-    if (typeof a.accept !== 'boolean') return err('BAD_ARGS', 'accept must be true or false.');
-    if (a.accept && !bagHas(player(state, a.player).hand, state.trade.get))
+    // base p.7: accept, decline or counteroffer. There is no one-response lock (D20 removed):
+    // a responder may change the answer until the offer is confirmed or cancelled.
+    const r = normalizeResponse(a);
+    if (!r)
+      return err('BAD_ARGS', 'Use accept: true/false or response: "accept" | "decline" | "counter".');
+    if (r.response === 'accept' && !bagHas(player(state, a.player).hand, state.trade.get))
       return err('NOT_ENOUGH', 'You do not have the requested cards.');
+    if (r.response === 'counter') {
+      const e = nonEmptyBags(ctx, r.give, r.get);
+      if (e) return e;
+      if (!bagHas(player(state, a.player).hand, bagClean(r.give!)))
+        return err('NOT_ENOUGH', 'You do not have those cards.');
+    }
     return null;
   },
   apply(ctx, action) {
     const a = action as A<'respondTrade'>;
-    if (!ctx.state.trade) return;
-    ctx.state.trade.responses[a.player] = a.accept ? 'accept' : 'decline';
-    ctx.emit({ e: 'tradeResponse', player: a.player, accept: a.accept });
+    const t = ctx.state.trade;
+    if (!t) return;
+    const r = normalizeResponse(a)!;
+    t.responses[a.player] =
+      r.response === 'counter'
+        ? { response: 'counter', give: bagClean(r.give!), get: bagClean(r.get!) }
+        : { response: r.response };
+    ctx.emit({ e: 'tradeResponse', player: a.player, response: r.response, accept: r.response === 'accept' });
   },
   legal(ctx, id) {
-    const { state } = ctx;
-    if (!state.trade || state.trade.responses[id]) return [];
-    return [true, false]
-      .map((accept) => ({ t: 'respondTrade', player: id, accept }) as Action)
-      .filter((x) => !respondTrade.validate(ctx, x));
+    const { state, rules } = ctx;
+    const t = state.trade;
+    if (!t || t.from === id || state.phase.k !== 'main') return [];
+    const out: Action[] = [];
+    for (const accept of [true, false]) {
+      const a = { t: 'respondTrade', player: id, accept } as Action;
+      if (!respondTrade.validate(ctx, a)) out.push(a);
+    }
+    // Counters are an open-ended space; legal() samples the 1-for-1 counters (like offerTrade).
+    const hand = player(state, id).hand;
+    for (const r of rules.config.resources)
+      if ((hand[r] ?? 0) > 0)
+        for (const s of rules.config.resources)
+          if (s !== r) {
+            const a = {
+              t: 'respondTrade', player: id, response: 'counter', give: { [r]: 1 }, get: { [s]: 1 },
+            } as Action;
+            if (!respondTrade.validate(ctx, a)) out.push(a);
+          }
+    return out;
   },
 };
 
@@ -128,9 +168,15 @@ export const confirmTrade: ActionDef = {
     if (e) return e;
     const t = state.trade;
     if (!t || t.from !== a.player) return err('NO_TRADE', 'You have no open trade offer.');
-    if (t.responses[a.with] !== 'accept') return err('NOT_ACCEPTED', `${String(a.with)} has not accepted.`);
-    if (!bagHas(player(state, a.player).hand, t.give)) return err('NOT_ENOUGH', 'You no longer have those cards.');
-    if (!bagHas(player(state, a.with).hand, t.get)) return err('NOT_ENOUGH', `${a.with} no longer has those cards.`);
+    const r = t.responses[a.with];
+    if (!r || r.response === 'decline') return err('NOT_ACCEPTED', `${String(a.with)} has not accepted.`);
+    // Re-validate both hands against the terms that will be executed.
+    const giveByMe = r.response === 'counter' ? r.get! : t.give;
+    const giveByThem = r.response === 'counter' ? r.give! : t.get;
+    if (!bagHas(player(state, a.player).hand, giveByMe))
+      return err('NOT_ENOUGH', 'You no longer have those cards.');
+    if (!bagHas(player(state, a.with).hand, giveByThem))
+      return err('NOT_ENOUGH', `${a.with} no longer has those cards.`);
     return null;
   },
   apply(ctx, action) {
@@ -138,14 +184,18 @@ export const confirmTrade: ActionDef = {
     const { state } = ctx;
     const t = state.trade;
     if (!t) return;
+    const r = t.responses[a.with]!;
+    // base p.7: a confirmed counteroffer executes the counter terms instead of the original offer.
+    const giveByMe = r.response === 'counter' ? r.get! : t.give;
+    const giveByThem = r.response === 'counter' ? r.give! : t.get;
     const me = player(state, a.player);
     const them = player(state, a.with);
-    bagSub(me.hand, t.give);
-    bagAdd(them.hand, t.give);
-    bagSub(them.hand, t.get);
-    bagAdd(me.hand, t.get);
+    bagSub(me.hand, giveByMe);
+    bagAdd(them.hand, giveByMe);
+    bagSub(them.hand, giveByThem);
+    bagAdd(me.hand, giveByThem);
     state.trade = undefined;
-    ctx.emit({ e: 'traded', a: a.player, b: a.with, aGave: t.give as Bag, bGave: t.get as Bag });
+    ctx.emit({ e: 'traded', a: a.player, b: a.with, aGave: giveByMe as Bag, bGave: giveByThem as Bag });
   },
   legal(ctx, id) {
     const t = ctx.state.trade;

@@ -35,7 +35,8 @@ function nineVP(s: GameState, id: string): VertexId {
 
 describe('setup (snake order)', () => {
   it('places in order p1..p4 then p4..p1 and starts turn 1 with p1', () => {
-    const s = autoSetup(newGame(4));
+    // firstPlayer: 'p1' pins the D1 start seat for this scenario (default: random per seed).
+    const s = autoSetup(newGame(4, 'test-seed', { firstPlayer: 'p1' }));
     const order = s.log.filter((l) => l.action.t === 'placeSettlement').map((l) => l.action.player);
     expect(order).toEqual(['p1', 'p2', 'p3', 'p4', 'p4', 'p3', 'p2', 'p1']);
     expect(s.phase.k).toBe('preRoll');
@@ -47,7 +48,7 @@ describe('setup (snake order)', () => {
   });
 
   it('second settlement yields one resource per adjacent producing hex', () => {
-    const s = autoSetup(newGame(4, 'yield'));
+    const s = autoSetup(newGame(4, 'yield', { firstPlayer: 'p1' }));
     const g = graphOf(s);
     const second = s.log.filter((l) => l.action.t === 'placeSettlement').slice(4);
     for (const l of second) {
@@ -61,7 +62,7 @@ describe('setup (snake order)', () => {
   });
 
   it('rejects out-of-turn moves and setup roads not touching the new settlement', () => {
-    let s = newGame(4);
+    let s = newGame(4, 'test-seed', { firstPlayer: 'p1' });
     expect(code(s, { t: 'placeSettlement', player: 'p2', v: 'v:0,0,N' })).toBe('NOT_YOUR_TURN');
     expect(code(s, { t: 'roll', player: 'p1' })).toBe('WRONG_PHASE');
     s = act(s, { t: 'placeSettlement', player: 'p1', v: 'v:0,0,N' });
@@ -382,6 +383,7 @@ describe('victory', () => {
 
   it("reaching the target in another player's build window wins only when the own turn starts", () => {
     let s = blankGame(5);
+    s.init.largeTableMode = 'extraBuild'; // this scenario pins the legacy extra-build windows
     const v = nineVP(s, 'p2');
     s = act(s, { t: 'endTurn', player: 'p1' });
     expect(s.phase).toEqual({ k: 'extraBuild', queue: ['p2', 'p3', 'p4', 'p5'] });
@@ -397,8 +399,14 @@ describe('victory', () => {
 });
 
 describe('extra build phase (5-6 players)', () => {
+  /** Legacy extra-build behaviour: the 5-6 default is now the official paired phase (5-6 p.3). */
+  function legacy(s: GameState): GameState {
+    s.init.largeTableMode = 'extraBuild';
+    return s;
+  }
+
   it('after each turn every other player gets a build window in seat order', () => {
-    let s = blankGame(5);
+    let s = legacy(blankGame(5));
     s.turn.current = 'p3';
     s = act(s, { t: 'endTurn', player: 'p3' });
     expect(s.phase).toEqual({ k: 'extraBuild', queue: ['p4', 'p5', 'p1', 'p2'] });

@@ -1,10 +1,11 @@
-// roll / discard / moveBlocker / steal / endTurn (incl. the extra build phase for 5-6 players).
+// roll / discard / moveBlocker / steal / endTurn (incl. the paired phase for 5-6 players and the
+// legacy extra build phase).
 import type { Action, Phase, PlayerId } from '../../types';
 import type { ActionDef, Ctx } from '../../ruleset/types';
 import { bagAdd, bagHas, bagSub, bagToList, bagTotal, bagValid } from '../../bag';
 import { randInt } from '../../rng';
 import {
-  err, expect, handSize, nextSeat, player, releaseNewCards, setPhase, startTurn, subBags,
+  err, expect, handSize, nextSeat, player, releaseNewCards, resumePhase, setPhase, startTurn, subBags,
 } from './helpers';
 
 type A<T extends string> = Extract<Action, { t: T }>;
@@ -107,12 +108,12 @@ export const moveBlocker: ActionDef = {
     const a = action as A<'moveBlocker'>;
     const { state } = ctx;
     if (state.phase.k !== 'moveBlocker') return;
-    const resume = state.phase.resume;
+    const { resume, actor } = state.phase;
     state.board.blocker = a.hex;
     ctx.emit({ e: 'blockerMoved', player: a.player, hex: a.hex });
     const from = stealCandidates(ctx, a.hex, a.player);
-    if (from.length) setPhase(ctx, { k: 'steal', from, resume });
-    else setPhase(ctx, { k: resume });
+    if (from.length) setPhase(ctx, { k: 'steal', from, resume, ...(actor ? { actor } : {}) });
+    else setPhase(ctx, resumePhase(state, resume));
   },
   legal(ctx, id) {
     return ctx.graph.hexes
@@ -145,7 +146,7 @@ export const steal: ActionDef = {
       bagAdd(player(state, a.player).hand, { [resource]: 1 });
     }
     ctx.emit({ e: 'stole', from: a.target, to: a.player, resource });
-    setPhase(ctx, { k: resume });
+    setPhase(ctx, resumePhase(state, resume));
   },
   legal(ctx, id) {
     const { state } = ctx;
@@ -158,19 +159,33 @@ export const steal: ActionDef = {
 
 export const endTurn: ActionDef = {
   validate(ctx, a) {
-    return expect(ctx.state, a, ['main', 'extraBuild']);
+    return expect(ctx.state, a, ['main', 'extraBuild', 'paired']);
   },
   apply(ctx, a) {
     const { state, rules } = ctx;
-    releaseNewCards(player(state, a.player));
-    if (state.phase.k === 'extraBuild') {
-      const queue = state.phase.queue.slice(1);
+    const ph = state.phase;
+    if (ph.k === 'extraBuild') {
+      releaseNewCards(player(state, a.player));
+      const queue = ph.queue.slice(1);
       if (queue.length) setPhase(ctx, { k: 'extraBuild', queue });
       else startTurn(ctx, nextSeat(state, state.turn.current));
       return;
     }
+    if (ph.k === 'paired') {
+      // 5-6 p.3: the paired turn ends here. Cards bought during the whole paired turn (by player 1
+      // or player 2) become playable now.
+      for (const p of state.players) releaseNewCards(p);
+      startTurn(ctx, nextSeat(state, state.turn.current));
+      return;
+    }
     state.trade = undefined;
     const next = rules.call('phaseAfterTurn', ctx, { k: 'preRoll' });
+    if (next.k === 'paired') {
+      // Player 1's bought cards stay locked: the bought-this-turn limit is per turn, not per phase.
+      setPhase(ctx, next);
+      return;
+    }
+    releaseNewCards(player(state, a.player));
     if (next.k === 'preRoll') startTurn(ctx, nextSeat(state, state.turn.current));
     else setPhase(ctx, next);
   },

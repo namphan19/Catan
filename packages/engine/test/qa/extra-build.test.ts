@@ -10,6 +10,13 @@ const code = (s: GameState, a: Action) => {
 };
 const seats = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'];
 
+/** Legacy extra-build behaviour: since the 2025 rulebooks the 5-6 default is the paired phase
+ *  (5-6 p.3, see test/official-rules.test.ts); these scenarios pin the legacy windows. */
+function legacy(s: GameState): GameState {
+  s.init.largeTableMode = 'extraBuild';
+  return s;
+}
+
 function queueOf(s: GameState): string[] {
   if (s.phase.k !== 'extraBuild') throw new Error(`not in extraBuild: ${s.phase.k}`);
   return s.phase.queue;
@@ -33,7 +40,7 @@ describe('extra build phase (RULES.md 8, D8, D9)', () => {
   it('6 players: every player passes through every extra build window in seat order', () => {
     // RULES.md 8: after each turn the other players get one build window "in seat order (starting
     // left of the active player)" and then the next player starts their turn.
-    let s = blankGame(6);
+    let s = legacy(blankGame(6));
     expect(s.init.extraBuild).toBe(true);
     const seen: string[] = [];
     for (let turn = 0; turn < 6; turn++) {
@@ -58,7 +65,7 @@ describe('extra build phase (RULES.md 8, D8, D9)', () => {
 
   it('in a build window only build/buy actions are legal; others are rejected (D8)', () => {
     // D8: allowed road/settlement/city/buyCard; no trades, no card plays.
-    let s = blankGame(5);
+    let s = legacy(blankGame(5));
     s = act(s, { t: 'endTurn', player: 'p1' });
     const [first, second] = queueOf(s);
     const g = graphOf(s);
@@ -86,7 +93,7 @@ describe('extra build phase (RULES.md 8, D8, D9)', () => {
 
   it('a card bought in a build window is playable on the owner next turn, not in the window (D9)', () => {
     // D9: bought cards "become playable when that player's window ends".
-    let s = blankGame(5);
+    let s = legacy(blankGame(5));
     s = act(s, { t: 'endTurn', player: 'p1' });
     const queue = queueOf(s); // [p2, p3, p4, p5]
     const first = queue[0];
@@ -109,7 +116,7 @@ describe('extra build phase (RULES.md 8, D8, D9)', () => {
     expect(four.phase.k).toBe('preRoll');
     expect(four.turn.current).toBe('p2');
 
-    const five = blankGame(5);
+    const five = legacy(blankGame(5));
     five.init.extraBuild = false;
     const started = act(five, { t: 'endTurn', player: 'p1' });
     expect(started.phase.k).toBe('preRoll');

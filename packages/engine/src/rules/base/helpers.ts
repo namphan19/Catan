@@ -1,5 +1,5 @@
 // Shared helpers for base rule modules.
-import type { Action, Bag, GameState, Phase, PlayerId, PlayerState, RuleError } from '../../types';
+import type { Action, Bag, GameState, Phase, PlayerId, PlayerState, Resume, RuleError } from '../../types';
 import type { ApplyCtx, Ctx } from '../../ruleset/types';
 import { longestRoute } from '../../board/graph';
 import { bagTotal } from '../../bag';
@@ -21,10 +21,44 @@ export function seatOrder(state: GameState): PlayerId[] {
   return state.players.map((p) => p.id);
 }
 
-/** Setup placement order: seats forward, then backward (snake). */
+/** Setup placement order (base p.12): the first player's seat first, forward to the last seat,
+ *  then backward to the first (D1: the first player is `turn.current` while setup is running). */
 export function setupOrder(state: GameState): PlayerId[] {
   const s = seatOrder(state);
-  return [...s, ...[...s].reverse()];
+  const k = s.indexOf(state.turn.current);
+  const rot = k < 0 ? s : [...s.slice(k), ...s.slice(0, k)];
+  return [...rot, ...[...rot].reverse()];
+}
+
+/** 5-6 players, paired mode (5-6 p.3): player 2 is the third seat to the left of player 1. */
+export function pairedPlayer(state: GameState): PlayerId {
+  const s = seatOrder(state);
+  return s[(s.indexOf(state.turn.current) + 3) % s.length];
+}
+
+/** Phase a moveBlocker / steal flow returns to. */
+export function resumePhase(state: GameState, resume: Resume): Phase {
+  return resume === 'paired' ? { k: 'paired', player: pairedPlayer(state) } : { k: resume };
+}
+
+/** The acting player of the current phase (also the player whose win is checked). */
+export function winningActor(state: GameState): PlayerId | null {
+  const ph = state.phase;
+  switch (ph.k) {
+    case 'paired':
+      return ph.player;
+    case 'moveBlocker':
+    case 'steal':
+    case 'freeRoads':
+      return ph.actor ?? state.turn.current;
+    // Setup and the legacy extra-build windows never produce a win (D11).
+    case 'setup':
+    case 'extraBuild':
+    case 'over':
+      return null;
+    default:
+      return state.turn.current;
+  }
 }
 
 export function nextSeat(state: GameState, id: PlayerId): PlayerId {
@@ -40,6 +74,12 @@ export function actors(state: GameState): PlayerId[] {
       return [setupOrder(state)[ph.idx]];
     case 'discard':
       return Object.keys(ph.owed).filter((p) => ph.owed[p] > 0);
+    case 'paired':
+      return [ph.player];
+    case 'moveBlocker':
+    case 'steal':
+    case 'freeRoads':
+      return [ph.actor ?? state.turn.current];
     case 'extraBuild':
       return ph.queue.length ? [ph.queue[0]] : [];
     case 'over':

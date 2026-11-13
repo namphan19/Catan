@@ -7,7 +7,7 @@ import { buildCity, placeRoad, placeSettlement } from './build';
 import { bankTrade, cancelTrade, confirmTrade, offerTrade, respondTrade } from './trade';
 import { discard, endTurn, moveBlocker, roll, steal } from './turn';
 import { buyCard, playCard } from './cards';
-import { player, seatOrder, vp } from './helpers';
+import { pairedPlayer, player, seatOrder, vp, winningActor } from './helpers';
 
 export const baseRuleset: Ruleset = {
   id: 'base',
@@ -60,12 +60,14 @@ export const baseRuleset: Ruleset = {
       return total;
     },
 
-    // A player wins only during their own turn (not in setup or another player's build window).
+    // The player whose action window is open wins on reaching the target. Setup and the legacy
+    // extra-build windows never produce a win (D11); the paired player wins instantly in their
+    // own phase (5-6 p.3).
     checkWinner(ctx, prev) {
       if (prev) return prev;
       const { state } = ctx;
-      if (['setup', 'extraBuild', 'over'].includes(state.phase.k)) return undefined;
-      const id = state.turn.current;
+      const id = winningActor(state);
+      if (!id) return undefined;
       return vp(ctx, id) >= state.init.vpToWin ? id : undefined;
     },
 
@@ -73,6 +75,12 @@ export const baseRuleset: Ruleset = {
 
     phaseAfterTurn(ctx, prev) {
       const { state } = ctx;
+      // 5-6 players, paired mode (5-6 p.3): player 2 (third seat left of player 1) gets an action
+      // phase with no roll after player 1 ends the turn. One card per phase, not per turn.
+      if (state.init.largeTableMode === 'paired' && state.players.length >= 5) {
+        state.turn.cardPlayed = false;
+        return { k: 'paired', player: pairedPlayer(state) };
+      }
       if (!state.init.extraBuild) return prev;
       const seats = seatOrder(state);
       const i = seats.indexOf(state.turn.current);

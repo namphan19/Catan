@@ -6,7 +6,7 @@ import { composeRules } from './ruleset/compose';
 import { baseRuleset } from './rules/base';
 import { getGraph } from './board/graph';
 import { generateBoard } from './board/generate';
-import { seedRng, shuffle } from './rng';
+import { randInt, seedRng, shuffle } from './rng';
 import { emptyBag } from './bag';
 import { vp } from './rules/base/helpers';
 
@@ -49,8 +49,13 @@ export interface CreateGameOptions {
   layout?: LayoutId;
   rulesets?: string[];
   vpToWin?: number;
-  /** Extra build phase after each turn. Defaults to true for 5-6 players. */
+  /** Legacy: extra build phase after each turn. Defaults to true for 5-6 players (used by the
+   *  legacy `largeTableMode: 'extraBuild'`; the official paired mode ignores it). */
   extraBuild?: boolean;
+  /** 5-6 players: 'paired' (official, default) or 'extraBuild' (legacy behaviour). */
+  largeTableMode?: 'paired' | 'extraBuild';
+  /** Force the first player; default: uniform over the seats from the game RNG (per seed). */
+  firstPlayer?: PlayerId;
 }
 
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
@@ -64,6 +69,11 @@ export function createGame(opts: CreateGameOptions): GameState {
   const rules = getRules(rulesetIds);
   const cfg = rules.config;
   const layout: LayoutId = opts.layout ?? (playerCount >= 5 ? 'large' : 'standard');
+  const ids: PlayerId[] = Array.from({ length: playerCount }, (_, i) => `p${i + 1}`);
+  if (opts.firstPlayer !== undefined && !ids.includes(opts.firstPlayer))
+    throw new Error(`firstPlayer must be one of ${ids.join(', ')}`);
+  const largeTableMode: 'paired' | 'extraBuild' =
+    playerCount >= 5 ? opts.largeTableMode ?? 'paired' : 'extraBuild';
   const init: GameInit = {
     seed,
     playerCount,
@@ -71,6 +81,7 @@ export function createGame(opts: CreateGameOptions): GameState {
     rulesetIds,
     vpToWin: opts.vpToWin ?? cfg.vpToWin,
     extraBuild: opts.extraBuild ?? playerCount >= 5,
+    largeTableMode,
   };
   const spec = cfg.layouts[layout];
   const rng = seedRng(seed);
@@ -84,7 +95,11 @@ export function createGame(opts: CreateGameOptions): GameState {
     rng,
     Object.entries(spec.deck).flatMap(([c, n]) => Array<string>(n).fill(c)),
   );
-  const ids: PlayerId[] = Array.from({ length: playerCount }, (_, i) => `p${i + 1}`);
+  // First player (base p.5/p.12: start roll; engine: one uniform pick from the game RNG). The pick
+  // is always consumed so the RNG stream — and therefore replay(init, actions) — stays identical.
+  const pick = randInt(rng, playerCount);
+  const firstPlayer = opts.firstPlayer ?? ids[pick];
+  init.firstPlayer = firstPlayer;
   const state: GameState = {
     schemaVersion: 1,
     init,
@@ -101,7 +116,7 @@ export function createGame(opts: CreateGameOptions): GameState {
     })),
     bank: { hand: emptyBag(cfg.resources, spec.bankPerResource), deck },
     phase: { k: 'setup', idx: 0, step: 'settlement' },
-    turn: { n: 0, current: ids[0], cardPlayed: false },
+    turn: { n: 0, current: firstPlayer, cardPlayed: false },
     awards: { longestRoute: null, largestForce: null },
     ext: {},
     log: [],
@@ -158,6 +173,8 @@ export function replay(init: GameInit, actions: Action[]): GameState {
     rulesets: init.rulesetIds,
     vpToWin: init.vpToWin,
     extraBuild: init.extraBuild,
+    largeTableMode: init.largeTableMode,
+    firstPlayer: init.firstPlayer,
   });
   for (const a of actions) s = applyAction(s, a).state;
   return s;

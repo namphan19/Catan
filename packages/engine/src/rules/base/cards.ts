@@ -1,11 +1,12 @@
 // buyCard / playCard. Cards: guard (move blocker + steal, counts for largest force), freeRoads,
-// harvest (take resources from the bank), claim (take one resource type from everyone), relic (1 VP, hidden).
-import type { Action } from '../../types';
+// harvest (take resources from the bank), claim (take one resource type from everyone), relic (1 VP,
+// hidden). In the paired phase (5-6 players) player 2 may play one card (5-6 p.3).
+import type { Action, Resume } from '../../types';
 import type { ActionDef, Ctx } from '../../ruleset/types';
 import { legalRoadSpots } from '../../board/graph';
 import { bagAdd, bagSub, bagTotal } from '../../bag';
 import { canAfford, pay } from './build';
-import { cost, err, expect, player, setPhase, updateLargestForce } from './helpers';
+import { cost, err, expect, player, resumePhase, setPhase, updateLargestForce } from './helpers';
 
 type A<T extends string> = Extract<Action, { t: T }>;
 
@@ -13,7 +14,7 @@ type A<T extends string> = Extract<Action, { t: T }>;
 
 export const buyCard: ActionDef = {
   validate(ctx, a) {
-    const e = expect(ctx.state, a, ['main', 'extraBuild']);
+    const e = expect(ctx.state, a, ['main', 'extraBuild', 'paired']);
     if (e) return e;
     if (ctx.state.bank.deck.length === 0) return err('DECK_EMPTY', 'No cards left to buy.');
     return canAfford(ctx, a.player, 'card');
@@ -39,7 +40,7 @@ export const playCard: ActionDef = {
   validate(ctx, action) {
     const a = action as A<'playCard'>;
     const { state, graph, rules } = ctx;
-    const e = expect(state, a, ['preRoll', 'main']);
+    const e = expect(state, a, ['preRoll', 'main', 'paired']);
     if (e) return e;
     if (!rules.config.playableCards.includes(a.card))
       return err('NOT_PLAYABLE', `${String(a.card)} cannot be played.`);
@@ -82,15 +83,30 @@ export const playCard: ActionDef = {
     let detail: unknown;
     if (a.card === 'guard') {
       updateLargestForce(ctx, a.player);
-      const resume = state.phase.k === 'preRoll' ? 'preRoll' : 'main';
+      // The flow returns to the phase the card was played from (paired players resume to the
+      // paired phase, 5-6 p.3); `actor` marks that the paired player owns the sub-phases.
+      const from = state.phase;
+      const inPaired = from.k === 'paired';
+      const resume: Resume = from.k === 'preRoll' ? 'preRoll' : inPaired ? 'paired' : 'main';
       ctx.emit({ e: 'cardPlayed', player: a.player, card: a.card });
-      setPhase(ctx, { k: 'moveBlocker', resume });
+      setPhase(
+        ctx,
+        inPaired
+          ? { k: 'moveBlocker', resume, actor: from.player }
+          : { k: 'moveBlocker', resume },
+      );
       return;
     }
     if (a.card === 'freeRoads') {
       const left = Math.min(rules.config.freeRoadsCount, p.supply.road);
       ctx.emit({ e: 'cardPlayed', player: a.player, card: a.card });
-      if (left > 0 && legalRoadSpots(graph, state.pieces, a.player).length) setPhase(ctx, { k: 'freeRoads', left });
+      if (left > 0 && legalRoadSpots(graph, state.pieces, a.player).length) {
+        const inPaired = state.phase.k === 'paired';
+        setPhase(
+          ctx,
+          inPaired ? { k: 'freeRoads', left, actor: a.player } : { k: 'freeRoads', left },
+        );
+      }
       return;
     }
     if (a.card === 'harvest') {
@@ -115,7 +131,7 @@ export const playCard: ActionDef = {
   },
   legal(ctx, id) {
     const { state, rules } = ctx;
-    if (expect(state, { t: 'playCard', player: id, card: 'guard' }, ['preRoll', 'main'])) return [];
+    if (expect(state, { t: 'playCard', player: id, card: 'guard' }, ['preRoll', 'main', 'paired'])) return [];
     const p = player(state, id);
     const rs = rules.config.resources;
     const out: Action[] = [];

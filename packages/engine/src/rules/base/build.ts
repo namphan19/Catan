@@ -4,7 +4,7 @@ import type { ActionDef, ApplyCtx, Ctx } from '../../ruleset/types';
 import { legalRoadSpots, legalSettlementSpots, satisfiesDistanceRule } from '../../board/graph';
 import { bagAdd, bagHas, bagSub } from '../../bag';
 import {
-  cost, err, expect, player, seatOrder, setPhase, setupOrder, startTurn, updateLongestRoute,
+  cost, err, expect, player, resumePhase, setPhase, setupOrder, startTurn, updateLongestRoute,
 } from './helpers';
 
 type A<T extends string> = Extract<Action, { t: T }>;
@@ -24,7 +24,7 @@ export const placeSettlement: ActionDef = {
   validate(ctx, action) {
     const a = action as A<'placeSettlement'>;
     const { state, graph } = ctx;
-    const e = expect(state, a, ['setup', 'main', 'extraBuild']);
+    const e = expect(state, a, ['setup', 'main', 'extraBuild', 'paired']);
     if (e) return e;
     if (state.phase.k === 'setup' && state.phase.step !== 'settlement')
       return err('WRONG_STEP', 'Place a road next.');
@@ -67,7 +67,7 @@ export const placeSettlement: ActionDef = {
   },
   legal(ctx, id) {
     const { state, graph } = ctx;
-    if (expect(state, { t: 'placeSettlement', player: id, v: '' }, ['setup', 'main', 'extraBuild']))
+    if (expect(state, { t: 'placeSettlement', player: id, v: '' }, ['setup', 'main', 'extraBuild', 'paired']))
       return [];
     const spots = legalSettlementSpots(graph, state.pieces, id, { setup: state.phase.k === 'setup' });
     return spots
@@ -81,7 +81,7 @@ export const placeRoad: ActionDef = {
     const a = action as A<'placeRoad'>;
     const { state, graph } = ctx;
     const ph = state.phase;
-    const e = expect(state, a, ['setup', 'main', 'extraBuild', 'freeRoads']);
+    const e = expect(state, a, ['setup', 'main', 'extraBuild', 'paired', 'freeRoads']);
     if (e) return e;
     if (ph.k === 'setup' && ph.step !== 'road') return err('WRONG_STEP', 'Place a settlement first.');
     if (!graph.edgeEnds[a.e]) return err('BAD_EDGE', `Unknown edge ${String(a.e)}.`);
@@ -110,19 +110,21 @@ export const placeRoad: ActionDef = {
     updateLongestRoute(ctx);
     if (ph.k === 'setup') {
       const idx = ph.idx + 1;
-      if (idx >= setupOrder(state).length) startTurn(ctx, seatOrder(state)[0]);
+      // D1: while setup runs, `turn.current` is the first player; turn 1 starts with them too.
+      if (idx >= setupOrder(state).length) startTurn(ctx, state.turn.current);
       else state.phase = { k: 'setup', idx, step: 'settlement' };
     } else if (ph.k === 'freeRoads') {
       const left = ph.left - 1;
       const more =
         left > 0 && p.supply.road > 0 && legalRoadSpots(graph, state.pieces, a.player).length > 0;
-      if (more) state.phase = { k: 'freeRoads', left };
-      else setPhase(ctx, { k: 'main' });
+      // An `actor` marks a freeRoads window opened by the paired player: resume to that phase.
+      if (more) state.phase = ph.actor ? { k: 'freeRoads', left, actor: ph.actor } : { k: 'freeRoads', left };
+      else setPhase(ctx, ph.actor ? resumePhase(state, 'paired') : { k: 'main' });
     }
   },
   legal(ctx, id) {
     const { state, graph } = ctx;
-    if (expect(state, { t: 'placeRoad', player: id, e: '' }, ['setup', 'main', 'extraBuild', 'freeRoads']))
+    if (expect(state, { t: 'placeRoad', player: id, e: '' }, ['setup', 'main', 'extraBuild', 'paired', 'freeRoads']))
       return [];
     const ph = state.phase;
     const spots =
@@ -139,7 +141,7 @@ export const buildCity: ActionDef = {
   validate(ctx, action) {
     const a = action as A<'buildCity'>;
     const { state } = ctx;
-    const e = expect(state, a, ['main', 'extraBuild']);
+    const e = expect(state, a, ['main', 'extraBuild', 'paired']);
     if (e) return e;
     const b = state.pieces.buildings[a.v];
     if (!b || b.owner !== a.player || b.kind !== 'settlement')
