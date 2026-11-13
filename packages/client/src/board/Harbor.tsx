@@ -11,6 +11,8 @@ export function Harbor({ harbor, graph }: { harbor: HarborData; graph: Graph }) 
   const ok = useAssets([path])[path];
   const g = edgeGeom(graph, harbor.edge);
   const d = SIZE * 0.52;
+  // Ratio chip sits fully below the icon (never over it): chip top = icon bottom + 4px.
+  const dy = d / 2 + 4;
   const label = `${harbor.ratio}:1`;
   const color = harbor.kind === 'any' ? 'var(--sea)' : RESOURCE_COLORS[harbor.kind] ?? 'var(--sea)';
   return (
@@ -20,7 +22,8 @@ export function Harbor({ harbor, graph }: { harbor: HarborData; graph: Graph }) 
       ) : (
         <circle r={d / 2} fill="var(--parchment-dark)" stroke={color} strokeWidth={3} />
       )}
-      <text y={d / 2 + 9} textAnchor="middle" className="harbor-ratio">
+      <rect className="harbor-ratio-bg" x={-16} y={dy} width={32} height={17} rx={4} />
+      <text y={dy + 13} textAnchor="middle" className="harbor-ratio">
         {label}
       </text>
       <title>

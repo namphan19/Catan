@@ -47,6 +47,7 @@ export const en: Record<string, string> = {
   player: 'Player {n}',
   seat_list: 'Players',
   you: 'You',
+  turnTag: 'turn',
   waitingFor: 'Waiting for {name}…',
   award_route: 'Longest trail',
   award_force: 'Largest force',

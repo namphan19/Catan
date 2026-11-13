@@ -64,9 +64,25 @@ button {
   color: #fff;
 }
 
-.btn:disabled {
-  opacity: 0.45;
+/* Disabled = clearly unavailable: soft ink on the darker parchment, soft border,
+   not-allowed cursor. The 0.45 opacity fade alone made a disabled primary button
+   ("Gieo xúc xắc" in the main phase) read as almost enabled. */
+.btn:disabled,
+.btn:disabled:hover,
+.btn:disabled:focus {
+  background: var(--parchment-dark);
+  border-color: var(--ink-soft);
+  color: var(--ink-soft);
   cursor: not-allowed;
+  box-shadow: none;
+  animation: none;
+}
+
+.btn-primary:disabled,
+.btn-primary:disabled:hover {
+  background: var(--parchment);
+  border-color: var(--ink-soft);
+  color: var(--ink-soft);
 }
 
 .btn-primary {
@@ -150,13 +166,14 @@ button {
   opacity: 1;
 }
 
-/* Keep edge-anchored tooltips (first/last button of a row) inside the viewport. */
-.tipwrap:first-child::after {
+/* Keep edge-anchored tooltips inside the viewport: Tooltip.tsx measures the wrapped control
+   on hover/focus and sets data-pos="left"/"right" when a centred tooltip would overflow. */
+.tipwrap[data-pos='left']::after {
   left: 0;
   transform: none;
 }
 
-.tipwrap:last-child::after {
+.tipwrap[data-pos='right']::after {
   left: auto;
   right: 0;
   transform: none;
@@ -571,7 +588,9 @@ button {
   font-weight: 700;
 }
 
-/* "(Bạn)" / acting tag: its own small pill so it never clips the name (V3). */
+/* "(Bạn)" / acting tag: its own small pill so it never clips the name (V3).
+   Readable on every player colour (ink on parchment with a 1 px ink border) — the
+   yellow p4 card made the old currentColor-on-colour pill disappear. */
 .seat-you,
 .seat-acting-tag {
   display: inline-block;
@@ -579,7 +598,9 @@ button {
   align-self: flex-start;
   font-weight: 400;
   font-size: 0.72em;
-  border: 1px solid currentColor;
+  background: var(--parchment);
+  color: var(--ink);
+  border: 1px solid var(--ink);
   border-radius: 999px;
   padding: 0 6px;
   width: max-content;
@@ -666,6 +687,14 @@ button {
   stroke: var(--parchment);
   stroke-width: 2px;
   stroke-linejoin: round;
+}
+
+/* Parchment chip behind the ratio so it reads over open sea (Harbor.tsx places the chip
+   below the icon, never covering the icon or a tile). */
+.harbor-ratio-bg {
+  fill: var(--parchment);
+  stroke: var(--ink);
+  stroke-width: 1;
 }
 
 .hl-vertex {
@@ -1076,17 +1105,19 @@ button {
   margin: 0;
 }
 
-/* ---------- Toasts (V5: top-right of the board column, above the bottom bar) ---------- */
+/* ---------- Toasts (V5: top-right of the board column, above the bottom bar).
+   Sitting at right:52px keeps the stack clear of the zoom controls (+, -, fit),
+   which own the top-right 10..46px strip — the two never overlap. */
 .toast-stack {
   position: absolute;
   top: 10px;
-  right: 10px;
+  right: 52px;
   z-index: 40;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 6px;
-  max-width: min(380px, 90%);
+  max-width: min(380px, calc(100% - 62px));
   pointer-events: none;
 }
 

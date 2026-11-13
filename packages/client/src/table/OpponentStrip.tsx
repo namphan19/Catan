@@ -23,6 +23,9 @@ export function OpponentStrip({ view }: { view: PlayerView }) {
               <Emblem id={playerEmblem(p.id)} size={16} />
               <span className="seat-name">{name(p.id)}</span>
               {p.id === view.viewer && <span className="seat-you">({t('you')})</span>}
+              {p.id === view.turn.current && (
+                <span className="seat-acting-tag">({t('turnTag')})</span>
+              )}
             </div>
             <div className="seat-vp">
               {vp} <small>{t('vpShort')}</small>

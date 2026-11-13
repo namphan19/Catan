@@ -51,6 +51,7 @@ export const vi: Record<string, string> = {
   player: 'Người chơi {n}',
   seat_list: 'Người chơi',
   you: 'Bạn',
+  turnTag: 'lượt',
   waitingFor: 'Đang chờ {name}…',
   award_route: 'Đường bộ dài nhất',
   award_force: 'Đạo quân hùng mạnh nhất',
