@@ -1,5 +1,5 @@
 // Action log (newest first), straight from the redacted view's log.
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import type { PlayerView } from '@hexgame/engine';
 import { useI18n } from '../i18n';
 import { useName } from '../shell/names';
@@ -13,7 +13,7 @@ export function LogPanel({ view }: { view: PlayerView }) {
     return desc.reverse();
     // view.log is replaced wholesale by each new view; describe on change only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, t, name]);
+  }, [view, t, name]) as ReactNode[];
 
   return (
     <div className="logpanel">

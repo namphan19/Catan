@@ -25,7 +25,7 @@ export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: Hom
   return (
     <main className="home">
       <header className="home-head">
-        <h1>{t('appTitle')}</h1>
+        <h1 className="logo">{t('appTitle')}</h1>
         <p>{t('appSubtitle')}</p>
         <Button variant="ghost" onClick={onLangToggle} aria-label={t('langToggle')}>
           🌐 {t('langToggle')}

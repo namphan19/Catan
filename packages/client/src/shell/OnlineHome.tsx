@@ -49,7 +49,7 @@ export function OnlineHome({ name, onName, onCreate, onJoin, onBack, onLangToggl
   return (
     <main className="home">
       <header className="home-head">
-        <h1>{t('appTitle')}</h1>
+        <h1 className="logo">{t('appTitle')}</h1>
         <p>{t('online_title')}</p>
         <Button variant="ghost" onClick={onLangToggle} aria-label={t('langToggle')}>
           🌐 {t('langToggle')}

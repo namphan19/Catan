@@ -13,11 +13,13 @@ export interface LobbyProps {
   onReady: (ready: boolean) => void;
   onStart: () => void;
   onLeave: () => void;
+  /** Host-only, before start: frees a seat and closes that player's connection (KICKED). */
+  onKick?: (seat: string) => void;
   onLangToggle: () => void;
   notice?: string | null;
 }
 
-export function Lobby({ room, onReady, onStart, onLeave, onLangToggle, notice }: LobbyProps) {
+export function Lobby({ room, onReady, onStart, onLeave, onKick, onLangToggle, notice }: LobbyProps) {
   const { t } = useI18n();
   const mine = room.seats.find((s) => s.seat === room.you);
   const isHost = room.you !== null && room.hostSeat === room.you;
@@ -77,7 +79,7 @@ export function Lobby({ room, onReady, onStart, onLeave, onLangToggle, notice }:
                 <Emblem id={SEAT_EMBLEMS[i]} size={18} />
                 <span className="lobby-seat-name">
                   {seat ? seat.name : t('lobby_empty', { n: seatIndex(seatId) })}
-                  {seatId === room.you ? ` (${t('net_you')})` : ''}
+                  {seatId === room.you && <span className="seat-you">({t('net_you')})</span>}
                 </span>
                 {host && <span className="badge">{t('lobby_host')}</span>}
                 {seat && (
@@ -88,6 +90,16 @@ export function Lobby({ room, onReady, onStart, onLeave, onLangToggle, notice }:
                   />
                 )}
                 {seat && <span className="lobby-ready">{t(seat.ready ? 'lobby_ready' : 'lobby_notReady')}</span>}
+                {isHost && seat && seatId !== room.you && onKick && (
+                  <Button
+                    variant="danger"
+                    className="btn-kick"
+                    onClick={() => onKick(seatId)}
+                    aria-label={t('lobby_kickTitle', { name: seat.name })}
+                  >
+                    ✖ {t('lobby_kick')}
+                  </Button>
+                )}
               </li>
             );
           })}

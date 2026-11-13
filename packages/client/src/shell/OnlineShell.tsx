@@ -90,6 +90,29 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
     }
   }, []);
 
+  const clearGame = useCallback(() => {
+    setView(null);
+    setLegal([]);
+    setEvents([]);
+    setErrors([]);
+  }, []);
+
+  /** Final WebSocket close codes (no reconnect): 4001 KICKED clears the session and shows
+   * the lobby home with a message; 4000 SEAT_TAKEN_OVER reports the takeover. */
+  const handleClosed = useCallback((code: number) => {
+    if (code === 4001) {
+      localStorage.removeItem(ROOM_KEY);
+      localStorage.removeItem('boschtan.sessionToken');
+      setRoom(null);
+      clearGame();
+      setNotice(t('err_KICKED'));
+    } else if (code === 4000) {
+      setRoom(null);
+      clearGame();
+      setNotice(t('err_SEAT_TAKEN_OVER'));
+    }
+  }, [clearGame, t]);
+
   const connRef = useRef<Connection | null>(null);
   useEffect(() => {
     const conn = new Connection({
@@ -100,6 +123,7 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
       getRoom: () => roomRef.current?.code ?? localStorage.getItem(ROOM_KEY),
       onMessage: handleMessage,
       onStatus: setOnline,
+      onClosed: handleClosed,
     });
     connRef.current = conn;
     conn.start();
@@ -107,14 +131,7 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
       conn.stop();
       connRef.current = null;
     };
-  }, [handleMessage]);
-
-  const clearGame = useCallback(() => {
-    setView(null);
-    setLegal([]);
-    setEvents([]);
-    setErrors([]);
-  }, []);
+  }, [handleMessage, handleClosed]);
 
   const changeName = useCallback((n: string) => {
     setName(n);
@@ -159,6 +176,10 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
     connRef.current?.send({ type: 'startGame' });
   }, []);
 
+  const kickSeat = useCallback((seat: string) => {
+    connRef.current?.send({ type: 'kick', seat });
+  }, []);
+
   const sendAction = useCallback((a: Action) => {
     // The server only accepts actions naming our own seat; legal actions from the server
     // already carry it, but be defensive for engine shapes without a player field.
@@ -196,7 +217,15 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
         />
       )}
       {screen === 'lobby' && room && (
-        <Lobby room={room} onReady={setReady} onStart={startGame} onLeave={leaveRoom} notice={notice} onLangToggle={onLangToggle} />
+        <Lobby
+          room={room}
+          onReady={setReady}
+          onStart={startGame}
+          onLeave={leaveRoom}
+          onKick={kickSeat}
+          notice={notice}
+          onLangToggle={onLangToggle}
+        />
       )}
       {screen === 'game' && room && (
         <NamesProvider names={names}>

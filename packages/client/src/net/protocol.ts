@@ -16,6 +16,7 @@ export type OutMsg =
   | { type: 'leaveRoom' }
   | { type: 'setReady'; ready: boolean }
   | { type: 'startGame' }
+  | { type: 'kick'; seat: string }
   | { type: 'action'; action: unknown }
   | { type: 'requestState' };
 

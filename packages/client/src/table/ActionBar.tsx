@@ -1,7 +1,10 @@
 // Contextual action bar. Every button's enabled state comes from getLegalActions; the tooltip
-// reason of a disabled button comes from validateAction (passed by the shell). No rules here.
+// reason of a disabled button comes from validateAction (passed by the shell), translated by
+// error code (BUG-QA-03). No rules logic here.
+import { useEffect, useState } from 'react';
 import type { Action, PlayerId, PlayerView, Validation } from '@hexgame/engine';
 import { useI18n, cardKey } from '../i18n';
+import { validationText } from '../net/errors';
 import { Button } from '../ui/Button';
 
 export type Pending = 'placeSettlement' | 'placeRoad' | 'buildCity' | 'moveBlocker' | null;
@@ -19,19 +22,38 @@ interface ActionBarProps {
 
 const PLACEHOLDER = { v: 'v:0,0,N', e: 'e:0,0,NE', hex: 'h:0,0' };
 
+/** True below the compact breakpoint (tablet ~1024 px): short labels are shown and the
+ * full label moves into the tooltip (V6). */
+function useCompact(): boolean {
+  const [compact, setCompact] = useState(() => window.matchMedia('(max-width: 1180px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1180px)');
+    const on = () => setCompact(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return compact;
+}
+
 export function ActionBar({ view, legal, onAction, validate, pending, setPending, onOpenTrade, onOpenCards }: ActionBarProps) {
   const { t } = useI18n();
+  const compact = useCompact();
   const me = (view.viewer ?? 'p1') as PlayerId;
   const has = (tt: string) => legal.some((a) => a.t === tt);
 
-  /** Disabled reason from validateAction on a probe action (engine message, shown as tooltip). */
+  /** Disabled reason from validateAction on a probe action, translated by code (unknown
+   * codes show a generic "not possible right now" line — never raw engine English). */
   const reason = (tt: string): string | undefined => {
     if (has(tt)) return undefined;
     if (!validate) return t('act_unavailable');
     const probe = probeAction(tt, me);
     const v = validate(probe);
-    return v.ok ? t('act_unavailable') : `${v.code}: ${v.message}`;
+    return v.ok ? t('act_unavailable') : validationText(v.code, t);
   };
+
+  /** Tooltip: translated disable reason, or (when compact) the full label that the short
+   * on-button text abbreviates. */
+  const tipOf = (tt: string, fullKey: string): string | undefined => reason(tt) ?? (compact ? t(fullKey) : undefined);
 
   const send = (a: Action) => onAction(a);
   const toggle = (p: Exclude<Pending, null>) => setPending(pending === p ? null : p);
@@ -40,45 +62,53 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
   const mustRespond = has('respondTrade');
   const confirmables = legal.filter((a) => a.t === 'confirmTrade');
 
+  /** Full + short label pair; the short one is only visible below the compact breakpoint. */
+  const label = (fullKey: string, shortKey: string) => (
+    <>
+      <span className="lbl-full">{t(fullKey)}</span>
+      <span className="lbl-short">{t(shortKey)}</span>
+    </>
+  );
+
   return (
     <div className="actionbar" role="toolbar" aria-label={t('appTitle')}>
       <Button
         variant="primary"
         disabled={!has('roll')}
-        tip={reason('roll')}
+        tip={tipOf('roll', 'act_roll')}
         onClick={() => send({ t: 'roll', player: me })}
       >
-        🎲 {t('act_roll')}
+        🎲 {label('act_roll', 'act_roll_s')}
       </Button>
 
       <Button
         disabled={!has('placeSettlement')}
-        tip={reason('placeSettlement')}
+        tip={tipOf('placeSettlement', 'act_buildSettlement')}
         aria-pressed={pending === 'placeSettlement'}
         className={pending === 'placeSettlement' ? 'active' : undefined}
         onClick={() => toggle('placeSettlement')}
       >
-        ⌂ {t('act_buildSettlement')}
+        ⌂ {label('act_buildSettlement', 'act_settlement_s')}
       </Button>
 
       <Button
         disabled={!has('placeRoad')}
-        tip={reason('placeRoad')}
+        tip={tipOf('placeRoad', 'act_buildRoad')}
         aria-pressed={pending === 'placeRoad'}
         className={pending === 'placeRoad' ? 'active' : undefined}
         onClick={() => toggle('placeRoad')}
       >
-        — {t('act_buildRoad')}
+        — {label('act_buildRoad', 'act_road_s')}
       </Button>
 
       <Button
         disabled={!has('buildCity')}
-        tip={reason('buildCity')}
+        tip={tipOf('buildCity', 'act_buildCity')}
         aria-pressed={pending === 'buildCity'}
         className={pending === 'buildCity' ? 'active' : undefined}
         onClick={() => toggle('buildCity')}
       >
-        🏛 {t('act_buildCity')}
+        🏛 {label('act_buildCity', 'act_city_s')}
       </Button>
 
       {has('moveBlocker') && (
@@ -92,8 +122,8 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
         </Button>
       )}
 
-      <Button disabled={!has('buyCard')} tip={reason('buyCard')} onClick={() => send({ t: 'buyCard', player: me })}>
-        🃏 {t('act_buyCard')}
+      <Button disabled={!has('buyCard')} tip={tipOf('buyCard', 'act_buyCard')} onClick={() => send({ t: 'buyCard', player: me })}>
+        🃏 {label('act_buyCard', 'act_buyCard_s')}
       </Button>
 
       {playable.map((card) =>
@@ -111,19 +141,19 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
       <Button
         variant={mustRespond ? 'primary' : 'ghost'}
         className={mustRespond ? 'pulse' : undefined}
-        tip={mustRespond ? undefined : reason('bankTrade')}
+        tip={mustRespond ? undefined : tipOf('bankTrade', 'act_bankTrade')}
         onClick={() => onOpenTrade('bank')}
       >
-        🏦 {t('act_bankTrade')}
+        🏦 {label('act_bankTrade', 'act_bankTrade_s')}
       </Button>
 
       <Button
         variant={mustRespond || confirmables.length > 0 ? 'primary' : 'ghost'}
         className={mustRespond ? 'pulse' : undefined}
-        tip={mustRespond || confirmables.length > 0 ? t('tradeBadge') : reason('offerTrade')}
+        tip={mustRespond || confirmables.length > 0 ? t('tradeBadge') : tipOf('offerTrade', 'act_playerTrade')}
         onClick={() => onOpenTrade('players')}
       >
-        🤝 {t('act_playerTrade')}
+        🤝 {label('act_playerTrade', 'act_playerTrade_s')}
         {mustRespond ? <span className="badge" aria-label={t('tradeBadge')}>1</span> : null}
       </Button>
 
@@ -136,10 +166,10 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
       <Button
         variant="primary"
         disabled={!has('endTurn')}
-        tip={reason('endTurn')}
+        tip={tipOf('endTurn', 'act_endTurn')}
         onClick={() => send({ t: 'endTurn', player: me })}
       >
-        ⏭ {t('act_endTurn')}
+        ⏭ {label('act_endTurn', 'act_endTurn_s')}
       </Button>
     </div>
   );

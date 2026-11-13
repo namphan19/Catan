@@ -22,6 +22,9 @@
   --p5: #0072b2; /* blue, shield */
   --p6: #d55e00; /* vermillion, flame */
 
-  --font-head: 'Cinzel', Georgia, serif;
+  /* Cinzel is caps-only with no Vietnamese diacritics: use it ONLY for the logo and
+     digits/tokens. All Vietnamese text (headings included) uses EB Garamond. */
+  --font-head: 'EB Garamond', Georgia, serif;
+  --font-logo: 'Cinzel', Georgia, serif;
   --font-body: 'EB Garamond', Georgia, serif;
 }

@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 
 export interface ToastItem {
   id: number;
-  text: string;
+  text: ReactNode;
   kind: 'info' | 'error' | 'gold';
 }
 
 export type Toast = Omit<ToastItem, 'id'>;
 
-/** Toast state with auto-expiry. Returns [list, push]; push never lets the stack exceed 4. */
+const MAX_TOASTS = 3;
+const TOAST_MS = 4000;
+
+/** Toast state with 4 s auto-expiry; the visible stack never exceeds 3 (V5). */
 export function useToasts(): [ToastItem[], (t: Toast) => void] {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
@@ -16,10 +19,13 @@ export function useToasts(): [ToastItem[], (t: Toast) => void] {
 
   const push = useCallback((t: Toast) => {
     const id = nextId.current++;
-    setToasts((list) => [...list.slice(-3), { ...t, id }]);
+    setToasts((list) => {
+      const next = [...list, { ...t, id }];
+      return next.slice(-MAX_TOASTS);
+    });
     const timer = window.setTimeout(() => {
       setToasts((list) => list.filter((x) => x.id !== id));
-    }, 4200);
+    }, TOAST_MS);
     timers.current.push(timer);
   }, []);
 

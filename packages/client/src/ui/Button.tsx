@@ -7,11 +7,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   tip?: string;
 }
 
-/** Focusable button; when a tip is given it is wrapped in a tooltip and exposed via aria-label. */
+/** Focusable button; when a tip is given it is wrapped in a tooltip. The accessible name
+ * stays the visible label text (BUG-QA-03): the tooltip reason is display-only. */
 export function Button({ variant = 'ghost', tip, children, className, ...rest }: ButtonProps) {
   const cls = `btn btn-${variant}${className ? ` ${className}` : ''}`;
   const btn = (
-    <button type="button" {...rest} className={cls} aria-label={tip ?? rest['aria-label']}>
+    <button type="button" {...rest} className={cls}>
       {children}
     </button>
   );

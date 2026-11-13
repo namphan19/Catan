@@ -39,13 +39,16 @@ interface Tf {
 const MIN_SCALE = 0.6;
 const MAX_SCALE = 3;
 
+/** A press must move this far (in client px) before it counts as a pan (BUG-QA-02). */
+const PAN_THRESHOLD = 5;
+
 export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onHex, onMiss }: BoardProps) {
   const { t } = useI18n();
   const graph = useMemo(() => getBoardGraph(layout), [layout]);
   const ext = useMemo(() => boardExtent(graph), [graph]);
   const svgRef = useRef<SVGSVGElement>(null);
   const [tf, setTf] = useState<Tf>({ s: 1, tx: 0, ty: 0 });
-  const drag = useRef<{ x: number; y: number; tx: number; ty: number; moved: boolean } | null>(null);
+  const drag = useRef<{ x: number; y: number; tx: number; ty: number; active: boolean } | null>(null);
   const hl = highlights ?? EMPTY_HIGHLIGHTS;
 
   // Wheel zoom anchored at the cursor (native listener so preventDefault works).
@@ -68,19 +71,25 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
     return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
-  // Pan by dragging anywhere on the board.
+  // Pan by dragging anywhere on the board — but only once the pointer has clearly moved.
+  // A press-and-release without movement must NOT capture the pointer, so the browser
+  // delivers a real `click` to the highlighted hit target underneath (BUG-QA-02).
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (e.button !== 0) return;
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect) return;
-    drag.current = { x: e.clientX, y: e.clientY, tx: tf.tx, ty: tf.ty, moved: false };
-    (e.currentTarget as SVGSVGElement).setPointerCapture(e.pointerId);
+    drag.current = { x: e.clientX, y: e.clientY, tx: tf.tx, ty: tf.ty, active: false };
     const pxPerUnit = rect.width / ext.w;
+    const pointerId = e.pointerId;
     const move = (ev: PointerEvent) => {
       if (!drag.current) return;
       const dx = ev.clientX - drag.current.x;
       const dy = ev.clientY - drag.current.y;
-      if (Math.abs(dx) + Math.abs(dy) > 5) drag.current.moved = true;
+      if (!drag.current.active) {
+        if (Math.abs(dx) + Math.abs(dy) <= PAN_THRESHOLD) return; // still just a press
+        drag.current.active = true;
+        svgRef.current?.setPointerCapture(pointerId);
+      }
       setTf((prev) => ({ ...prev, tx: drag.current!.tx + dx / pxPerUnit, ty: drag.current!.ty + dy / pxPerUnit }));
     };
     const up = () => {
@@ -214,12 +223,26 @@ function EdgeHit({
   label: string;
 }) {
   const g = edgeGeom(getBoardGraph(layout), edge);
+  // A quad (not a <line>): a horizontal line's bounding box has height 0, which real
+  // clicks (Playwright locator.click) could never target. Half-width matches the old
+  // stroke-width of 12 user units.
+  const half = 6;
+  const dx = g.b.x - g.a.x;
+  const dy = g.b.y - g.a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const px = (-dy / len) * half;
+  const py = (dx / len) * half;
+  const pts = [
+    [g.a.x + px, g.a.y + py],
+    [g.b.x + px, g.b.y + py],
+    [g.b.x - px, g.b.y - py],
+    [g.a.x - px, g.a.y - py],
+  ]
+    .map(([x, y]) => `${x},${y}`)
+    .join(' ');
   return (
-    <line
-      x1={g.a.x}
-      y1={g.a.y}
-      x2={g.b.x}
-      y2={g.b.y}
+    <polygon
+      points={pts}
       className="hit hit-edge"
       role="button"
       aria-label={label}
@@ -229,6 +252,6 @@ function EdgeHit({
       }}
     >
       <title>{label}</title>
-    </line>
+    </polygon>
   );
 }

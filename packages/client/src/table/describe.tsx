@@ -1,7 +1,10 @@
 // Turning engine actions/events into UI text. Pure display: ids and amounts come from the
-// engine objects; no game logic here.
+// engine objects; no game logic here. Log lines are human sentences in the UI language and
+// never show raw board ids like "v:-2,1,S" (resource gains get icons where useful).
+import type { ReactNode } from 'react';
 import type { Action, GameEvent, PlayerId } from '@hexgame/engine';
 import { cardKey, resKey } from '../i18n';
+import { ResourceIcon } from '../ui/ResourceIcon';
 
 export type TFn = (key: string, params?: Record<string, string | number>) => string;
 export type NameFn = (id: PlayerId) => string;
@@ -26,50 +29,89 @@ function pieceKey(kind: string): string {
   return 'piece_road';
 }
 
-/** One log line for an action. */
-export function describeAction(a: Action, t: TFn, name: NameFn): string {
+/** "2× Gỗ, 1× Lúa" with a small icon per resource (used in log lines and toasts). */
+export function bagNode(bag: Record<string, number> | undefined, t: TFn): ReactNode {
+  const entries = Object.entries(bag ?? {}).filter(([, n]) => (n || 0) > 0);
+  if (entries.length === 0) return t('toast_none');
+  return entries.map(([r, n], i) => (
+    <span key={r} className="log-res">
+      {i > 0 && ', '}
+      <ResourceIcon res={r} size={13} /> {n}× {t(resKey(r))}
+    </span>
+  ));
+}
+
+/** Plain-text variant (for aria strings and toasts that must stay text). */
+export function bagList(bag: Record<string, number> | undefined, t: TFn): string {
+  if (!bag) return '—';
+  const parts = Object.entries(bag)
+    .filter(([, n]) => (n || 0) > 0)
+    .map(([r, n]) => `${n}× ${t(resKey(r))}`);
+  return parts.length ? parts.join(', ') : '—';
+}
+
+/** One log line for an action — a human sentence, no raw board ids. */
+export function describeAction(a: Action, t: TFn, name: NameFn): ReactNode {
   const who = name(a.player);
   switch (a.t) {
     case 'placeSettlement':
-      return `${who} · ${t('piece_settlement')} ${a.v}`;
+      return t('log_settlement', { name: who });
     case 'placeRoad':
-      return `${who} · ${t('piece_road')} ${a.e}`;
+      return t('log_road', { name: who });
     case 'buildCity':
-      return `${who} · ${t('piece_city')} ${a.v}`;
+      return t('log_city', { name: who });
     case 'roll':
-      return `${who} · ${t('act_roll')}`;
+      return t('log_roll', { name: who });
     case 'discard':
-      return `${who} · ${t('toast_discarded', { n: bagTotal(a.bag) })} (${bagList(a.bag, t)})`;
+      return (
+        <>
+          {t('log_discard', { name: who, n: bagTotal(a.bag) })} ({bagNode(a.bag, t)})
+        </>
+      );
     case 'moveBlocker':
-      return `${who} · ${t('blocker')} → ${a.hex}`;
+      return t('log_blocker', { name: who });
     case 'steal':
-      return `${who} · ${t('dlg_stealTitle')} ${name(a.target)}`;
-    case 'bankTrade':
-      return `${who} · ${t('act_bankTrade')} (${bagList(a.give, t)} → ${bagList(a.get, t)})`;
-    case 'offerTrade':
-      return `${who} · ${t('toast_tradeOffered', { name: who })} (${bagList(a.give, t)} → ${bagList(a.get, t)})`;
+      return t('log_stole', { name: who, name2: name(a.target) });
+    case 'bankTrade': {
+      const n = bagTotal(a.give);
+      const m = bagTotal(a.get);
+      return (
+        <>
+          {t('log_bankTrade', { name: who, n, m })} ({bagNode(a.give, t)} → {bagNode(a.get, t)})
+        </>
+      );
+    }
+    case 'offerTrade': {
+      const n = bagTotal(a.give);
+      const m = bagTotal(a.get);
+      return (
+        <>
+          {t('log_offerTrade', { name: who, n, m })} ({bagNode(a.give, t)} → {bagNode(a.get, t)})
+        </>
+      );
+    }
     case 'respondTrade': {
       const acc = 'accept' in a ? a.accept : (a as { response?: string }).response;
       const resp = acc === true || acc === 'accept' ? t('toast_respondAccept') : acc === 'counter' ? t('dlg_counter') : t('toast_respondDecline');
-      return `${who} · ${resp}`;
+      return t('log_respondTrade', { name: who, resp });
     }
     case 'confirmTrade':
-      return `${who} · ${t('act_confirmWith', { name: name(a.with) })}`;
+      return t('log_confirmTrade', { name: who, name2: name(a.with) });
     case 'cancelTrade':
-      return `${who} · ${t('act_cancelOffer')}`;
+      return t('log_cancelTrade', { name: who });
     case 'buyCard':
-      return `${who} · ${t('act_buyCard')}`;
+      return t('log_buyCard', { name: who });
     case 'playCard':
-      return `${who} · ${t('toast_cardPlayed', { card: t(cardKey(a.card)) })}`;
+      return t('log_playCard', { name: who, card: t(cardKey(a.card)) });
     case 'endTurn':
-      return `${who} · ${t('act_endTurn')}`;
+      return t('log_endTurn', { name: who });
     default:
-      return `${who} · ${a.t}`;
+      return t('log_other', { name: who, action: a.t });
   }
 }
 
-/** One log line for an event (already redacted for the viewer via getEventsView). */
-export function describeEvent(ev: GameEvent, t: TFn, name: NameFn): string {
+/** One log/toast line for an event (already redacted for the viewer via getEventsView). */
+export function describeEvent(ev: GameEvent, t: TFn, name: NameFn): ReactNode {
   switch (ev.e) {
     case 'rolled':
       return t('toast_rolled', {
@@ -83,7 +125,11 @@ export function describeEvent(ev: GameEvent, t: TFn, name: NameFn): string {
       if (entries.length === 0) return '';
       if (entries.length === 1) {
         const [id, bag] = entries[0] as [string, Record<string, number>];
-        return t('toast_produced', { name: name(id), bag: bagList(bag, t) });
+        return (
+          <>
+            {t('toast_produced', { name: name(id) })}: {bagNode(bag, t)}
+          </>
+        );
       }
       return t('toast_producedMany', {
         text: entries.map(([id, bag]) => `${name(id)}: ${bagList(bag, t)}`).join(' · '),
@@ -142,17 +188,8 @@ export function describeEvent(ev: GameEvent, t: TFn, name: NameFn): string {
     case 'turnStarted':
       return t('toast_turnStarted', { name: name(ev.player) });
     case 'ext':
-      return `${ev.id}`;
+      return t('phase_ext', { id: ev.id });
     default:
       return '';
   }
-}
-
-/** "2× Gỗ, 1× Lúa" */
-export function bagList(bag: Record<string, number> | undefined, t: TFn): string {
-  if (!bag) return '—';
-  const parts = Object.entries(bag)
-    .filter(([, n]) => (n || 0) > 0)
-    .map(([r, n]) => `${n}× ${t(resKey(r))}`);
-  return parts.length ? parts.join(', ') : '—';
 }

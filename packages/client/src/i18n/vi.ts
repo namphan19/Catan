@@ -205,6 +205,34 @@ export const vi: Record<string, string> = {
   toast_phase: 'Chuyển giai đoạn: {phase}',
   toast_turnStarted: '— Lượt của {name} —',
 
+  // Log sentences: human phrases, never raw board ids (v:/e:/h:).
+  log_settlement: '{name} xây làng',
+  log_road: '{name} xây đường',
+  log_city: '{name} nâng cấp làng thành thành phố',
+  log_roll: '{name} gieo xúc xắc',
+  log_discard: '{name} bỏ {n} thẻ',
+  log_blocker: '{name} di chuyển Băng cướp',
+  log_stole: '{name} cướp của {name2}',
+  log_bankTrade: '{name} đổi với ngân hàng',
+  log_offerTrade: '{name} mở đề nghị đổi bài',
+  log_respondTrade: '{name} {resp}',
+  log_confirmTrade: '{name} chốt đổi bài với {name2}',
+  log_cancelTrade: '{name} hủy đề nghị đổi bài',
+  log_buyCard: '{name} mua một thẻ',
+  log_playCard: '{name} dùng thẻ {card}',
+  log_endTurn: '{name} kết thúc lượt',
+  log_other: '{name}: {action}',
+
+  // Short action-bar labels (compact/tablet layout); full labels stay in the tooltip.
+  act_roll_s: 'Gieo',
+  act_settlement_s: 'Làng',
+  act_road_s: 'Đường',
+  act_city_s: 'Thành phố',
+  act_buyCard_s: 'Mua',
+  act_bankTrade_s: 'Ngân hàng',
+  act_playerTrade_s: 'Đổi bài',
+  act_endTurn_s: 'Kết thúc',
+
   // Online (M2 server)
   net_offline: 'Mất kết nối – đang kết nối lại...',
   net_room: 'Phòng {code}',
@@ -247,6 +275,8 @@ export const vi: Record<string, string> = {
   lobby_startHint: 'Cần đủ {n} người và tất cả đã sẵn sàng.',
   lobby_waitingHost: 'Chờ chủ phòng bấm bắt đầu...',
   lobby_leave: 'Rời phòng',
+  lobby_kick: 'Đuổi',
+  lobby_kickTitle: 'Đuổi {name} khỏi phòng',
 
   // Server error codes (protocol + engine) — unknown codes show the server message.
   err_unknown: 'Lỗi từ máy chủ: {msg}',
@@ -305,4 +335,6 @@ export const vi: Record<string, string> = {
   err_BAD_HEX: 'Ô hex không hợp lệ.',
   err_BAD_TARGET: 'Đích không hợp lệ.',
   err_BAD_VERTEX: 'Đỉnh không hợp lệ.',
+  err_KICKED: 'Bạn đã bị chủ phòng mời ra khỏi phòng.',
+  err_SEAT_TAKEN_OVER: 'Một phiên khác đã vào chỗ của bạn. Hãy vào lại phòng để lấy lại chỗ.',
 };

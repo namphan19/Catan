@@ -3,6 +3,14 @@
 // unknown shows the server's own message.
 import { useI18n } from '../i18n';
 
+/** Engine/protocol error code -> translated text for our own tooltip (BUG-QA-03):
+ * known codes use the i18n `err_<code>` strings; unknown codes fall back to a generic
+ * "not possible right now" line instead of the raw English validation message. */
+export function validationText(code: string, t: (k: string, p?: Record<string, string | number>) => string): string {
+  if (KNOWN_CODES.has(code)) return t(`err_${code}`);
+  return t('act_unavailable');
+}
+
 export function errorText(code: string, message: string, t: (k: string, p?: Record<string, string | number>) => string): string {
   if (KNOWN_CODES.has(code)) return t(`err_${code}`);
   // Unknown code: show the plain server message.
@@ -68,6 +76,9 @@ const KNOWN_CODES = new Set([
   'BAD_HEX',
   'BAD_TARGET',
   'BAD_VERTEX',
+  // connection close reasons (codes 4000/4001 on the WebSocket close frame)
+  'KICKED',
+  'SEAT_TAKEN_OVER',
 ]);
 
 /** Hook form for React components. */

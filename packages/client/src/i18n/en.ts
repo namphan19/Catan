@@ -189,6 +189,34 @@ export const en: Record<string, string> = {
   toast_phase: 'Phase: {phase}',
   toast_turnStarted: '— {name}’s turn —',
 
+  // Log sentences: human phrases, never raw board ids (v:/e:/h:).
+  log_settlement: '{name} built a settlement',
+  log_road: '{name} built a road',
+  log_city: '{name} upgraded a settlement into a city',
+  log_roll: '{name} rolled the dice',
+  log_discard: '{name} discarded {n} cards',
+  log_blocker: '{name} moved the Blocker',
+  log_stole: '{name} robbed {name2}',
+  log_bankTrade: '{name} traded with the bank',
+  log_offerTrade: '{name} opened a trade offer',
+  log_respondTrade: '{name} {resp}',
+  log_confirmTrade: '{name} confirmed a trade with {name2}',
+  log_cancelTrade: '{name} cancelled their trade offer',
+  log_buyCard: '{name} bought a card',
+  log_playCard: '{name} played a {card}',
+  log_endTurn: '{name} ended their turn',
+  log_other: '{name}: {action}',
+
+  // Short action-bar labels (compact/tablet layout); full labels stay in the tooltip.
+  act_roll_s: 'Roll',
+  act_settlement_s: 'Town',
+  act_road_s: 'Road',
+  act_city_s: 'City',
+  act_buyCard_s: 'Buy',
+  act_bankTrade_s: 'Bank',
+  act_playerTrade_s: 'Trade',
+  act_endTurn_s: 'End',
+
   // Online (M2 server)
   net_offline: 'Disconnected – reconnecting...',
   net_room: 'Room {code}',
@@ -231,6 +259,8 @@ export const en: Record<string, string> = {
   lobby_startHint: 'All {n} seats must be filled and ready.',
   lobby_waitingHost: 'Waiting for the host to start...',
   lobby_leave: 'Leave room',
+  lobby_kick: 'Kick',
+  lobby_kickTitle: 'Remove {name} from the room',
 
   // Server error codes (protocol + engine) — unknown codes show the server message.
   err_unknown: 'Server error: {msg}',
@@ -289,4 +319,6 @@ export const en: Record<string, string> = {
   err_BAD_HEX: 'Invalid hex.',
   err_BAD_TARGET: 'Invalid target.',
   err_BAD_VERTEX: 'Invalid vertex.',
+  err_KICKED: 'The host removed you from the room.',
+  err_SEAT_TAKEN_OVER: 'Another session took over your seat. Rejoin the room to reclaim it.',
 };

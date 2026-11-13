@@ -20,6 +20,9 @@ export interface ConnectionHandlers {
   onMessage: (msg: ServerMsg) => void;
   /** Connection status changes; false while the socket is down/retrying. */
   onStatus: (online: boolean) => void;
+  /** Application close codes (4000 SEAT_TAKEN_OVER, 4001 KICKED): no reconnect happens;
+   * the shell shows the translated reason. Absent -> treated like any other close. */
+  onClosed?: (code: number, reason: string) => void;
 }
 
 export class Connection {
@@ -103,11 +106,20 @@ export class Connection {
       if (msg.type === 'welcome') this.h.setToken(msg.sessionToken);
       this.h.onMessage(msg);
     };
-    // onclose fires after every failed attempt too; it drives the retry loop.
-    ws.onclose = () => {
+    // onclose fires after every failed attempt too; it drives the retry loop. Application
+    // close codes 4000/4001 (SEAT_TAKEN_OVER / KICKED) are final: no reconnect, the shell
+    // shows the translated reason instead (docs/PROTOCOL.md).
+    ws.onclose = (ev) => {
       if (this.ws === ws) {
         this.ws = null;
         this.h.onStatus(false);
+      }
+      if (ev.code >= 4000 && ev.code <= 4999) {
+        this.stopped = true;
+        if (this.timer !== null) clearTimeout(this.timer);
+        this.timer = null;
+        this.h.onClosed?.(ev.code, ev.reason ?? '');
+        return;
       }
       this.scheduleReconnect();
     };

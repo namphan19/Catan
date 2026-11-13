@@ -12,8 +12,8 @@ export function shotPath(name: string, project: string): string {
 /**
  * Console/page-error capture. Returns a getter for the collected errors; the spec asserts
  * on it at the end of each test.
- * NOTE: the app ships no favicon link, so Chromium's automatic /favicon.ico request 404s;
- * that network noise is filtered here and reported separately in docs/qa/UI_SMOKE.md.
+ * The app ships a favicon (inline SVG data URI in index.html), so the historical
+ * /favicon.ico 404 noise is gone; the filter stays as harmless insurance.
  */
 export function captureErrors(page: Page): () => string[] {
   const errors: string[] = [];
@@ -67,17 +67,16 @@ export async function confirmCover(page: Page): Promise<void> {
 }
 
 /**
- * Click a board hit target (vertex / edge / hex).
+ * Click a board hit target (vertex / edge / hex) through the real input pipeline.
  *
- * BUG-QA-02: a real input-pipeline click does NOT reach the hit element. Board.tsx calls
- * setPointerCapture on the <svg> for every pointerdown, so Chromium retargets the following
- * `click` event to the SVG itself and the hit circle's onClick never fires. Verified by probe:
- * a real click leaves the log empty, dispatchEvent('click') registers the move. Until the
- * client fixes pointer handling we drive board clicks synthetically; everything outside the
- * SVG (buttons, covers, dialogs) is clicked through the real input pipeline.
+ * BUG-QA-02 (fixed): the board used to setPointerCapture on the <svg> for every pointerdown,
+ * which retargeted the browser's `click` to the SVG so the hit element's onClick never fired.
+ * The board now only starts panning (and captures) after the pointer moved more than 5 px,
+ * so a press-and-release without movement delivers a real, trusted click to the hit target —
+ * these tests prove that with real Playwright clicks (regression guard for the old bug).
  */
 export async function clickHit(page: Page, selector: string): Promise<void> {
-  await page.locator(selector).first().dispatchEvent('click');
+  await page.locator(selector).first().click();
 }
 
 /**

@@ -148,6 +148,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
             onHex={(h) => tryTarget((a) => a.t === 'moveBlocker' && a.hex === h, 'hex')}
             onMiss={() => setPending(null)}
           />
+          <ToastStack toasts={toasts} />
         </div>
         <SidePanel view={view} />
       </div>
@@ -214,7 +215,6 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
         </div>
       )}
 
-      <ToastStack toasts={toasts} />
       <span className="sr-only" aria-live="assertive">
         {mustRespond ? t('tradeBadge') : ''}
       </span>
