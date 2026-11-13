@@ -1,0 +1,27 @@
+/* Design tokens — exact values from docs/UI.md. */
+:root {
+  --parchment: #f3e9d2;
+  --parchment-dark: #e4d3ae;
+  --ink: #3b2f2f;
+  --ink-soft: #6b5b4e;
+  --sea: #3e7ca6;
+  --gold: #c9a227;
+  --danger: #a23b2a;
+
+  --forest: #2f5d3a;
+  --claypit: #b5562b;
+  --meadow: #8db255;
+  --field: #e0b84c;
+  --quarry: #8a8d91;
+  --waste: #d9c79e;
+
+  --p1: #e69f00; /* orange, sun */
+  --p2: #56b4e9; /* sky, wave */
+  --p3: #009e73; /* green, leaf */
+  --p4: #f0e442; /* yellow, star */
+  --p5: #0072b2; /* blue, shield */
+  --p6: #d55e00; /* vermillion, flame */
+
+  --font-head: 'Cinzel', Georgia, serif;
+  --font-body: 'EB Garamond', Georgia, serif;
+}

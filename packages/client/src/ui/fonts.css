@@ -1,0 +1,21 @@
+/* Fonts bundled locally by the artist (OFL) — see /assets/fonts/*-OFL.txt.
+   The files are TTF, so format('truetype'); serif fallback per docs/UI.md. */
+@font-face {
+  font-family: 'Cinzel';
+  src: url('/assets/fonts/Cinzel.ttf') format('truetype');
+  font-weight: 400 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'EB Garamond';
+  src: url('/assets/fonts/EBGaramond.ttf') format('truetype');
+  font-weight: 400 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'EB Garamond';
+  src: url('/assets/fonts/EBGaramond-Italic.ttf') format('truetype');
+  font-style: italic;
+  font-weight: 400 800;
+  font-display: swap;
+}
