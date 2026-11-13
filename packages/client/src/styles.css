@@ -144,7 +144,9 @@ button {
 .tipwrap::after {
   content: attr(data-tip);
   position: absolute;
-  bottom: calc(100% + 6px);
+  /* --tip-lift is set by Tooltip.tsx for bottom-bar buttons so the tip clears the
+     hand panel's status line instead of covering it. */
+  bottom: calc(100% + 6px + var(--tip-lift, 0px));
   left: 50%;
   transform: translateX(-50%);
   background: var(--ink);
@@ -650,6 +652,87 @@ button {
   flex-direction: column;
   gap: 4px;
   z-index: 5;
+}
+
+/* ---------- 3D board (lazy chunk) ---------- */
+.board3d-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--parchment);
+}
+
+.board3d-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: grab;
+}
+
+.board3d-wrap canvas:active {
+  cursor: grabbing;
+}
+
+.board3d-loading {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--parchment);
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+
+.board3d-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 3px solid var(--parchment-dark);
+  border-top-color: var(--ink);
+  animation: board3d-spin 0.9s linear infinite;
+}
+
+@keyframes board3d-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 2D / 3D segmented toggle in the top bar. */
+.view-toggle {
+  display: inline-flex;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--parchment);
+}
+
+.view-toggle-btn {
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-head);
+  font-size: 0.9rem;
+  font-weight: 700;
+  padding: 2px 12px;
+  cursor: pointer;
+}
+
+.view-toggle-btn + .view-toggle-btn {
+  border-left: 1px solid var(--ink-soft);
+}
+
+.view-toggle-btn.active {
+  background: var(--gold);
+}
+
+.view-toggle-btn:focus-visible {
+  outline: 2px solid var(--danger);
+  outline-offset: -2px;
 }
 
 .hex-tile polygon {

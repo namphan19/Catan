@@ -73,7 +73,8 @@ export function Road({ edge, player, graph }: { edge: EdgeId; player: PlayerId; 
   const color = playerColor(player);
   const { a, b, mid, angle, len } = edgeGeom(graph, edge);
   const w = len * 0.94;
-  const h = (w * 14) / 60;
+  // Roads are pieces too: 30% thicker than the artist's base aspect (docs/UI.md V-series).
+  const h = ((w * 14) / 60) * 1.3;
   const art = PIECE_ART.road ?? null;
   if (art) {
     return (
@@ -97,6 +98,9 @@ export function Building({ v, kind, player }: { v: VertexId; kind: string; playe
   return <SettlementImage v={v} player={player} color={color} p={p} />;
 }
 
+/** Pieces in the 2D board are 30% larger than the artist's nominal size (PO request). */
+const PIECE_SCALE_2D = 1.3;
+
 function SettlementImage({
   v,
   player,
@@ -108,7 +112,7 @@ function SettlementImage({
   color: string;
   p: { x: number; y: number };
 }) {
-  const s = SIZE * 0.6;
+  const s = SIZE * 0.6 * PIECE_SCALE_2D;
   const art = PIECE_ART.settlement ?? null;
   if (art) {
     return (
@@ -147,13 +151,15 @@ function CityImage({
   color: string;
   p: { x: number; y: number };
 }) {
-  const s = SIZE * 0.82;
+  const s = SIZE * 0.82 * PIECE_SCALE_2D;
+  // The city art is 52x44: keep that aspect (no stretching) instead of the old square box.
+  const sh = s * (44 / 52);
   const art = PIECE_ART.city ?? null;
   if (art) {
     return (
       <g transform={`translate(${p.x} ${p.y})`} style={{ color }}>
-        <InlineArt art={art} x={-s / 2} y={-s / 2} width={s} height={s} className="piece-body piece-city" />
-        <EmblemSeal cx={s * 0.32} cy={s * 0.3} r={s * 0.15} emblem={playerEmblem(player)} />
+        <InlineArt art={art} x={-s / 2} y={-sh / 2} width={s} height={sh} className="piece-body piece-city" />
+        <EmblemSeal cx={s * 0.32} cy={sh * 0.34} r={s * 0.15} emblem={playerEmblem(player)} />
         <title>{v}</title>
       </g>
     );

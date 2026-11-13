@@ -5,8 +5,17 @@ import { useName } from '../shell/names';
 import { playerColor, playerEmblem, seatIndex } from '../ui/colors';
 import { Emblem } from '../ui/Emblem';
 import { awardKey } from './describe';
+import type { BoardMode } from '../board/BoardSwitch';
 
-export function TopBar({ view }: { view: PlayerView }) {
+export function TopBar({
+  view,
+  boardMode,
+  onBoardMode,
+}: {
+  view: PlayerView;
+  boardMode?: BoardMode;
+  onBoardMode?: (m: BoardMode) => void;
+}) {
   const { t, lang, setLang } = useI18n();
   const name = useName();
   const ph = view.phase;
@@ -54,6 +63,30 @@ export function TopBar({ view }: { view: PlayerView }) {
             </span>
           ))}
       </div>
+      {onBoardMode && (
+        <div className="view-toggle" role="group" aria-label={t('board_view')}>
+          <button
+            type="button"
+            className={boardMode !== '3d' ? 'view-toggle-btn active' : 'view-toggle-btn'}
+            aria-pressed={boardMode !== '3d'}
+            aria-label={t('board_view2d')}
+            title={t('board_view2d')}
+            onClick={() => onBoardMode('2d')}
+          >
+            2D
+          </button>
+          <button
+            type="button"
+            className={boardMode === '3d' ? 'view-toggle-btn active' : 'view-toggle-btn'}
+            aria-pressed={boardMode === '3d'}
+            aria-label={t('board_view3d')}
+            title={t('board_view3d')}
+            onClick={() => onBoardMode('3d')}
+          >
+            3D
+          </button>
+        </div>
+      )}
       <button
         type="button"
         className="btn btn-ghost btn-lang"

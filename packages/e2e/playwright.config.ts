@@ -21,8 +21,27 @@ export default defineConfig({
     viewport: { width: 1440, height: 900 },
   },
   projects: [
-    { name: 'desktop', use: { viewport: { width: 1440, height: 900 } } },
-    { name: 'tablet', use: { viewport: { width: 1024, height: 768 } } },
+    {
+      name: 'desktop',
+      testIgnore: /board3d\.spec\.ts/,
+      use: { viewport: { width: 1440, height: 900 } },
+    },
+    {
+      name: 'tablet',
+      testIgnore: /board3d\.spec\.ts/,
+      use: { viewport: { width: 1024, height: 768 } },
+    },
+    {
+      // Software WebGL (SwiftShader) so the 3D canvas renders on headless CI/office machines.
+      name: '3d',
+      testMatch: /board3d\.spec\.ts/,
+      use: {
+        viewport: { width: 1440, height: 900 },
+        launchOptions: {
+          args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'],
+        },
+      },
+    },
   ],
   webServer: {
     command:

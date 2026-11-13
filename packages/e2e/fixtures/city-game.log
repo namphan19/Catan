@@ -1,0 +1,2 @@
+actions=59 cities=2 roads=8 phase={"k":"main"} winner=-
+[{"id":"p1","hand":{"timber":0,"clay":1,"fiber":1,"grain":2,"stone":0}},{"id":"p2","hand":{"timber":0,"clay":4,"fiber":3,"grain":1,"stone":3}},{"id":"p3","hand":{"timber":5,"clay":1,"fiber":0,"grain":3,"stone":0}},{"id":"p4","hand":{"timber":1,"clay":1,"fiber":1,"grain":1,"stone":0}}]

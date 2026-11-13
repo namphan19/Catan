@@ -1,7 +1,7 @@
 // The game table. Takes { view, legal, onAction, events } only (docs/UI.md) so the online
 // client can reuse it. Every button, highlight and dialog option derives from getLegalActions;
 // disabled reasons come from validateAction. No rules logic lives here.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Action, GameEvent, PlayerId, PlayerView, Validation } from '@hexgame/engine';
 import { useI18n } from '../i18n';
 import { useName } from '../shell/names';
@@ -9,7 +9,7 @@ import { playerColor, playerEmblem } from '../ui/colors';
 import { Emblem } from '../ui/Emblem';
 import { Button } from '../ui/Button';
 import { ToastStack, useToasts } from '../ui/Toast';
-import { Board } from '../board/Board';
+import { BoardSwitch, readBoardMode, writeBoardMode, type BoardMode } from '../board/BoardSwitch';
 import { EMPTY_HIGHLIGHTS, type Highlights } from '../board/Highlights';
 import { TopBar } from './TopBar';
 import { OpponentStrip } from './OpponentStrip';
@@ -39,6 +39,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const check = validate ?? (() => ({ ok: true } as Validation));
   const [toasts, pushToast] = useToasts();
   const [pending, setPending] = useState<Pending>(null);
+  const [boardMode, setBoardMode] = useState<BoardMode>(readBoardMode);
   const [tradeTab, setTradeTab] = useState<TradeTab>('bank');
   const [tradeOpen, setTradeOpen] = useState<TradeTab | null>(null);
   const [cardOpen, setCardOpen] = useState<PickCard | null>(null);
@@ -122,6 +123,18 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
     }
   };
 
+  const changeBoardMode = (m: BoardMode) => {
+    setBoardMode(m);
+    writeBoardMode(m);
+  };
+
+  // 3D unavailable / lost its context: switch back to the SVG board and say why.
+  const boardFallback = useCallback(() => {
+    setBoardMode('2d');
+    writeBoardMode('2d');
+    pushToast({ text: t('board3d_fallback'), kind: 'error' });
+  }, [t, pushToast]);
+
   const closeTrade = () => setTradeOpen(null);
   const closeCard = () => setCardOpen(null);
 
@@ -129,11 +142,13 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
 
   return (
     <div className="table">
-      <TopBar view={view} />
+      <TopBar view={view} boardMode={boardMode} onBoardMode={changeBoardMode} />
       <OpponentStrip view={view} />
       <div className="table-main">
         <div className="board-area">
-          <Board
+          <BoardSwitch
+            mode={boardMode}
+            onFallback={boardFallback}
             layout={view.init.layout}
             board={view.board}
             pieces={view.pieces}

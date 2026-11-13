@@ -1,0 +1,283 @@
+{
+ "init": {
+  "seed": "city-demo-3d",
+  "playerCount": 4,
+  "layout": "standard",
+  "rulesetIds": [
+   "base"
+  ],
+  "vpToWin": 10,
+  "extraBuild": false,
+  "largeTableMode": "extraBuild",
+  "firstPlayer": "p4"
+ },
+ "actions": [
+  {
+   "t": "placeSettlement",
+   "player": "p4",
+   "v": "v:0,-1,N"
+  },
+  {
+   "t": "placeRoad",
+   "player": "p4",
+   "e": "e:1,-2,W"
+  },
+  {
+   "t": "placeSettlement",
+   "player": "p1",
+   "v": "v:0,-1,S"
+  },
+  {
+   "t": "placeRoad",
+   "player": "p1",
+   "e": "e:0,0,NW"
+  },
+  {
+   "t": "placeSettlement",
+   "player": "p2",
+   "v": "v:-2,2,N"
+  },
+  {
+   "t": "placeRoad",
+   "player": "p2",
+   "e": "e:-1,1,W"
+  },
+  {
+   "t": "placeSettlement",
+   "player": "p3",
+   "v": "v:0,1,N"
+  },
+  {
+   "t": "placeRoad",
+   "player": "p3",
+   "e": "e:1,0,W"
+  },
+  {
+   "t": "placeSettlement",
+   "player": "p3",
+   "v": "v:1,-1,N"
+  },
+  {
+   "t": "placeRoad",
+   "player": "p3",
+   "e": "e:2,-2,W"
+  },
+  {
+   "t": "placeSettlement",
+   "player": "p2",
+   "v": "v:-2,0,S"
+  },
+  {
+   "t": "placeRoad",
+   "player": "p2",
+   "e": "e:-2,1,NW"
+  },
+  {
+   "t": "placeSettlement",
+   "player": "p1",
+   "v": "v:0,2,N"
+  },
+  {
+   "t": "placeRoad",
+   "player": "p1",
+   "e": "e:1,1,W"
+  },
+  {
+   "t": "placeSettlement",
+   "player": "p4",
+   "v": "v:1,1,N"
+  },
+  {
+   "t": "placeRoad",
+   "player": "p4",
+   "e": "e:2,0,W"
+  },
+  {
+   "t": "roll",
+   "player": "p4"
+  },
+  {
+   "t": "endTurn",
+   "player": "p4"
+  },
+  {
+   "t": "roll",
+   "player": "p1"
+  },
+  {
+   "t": "moveBlocker",
+   "player": "p1",
+   "hex": "h:0,-2"
+  },
+  {
+   "t": "steal",
+   "player": "p1",
+   "target": "p4"
+  },
+  {
+   "t": "endTurn",
+   "player": "p1"
+  },
+  {
+   "t": "roll",
+   "player": "p2"
+  },
+  {
+   "t": "endTurn",
+   "player": "p2"
+  },
+  {
+   "t": "roll",
+   "player": "p3"
+  },
+  {
+   "t": "endTurn",
+   "player": "p3"
+  },
+  {
+   "t": "roll",
+   "player": "p4"
+  },
+  {
+   "t": "endTurn",
+   "player": "p4"
+  },
+  {
+   "t": "roll",
+   "player": "p1"
+  },
+  {
+   "t": "endTurn",
+   "player": "p1"
+  },
+  {
+   "t": "roll",
+   "player": "p2"
+  },
+  {
+   "t": "endTurn",
+   "player": "p2"
+  },
+  {
+   "t": "roll",
+   "player": "p3"
+  },
+  {
+   "t": "endTurn",
+   "player": "p3"
+  },
+  {
+   "t": "roll",
+   "player": "p4"
+  },
+  {
+   "t": "endTurn",
+   "player": "p4"
+  },
+  {
+   "t": "roll",
+   "player": "p1"
+  },
+  {
+   "t": "endTurn",
+   "player": "p1"
+  },
+  {
+   "t": "roll",
+   "player": "p2"
+  },
+  {
+   "t": "discard",
+   "player": "p1",
+   "bag": {
+    "clay": 1,
+    "fiber": 3,
+    "grain": 1
+   }
+  },
+  {
+   "t": "discard",
+   "player": "p4",
+   "bag": {
+    "clay": 1,
+    "fiber": 3
+   }
+  },
+  {
+   "t": "moveBlocker",
+   "player": "p2",
+   "hex": "h:1,-2"
+  },
+  {
+   "t": "steal",
+   "player": "p2",
+   "target": "p3"
+  },
+  {
+   "t": "endTurn",
+   "player": "p2"
+  },
+  {
+   "t": "roll",
+   "player": "p3"
+  },
+  {
+   "t": "endTurn",
+   "player": "p3"
+  },
+  {
+   "t": "roll",
+   "player": "p4"
+  },
+  {
+   "t": "endTurn",
+   "player": "p4"
+  },
+  {
+   "t": "roll",
+   "player": "p1"
+  },
+  {
+   "t": "endTurn",
+   "player": "p1"
+  },
+  {
+   "t": "roll",
+   "player": "p2"
+  },
+  {
+   "t": "endTurn",
+   "player": "p2"
+  },
+  {
+   "t": "roll",
+   "player": "p3"
+  },
+  {
+   "t": "endTurn",
+   "player": "p3"
+  },
+  {
+   "t": "roll",
+   "player": "p4"
+  },
+  {
+   "t": "buildCity",
+   "player": "p4",
+   "v": "v:0,-1,N"
+  },
+  {
+   "t": "endTurn",
+   "player": "p4"
+  },
+  {
+   "t": "roll",
+   "player": "p1"
+  },
+  {
+   "t": "buildCity",
+   "player": "p1",
+   "v": "v:0,-1,S"
+  }
+ ]
+}

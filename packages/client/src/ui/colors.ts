@@ -47,6 +47,30 @@ export const TERRAIN_COLORS: Record<string, string> = {
   sea: 'var(--sea)',
 };
 
+/** Same palette as hex strings, for WebGL materials (CSS var() cannot reach a shader). */
+export const PLAYER_HEX: Record<string, string> = {
+  p1: '#e69f00',
+  p2: '#56b4e9',
+  p3: '#009e73',
+  p4: '#f0e442',
+  p5: '#0072b2',
+  p6: '#d55e00',
+};
+
+export const TERRAIN_HEX: Record<string, string> = {
+  forest: '#2f5d3a',
+  claypit: '#b5562b',
+  meadow: '#8db255',
+  field: '#e0b84c',
+  quarry: '#8a8d91',
+  waste: '#d9c79e',
+  sea: '#3e7ca6',
+};
+
+export function playerHex(id: string): string {
+  return PLAYER_HEX[`p${seatIndex(id)}`] ?? '#6b5b4e';
+}
+
 /** Resource -> chip colour (matches the terrain that produces it). */
 export const RESOURCE_COLORS: Record<string, string> = {
   timber: 'var(--forest)',

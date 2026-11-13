@@ -9,6 +9,11 @@ export function shotPath(name: string, project: string): string {
   return path.resolve(__dirname, '..', '..', '..', 'docs', 'qa', 'screenshots', rel);
 }
 
+/** Screenshots of the 3D prototype live in docs/qa/screenshots/3d/. */
+export function shot3dPath(name: string): string {
+  return path.resolve(__dirname, '..', '..', '..', 'docs', 'qa', 'screenshots', '3d', name);
+}
+
 /**
  * Console/page-error capture. Returns a getter for the collected errors; the spec asserts
  * on it at the end of each test.
@@ -56,6 +61,9 @@ export const VI = {
   endTurn: /Kết thúc lượt/,
   tradePlayers: /Đổi bài với người chơi/,
   tradeDialogTitle: 'Đổi bài',
+  board3d: 'Bàn cờ 3D',
+  board2d: 'Bàn cờ 2D',
+  loadReplay: 'Nạp và replay',
 } as const;
 
 /** Click "I am ready" on the pass-device cover. */
