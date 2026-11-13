@@ -16,6 +16,7 @@ export type ClientMsg =
   | { type: 'leaveRoom'; reqId?: string }
   | { type: 'setReady'; ready: boolean; reqId?: string }
   | { type: 'startGame'; reqId?: string }
+  | { type: 'kick'; seat: string; reqId?: string }
   | { type: 'action'; action: unknown; reqId?: string }
   | { type: 'requestState'; reqId?: string };
 
@@ -49,9 +50,15 @@ export type ParseResult = ParseOk | ParseFail;
 
 const CONTROL = /[\u0000-\u001F\u007F]/;
 /** 5 chars, A-Z0-9 without O/0/I/1 (docs/PROTOCOL.md). */
-const CODE_RE = /^[A-HJ-NP-Z2-9]{5}$/;
-/** base64url, 1..64 chars (the server issues 22-char tokens; be liberal on read). */
-const TOKEN_RE = /^[A-Za-z0-9_-]{1,64}$/;
+export const CODE_RE = /^[A-HJ-NP-Z2-9]{5}$/;
+/**
+ * Only the exact shape the server issues is honoured (docs/PROTOCOL.md): 128-bit tokens,
+ * exactly 22 base64url chars. Any other shape (weak, hand-made, corrupt localStorage) is
+ * treated as a new session and replaced with a fresh server-issued token.
+ */
+export const SERVER_TOKEN_RE = /^[A-Za-z0-9_-]{22}$/;
+/** Max JSON nesting depth accepted in one message (bigger -> BAD_MESSAGE). */
+export const MAX_JSON_DEPTH = 20;
 
 const isStr = (v: unknown): v is string => typeof v === 'string';
 const isPlainObj = (v: unknown): v is Record<string, unknown> =>
@@ -80,11 +87,9 @@ function parseHello(msg: Record<string, unknown>, reqId?: string): ClientMsg {
     reqId,
   };
   const token = msg.sessionToken;
-  if (token !== undefined) {
-    if (!isStr(token) || !TOKEN_RE.test(token))
-      throwErr('BAD_TOKEN', 'sessionToken must be a base64url string of at most 64 characters.');
-    out.sessionToken = token;
-  }
+  // Only a server-issued token shape is honoured; anything else becomes a new session
+  // (docs/PROTOCOL.md), so no BAD_TOKEN reply - the token is simply not passed on.
+  if (isStr(token) && SERVER_TOKEN_RE.test(token)) out.sessionToken = token;
   return out;
 }
 
@@ -126,11 +131,42 @@ function parseJoinRoom(msg: Record<string, unknown>, reqId?: string): ClientMsg 
 }
 
 /**
+ * Max nesting depth check on the raw text (docs/PROTOCOL.md / security review #8): a
+ * deeply nested 64 KB payload can make downstream JSON work throw. Scans the text once,
+ * tracking string state, so no recursion is involved.
+ */
+export function jsonDepthWithinLimit(text: string, maxDepth = MAX_JSON_DEPTH): boolean {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inString = false;
+      continue;
+    }
+    if (ch === '"') inString = true;
+    else if (ch === '{' || ch === '[') {
+      depth++;
+      if (depth > maxDepth) return false;
+    } else if (ch === '}' || ch === ']') {
+      depth--;
+    }
+  }
+  return true;
+}
+
+/**
  * Runtime validation of one raw text frame. Rejects anything that is not a well-formed
  * message of a known type with bounded fields; unknown extra fields are ignored and every
  * action payload is re-validated by the engine anyway.
  */
 export function parseClientMessage(text: string): ParseResult {
+  if (!jsonDepthWithinLimit(text)) {
+    return { ok: false, code: 'BAD_MESSAGE', message: 'The message is nested too deeply.' };
+  }
   let raw: unknown;
   try {
     raw = JSON.parse(text);
@@ -162,6 +198,12 @@ export function parseClientMessage(text: string): ParseResult {
       }
       case 'startGame':
         return { ok: true, msg: { type: 'startGame', reqId } };
+      case 'kick': {
+        const seat = raw.seat;
+        if (!isStr(seat) || !/^p[1-6]$/.test(seat))
+          return { ok: false, code: 'BAD_MESSAGE', message: 'kick needs a seat like "p3".' };
+        return { ok: true, msg: { type: 'kick', seat, reqId } };
+      }
       case 'action': {
         const action = raw.action;
         if (!isPlainObj(action) || !isStr(action.t) || action.t.length === 0 || action.t.length > 64)

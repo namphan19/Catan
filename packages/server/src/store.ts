@@ -4,7 +4,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { Action, GameInit } from '@hexgame/engine';
-import type { RoomOptions } from './protocol';
+import { CODE_RE, type RoomOptions } from './protocol';
 
 export interface PersistedSeat {
   name: string;
@@ -33,6 +33,7 @@ export class RoomStore {
 
   /** Atomic write: temp file in the same directory, then rename over the target. */
   save(room: PersistedRoom): void {
+    if (!CODE_RE.test(room.code)) throw new Error(`refusing to persist room code ${JSON.stringify(room.code)}`);
     const file = this.fileFor(room.code);
     const tmp = `${file}.tmp`;
     fs.writeFileSync(tmp, JSON.stringify(room));
@@ -72,17 +73,36 @@ export class RoomStore {
 
 function isPersistedRoom(v: unknown): v is PersistedRoom {
   const r = v as PersistedRoom;
+  if (typeof v !== 'object' || v === null) return false;
+  // The code reaches fileFor() on save/delete: only the strict room-code alphabet may
+  // pass, so a tampered file can never cause path traversal (security review #6).
+  if (typeof r.code !== 'string' || !CODE_RE.test(r.code)) return false;
+  if (typeof r.hostSeat !== 'string' || !/^p[1-6]$/.test(r.hostSeat)) return false;
+  if (typeof r.playerCount !== 'number' || !Number.isInteger(r.playerCount)) return false;
+  if (r.playerCount < 3 || r.playerCount > 6) return false;
+  if (!Array.isArray(r.seats) || r.seats.length !== r.playerCount) return false;
+  if (!r.seats.every((s) => s && isPersistedSeat(s))) return false;
+  if (Number(r.hostSeat.slice(1)) - 1 >= r.playerCount) return false;
+  if (!isPersistedOptions(r.options)) return false;
+  if (r.init === null || typeof r.init !== 'object' || typeof r.init.seed !== 'string') return false;
+  return Array.isArray(r.actions);
+}
+
+function isPersistedSeat(s: PersistedSeat): boolean {
+  // Names are bounded like hello names; token hashes are always SHA-256 hex.
   return (
-    typeof v === 'object' &&
-    v !== null &&
-    typeof r.code === 'string' &&
-    typeof r.hostSeat === 'string' &&
-    typeof r.playerCount === 'number' &&
-    Array.isArray(r.seats) &&
-    r.seats.every((s) => s && typeof s.name === 'string' && typeof s.tokenHash === 'string') &&
-    r.init !== null &&
-    typeof r.init === 'object' &&
-    typeof r.init.seed === 'string' &&
-    Array.isArray(r.actions)
+    typeof s.name === 'string' &&
+    s.name.length >= 1 &&
+    s.name.length <= 24 &&
+    typeof s.tokenHash === 'string' &&
+    /^[0-9a-f]{64}$/.test(s.tokenHash)
   );
+}
+
+function isPersistedOptions(o: RoomOptions): boolean {
+  if (o === null || typeof o !== 'object') return false;
+  const mode = (o as RoomOptions).largeTableMode;
+  if (mode !== undefined && mode !== 'paired' && mode !== 'extraBuild') return false;
+  const vp = (o as RoomOptions).vpToWin;
+  return vp === undefined || (typeof vp === 'number' && Number.isInteger(vp) && vp >= 1 && vp <= 100);
 }

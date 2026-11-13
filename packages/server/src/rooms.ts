@@ -17,7 +17,7 @@ import {
   type GameState,
   type PlayerId,
 } from '@hexgame/engine';
-import { parseClientMessage, type ClientMsg, type ServerMsg } from './protocol';
+import { CODE_RE, parseClientMessage, type ClientMsg, type ServerMsg } from './protocol';
 import { RoomStore, type PersistedRoom } from './store';
 
 export interface Conn {
@@ -34,6 +34,8 @@ export interface ConnRecord {
   name: string;
   roomCode: string | null;
   seat: PlayerId | null;
+  /** Failed joinRoom attempts on this connection (brute-force budget, see limits.ts). */
+  failedJoins: number;
 }
 
 interface RoomPlayer {
@@ -65,6 +67,12 @@ export interface HubOptions {
 
 export const DEFAULT_ROOM_LIMIT = 50;
 export const DEFAULT_IDLE_MS = 30 * 60 * 1000;
+/** Failed joinRoom attempts allowed per connection before it is closed (docs/PROTOCOL.md: 10). */
+export const MAX_FAILED_JOINS = 10;
+/** Application-defined WebSocket close codes (4000-4999 range). */
+export const CLOSE_SEAT_TAKEN_OVER = 4000;
+export const CLOSE_KICKED = 4001;
+export const CLOSE_TOO_MANY_JOINS = 4002;
 
 const seatOf = (index: number): PlayerId => `p${index + 1}`;
 
@@ -110,7 +118,15 @@ export class Hub {
   }
 
   attach(conn: Conn): ConnRecord {
-    const rec: ConnRecord = { conn, helloed: false, token: '', name: '', roomCode: null, seat: null };
+    const rec: ConnRecord = {
+      conn,
+      helloed: false,
+      token: '',
+      name: '',
+      roomCode: null,
+      seat: null,
+      failedJoins: 0,
+    };
     this.conns.set(conn.id, rec);
     return rec;
   }
@@ -130,10 +146,15 @@ export class Hub {
   /** Remove rooms that have had no connected player for idleMs (docs/PROTOCOL.md: 30 min). */
   sweep(now = Date.now()): void {
     for (const room of [...this.rooms.values()]) {
-      if (room.emptySince !== null && now - room.emptySince >= this.idleMs) {
-        this.rooms.delete(room.code);
-        this.store?.delete(room.code);
-        console.log(`[room] ${room.code} deleted (no connected player)`);
+      // One broken room (e.g. a locked file on Windows) must never kill the process.
+      try {
+        if (room.emptySince !== null && now - room.emptySince >= this.idleMs) {
+          this.store?.delete(room.code);
+          this.rooms.delete(room.code);
+          console.log(`[room] ${room.code} deleted (no connected player)`);
+        }
+      } catch (e) {
+        console.error(`[room] sweep failed for ${room.code}: ${String(e)}`);
       }
     }
   }
@@ -144,6 +165,10 @@ export class Hub {
     let count = 0;
     for (const p of this.store.loadAll()) {
       try {
+        if (!isRestorable(p)) {
+          console.error(`[room] skipping invalid persisted room ${JSON.stringify(p.code)}: bad shape`);
+          continue;
+        }
         const state = replay(p.init, p.actions);
         const players: RoomPlayer[] = p.seats.map((s) => ({
           name: s.name,
@@ -208,6 +233,9 @@ export class Hub {
       case 'startGame':
         this.onStartGame(rec, msg);
         break;
+      case 'kick':
+        this.onKick(rec, msg);
+        break;
       case 'action':
         this.onAction(rec, msg);
         break;
@@ -224,13 +252,30 @@ export class Hub {
   // ------------------------------------------------------------------ lobby
 
   private onHello(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'hello' }>): void {
+    let renamed = false;
     if (!rec.helloed) {
       rec.helloed = true;
       rec.name = msg.name;
       rec.token = msg.sessionToken ?? randomToken();
+    } else if (msg.name !== rec.name) {
+      // A repeated hello renames the player, in the lobby and in a running game
+      // (docs/PROTOCOL.md). The connection's existing token stays authoritative.
+      rec.name = msg.name;
+      renamed = true;
     }
-    // A repeated hello keeps the connection's existing token; it is authoritative.
+    // The reply to the hello goes out before any room broadcast.
     rec.conn.send({ type: 'welcome', sessionToken: rec.token, name: rec.name });
+    if (renamed) {
+      const room = rec.roomCode ? this.rooms.get(rec.roomCode) : undefined;
+      const idx =
+        room && rec.token
+          ? room.players.findIndex((p) => hashEquals(p.tokenHash, hashToken(rec.token)))
+          : -1;
+      if (room && idx !== -1) {
+        room.players[idx].name = msg.name;
+        this.broadcastRoom(room);
+      }
+    }
   }
 
   private onCreateRoom(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'createRoom' }>): void {
@@ -265,14 +310,14 @@ export class Hub {
       return;
     }
     const room = this.rooms.get(msg.code);
-    if (!room) {
-      this.error(rec.conn, msg.reqId, 'NO_SUCH_ROOM', 'No room with that code exists.');
-      return;
-    }
+    if (!room) return this.failJoin(rec, msg, 'NO_SUCH_ROOM', 'No room with that code exists.');
     const tokenHash = hashToken(rec.token);
     const reclaimIdx = room.players.findIndex((p) => hashEquals(p.tokenHash, tokenHash));
     if (reclaimIdx !== -1) {
       // Reconnect: the session token restores the seat, also while the game is running.
+      // If a live connection already holds this seat, the NEW connection wins and the
+      // old one is closed with SEAT_TAKEN_OVER (docs/PROTOCOL.md).
+      this.takeoverSeat(room, tokenHash, rec.conn.id);
       room.players[reclaimIdx].name = rec.name;
       this.attachToRoom(rec, room, reclaimIdx);
       this.afterRoomChange(room);
@@ -282,12 +327,10 @@ export class Hub {
       return;
     }
     if (room.started) {
-      this.error(rec.conn, msg.reqId, 'GAME_STARTED', 'That game has already started.');
-      return;
+      return this.failJoin(rec, msg, 'GAME_STARTED', 'That game has already started.');
     }
     if (room.players.length >= room.playerCount) {
-      this.error(rec.conn, msg.reqId, 'ROOM_FULL', 'That room is full.');
-      return;
+      return this.failJoin(rec, msg, 'ROOM_FULL', 'That room is full.');
     }
     room.players.push({ name: rec.name, tokenHash, ready: false });
     this.attachToRoom(rec, room, room.players.length - 1);
@@ -382,6 +425,43 @@ export class Hub {
 
   // ------------------------------------------------------------------ game
 
+  /** Host-only, lobby-only: free a seat and close that player's connection (docs/PROTOCOL.md). */
+  private onKick(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'kick' }>): void {
+    const room = rec.roomCode ? this.rooms.get(rec.roomCode) : undefined;
+    if (!room || !rec.seat) {
+      this.error(rec.conn, msg.reqId, 'NOT_IN_ROOM', 'You are not in a room.');
+      return;
+    }
+    if (room.started) {
+      this.error(rec.conn, msg.reqId, 'GAME_STARTED', 'Players can only be kicked in the lobby.');
+      return;
+    }
+    if (!hashEquals(room.hostHash, hashToken(rec.token))) {
+      this.error(rec.conn, msg.reqId, 'NOT_HOST', 'Only the host can kick a player.');
+      return;
+    }
+    if (msg.seat === rec.seat) {
+      this.error(rec.conn, msg.reqId, 'BAD_KICK', 'You cannot kick yourself; leave the room instead.');
+      return;
+    }
+    const idx = Number(msg.seat.slice(1)) - 1;
+    if (!Number.isInteger(idx) || idx < 0 || idx >= room.players.length) {
+      this.error(rec.conn, msg.reqId, 'BAD_KICK', 'That seat is empty.');
+      return;
+    }
+    const [removed] = room.players.splice(idx, 1);
+    for (const r of [...this.conns.values()]) {
+      if (r.roomCode !== room.code || !r.token) continue;
+      if (!hashEquals(hashToken(r.token), removed.tokenHash)) continue;
+      console.log(`[room] ${room.code} ${msg.seat} kicked (${safeName(removed.name)})`);
+      r.conn.close(CLOSE_KICKED, 'KICKED');
+      this.detach(r.conn.id);
+    }
+    this.reseatConns(room);
+    this.afterRoomChange(room);
+    this.broadcastRoom(room);
+  }
+
   private onAction(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'action' }>): void {
     const room = rec.roomCode ? this.rooms.get(rec.roomCode) : undefined;
     const game = room?.game;
@@ -391,13 +471,9 @@ export class Hub {
     }
     const action = msg.action as { player?: unknown };
     // The server decides the seat; a client that names another seat is impersonating it.
+    // The reply never echoes the client's input (no String() on hostile objects).
     if (action.player !== rec.seat) {
-      this.error(
-        rec.conn,
-        msg.reqId,
-        'IMPERSONATION',
-        `Actions must use your own seat (${rec.seat}), not ${String(action.player)}.`,
-      );
+      this.error(rec.conn, msg.reqId, 'IMPERSONATION', `Actions must use your own seat (${rec.seat}).`);
       return;
     }
     const v = validateAction(game.state, msg.action as Action);
@@ -442,6 +518,27 @@ export class Hub {
   }
 
   // ------------------------------------------------------------------ helpers
+
+  /** A failed joinRoom: error reply, budget count, close after MAX_FAILED_JOINS. */
+  private failJoin(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'joinRoom' }>, code: string, message: string): void {
+    this.error(rec.conn, msg.reqId, code, message);
+    rec.failedJoins++;
+    if (rec.failedJoins >= MAX_FAILED_JOINS) {
+      console.log(`[conn] ${rec.conn.id} closed after ${rec.failedJoins} failed joins`);
+      rec.conn.close(CLOSE_TOO_MANY_JOINS, 'TOO_MANY_FAILED_JOINS');
+    }
+  }
+
+  /** Close every live connection other than `keepConnId` that holds the seat with this token. */
+  private takeoverSeat(room: Room, tokenHash: string, keepConnId: number): void {
+    for (const r of [...this.conns.values()]) {
+      if (r.conn.id === keepConnId || r.roomCode !== room.code) continue;
+      if (!r.token || !hashEquals(hashToken(r.token), tokenHash)) continue;
+      console.log(`[room] ${room.code} ${r.seat} taken over (old connection closed)`);
+      r.conn.close(CLOSE_SEAT_TAKEN_OVER, 'SEAT_TAKEN_OVER');
+      this.detach(r.conn.id);
+    }
+  }
 
   private attachToRoom(rec: ConnRecord, room: Room, playerIdx: number): void {
     rec.roomCode = room.code;
@@ -543,4 +640,16 @@ export class Hub {
 /** Log names/actions without quoting user content. */
 function safeName(name: string): string {
   return name.replace(/[^A-Za-z0-9_. -]/g, '?').slice(0, 24);
+}
+
+/**
+ * Shape checks on persisted data before it reaches a Room (security review #6): a tampered
+ * file must never put a traversal `code` or nonsense seat list into memory.
+ */
+function isRestorable(p: PersistedRoom): boolean {
+  if (!CODE_RE.test(p.code)) return false;
+  if (!Number.isInteger(p.playerCount) || p.playerCount < 3 || p.playerCount > 6) return false;
+  if (p.seats.length !== p.playerCount) return false;
+  const hostIdx = Number(p.hostSeat.slice(1)) - 1;
+  return Number.isInteger(hostIdx) && hostIdx >= 0 && hostIdx < p.playerCount;
 }

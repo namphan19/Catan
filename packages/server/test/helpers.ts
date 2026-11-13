@@ -24,9 +24,14 @@ export class TestClient {
   private waiters: { test: (m: ServerMsg) => boolean; resolve: (m: ServerMsg) => void }[] = [];
   private opened: Promise<void>;
 
-  constructor(url: string) {
+  constructor(url: string, opts: { autoPong?: boolean } = {}) {
     this.opened = new Promise((resolve, reject) => {
-      this.ws = new WebSocket(url);
+      // autoPong: false is for heartbeat tests (docs/PROTOCOL.md pong timeout).
+      // ws honours the option at runtime; @types/ws 8.5.13 does not declare it yet.
+      this.ws =
+        opts.autoPong === false
+          ? new WebSocket(url, { autoPong: false } as unknown as import('ws').ClientOptions)
+          : new WebSocket(url);
       this.ws.on('open', () => resolve());
       this.ws.on('error', reject);
       this.ws.on('message', (data) => {

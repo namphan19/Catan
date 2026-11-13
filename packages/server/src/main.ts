@@ -23,13 +23,22 @@ export interface ServerOptions {
   clientDist?: string;
   dataDir?: string;
   hub?: HubOptions;
+  /** Max concurrent WebSocket connections (docs/PROTOCOL.md: 200). */
+  maxConnections?: number;
+  /** Max concurrent WebSocket connections per client IP (docs/PROTOCOL.md: 10). */
+  maxConnectionsPerIp?: number;
 }
 
 export interface ServerHandle {
   port: number;
   hub: Hub;
+  /** The WebSocket server; exposed for tests and supervision. */
+  wss: WebSocketServer;
   close(): Promise<void>;
 }
+
+export const DEFAULT_MAX_CONNECTIONS = 200;
+export const DEFAULT_MAX_CONNECTIONS_PER_IP = 10;
 
 class WsConn implements Conn {
   readonly id: number;
@@ -79,18 +88,40 @@ const CONTENT_TYPES: Record<string, string> = {
   '.webmanifest': 'application/manifest+json',
 };
 
-function sendFile(res: http.ServerResponse, file: string, status = 200): void {
+function sendFile(res: http.ServerResponse, file: string, pathname: string, status = 200): void {
   const type = CONTENT_TYPES[path.extname(file).toLowerCase()] ?? 'application/octet-stream';
   let body: Buffer;
   try {
     body = fs.readFileSync(file);
   } catch {
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders(pathname, file) });
     res.end('Not found');
     return;
   }
-  res.writeHead(status, { 'Content-Type': type, 'Content-Length': body.length, 'Cache-Control': 'no-cache' });
+  res.writeHead(status, {
+    'Content-Type': type,
+    'Content-Length': body.length,
+    ...securityHeaders(pathname, file),
+  });
   res.end(body);
+}
+
+/**
+ * Security headers (security review #9): nosniff everywhere, immutable caching only for
+ * hashed bundle files under /assets/, no-cache for everything else (index.html must be
+ * revalidated), and a CSP on SVG (scriptable when navigated to directly).
+ */
+function securityHeaders(pathname: string, file: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'X-Content-Type-Options': 'nosniff',
+    'Cache-Control': pathname.startsWith('/assets/')
+      ? 'public, max-age=31536000, immutable'
+      : 'no-cache',
+  };
+  if (path.extname(file).toLowerCase() === '.svg') {
+    headers['Content-Security-Policy'] = "default-src 'none'; style-src 'unsafe-inline'";
+  }
+  return headers;
 }
 
 /**
@@ -102,7 +133,7 @@ export function createStaticHandler(rootDir: string): (req: http.IncomingMessage
   const indexHtml = path.join(root, 'index.html');
   return (req, res) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
-      res.writeHead(405, { Allow: 'GET, HEAD' });
+      res.writeHead(405, { Allow: 'GET, HEAD', ...securityHeaders('/', '') });
       res.end();
       return;
     }
@@ -110,13 +141,13 @@ export function createStaticHandler(rootDir: string): (req: http.IncomingMessage
     try {
       pathname = decodeURIComponent(new URL(req.url ?? '/', 'http://localhost').pathname);
     } catch {
-      res.writeHead(400);
+      res.writeHead(400, securityHeaders('/', ''));
       res.end();
       return;
     }
     const resolved = path.resolve(root, `.${path.posix.normalize(pathname)}`);
     if (resolved !== root && !resolved.startsWith(root + path.sep)) {
-      res.writeHead(403);
+      res.writeHead(403, securityHeaders(pathname, ''));
       res.end();
       return;
     }
@@ -127,19 +158,20 @@ export function createStaticHandler(rootDir: string): (req: http.IncomingMessage
       stat = undefined;
     }
     if (stat?.isFile()) {
-      sendFile(res, resolved);
+      sendFile(res, resolved, pathname);
       return;
     }
-    // Directories are not listed; unknown paths fall back to the SPA index.
+    // Directories are not listed; unknown paths fall back to the SPA index (always no-cache,
+    // even for /assets/ paths - only real hashed bundles get immutable caching).
     try {
       if (fs.existsSync(indexHtml) && fs.statSync(indexHtml).isFile()) {
-        sendFile(res, indexHtml);
+        sendFile(res, indexHtml, '');
         return;
       }
     } catch {
       // fall through to 404
     }
-    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', ...securityHeaders(pathname, '') });
     res.end('Not found');
   };
 }
@@ -157,8 +189,12 @@ export function startServer(opts: ServerOptions = {}): Promise<ServerHandle> {
   const serveStatic = createStaticHandler(clientDist);
   const httpServer = http.createServer(serveStatic);
   const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_FRAME_BYTES });
+  const maxConnections = opts.maxConnections ?? DEFAULT_MAX_CONNECTIONS;
+  const maxConnectionsPerIp = opts.maxConnectionsPerIp ?? DEFAULT_MAX_CONNECTIONS_PER_IP;
+  const connsPerIp = new Map<string, number>();
 
-  // Only /ws is a WebSocket endpoint; anything else gets its socket destroyed.
+  // Only /ws is a WebSocket endpoint; anything else gets its socket destroyed. Concurrent
+  // connections are capped globally and per IP; excess upgrades get HTTP 503.
   httpServer.on('upgrade', (req, socket, head) => {
     let pathname = '/';
     try {
@@ -171,7 +207,23 @@ export function startServer(opts: ServerOptions = {}): Promise<ServerHandle> {
       socket.destroy();
       return;
     }
-    wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
+    const ip = (socket as import('node:net').Socket).remoteAddress ?? 'unknown';
+    if (wss.clients.size >= maxConnections || (connsPerIp.get(ip) ?? 0) >= maxConnectionsPerIp) {
+      console.log(`[server] upgrade rejected (503): total ${wss.clients.size}, ip ${ip}`);
+      socket.resume();
+      socket.end('HTTP/1.1 503 Service Unavailable\r\nConnection: close\r\nContent-Length: 0\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+    wss.handleUpgrade(req, socket, head, (ws) => {
+      connsPerIp.set(ip, (connsPerIp.get(ip) ?? 0) + 1);
+      ws.on('close', () => {
+        const n = (connsPerIp.get(ip) ?? 1) - 1;
+        if (n <= 0) connsPerIp.delete(ip);
+        else connsPerIp.set(ip, n);
+      });
+      wss.emit('connection', ws, req);
+    });
   });
 
   wss.on('connection', (ws) => {
@@ -214,22 +266,33 @@ export function startServer(opts: ServerOptions = {}): Promise<ServerHandle> {
   });
 
   const pingTimer = setInterval(() => {
-    const now = Date.now();
-    for (const ws of wss.clients) {
-      const conn = (ws as WebSocket & { _conn?: WsConn })._conn;
-      if (conn) {
-        if (now - conn.lastPong > PONG_TIMEOUT_MS) {
-          conn.close(1000, 'ping timeout');
-          continue;
+    // A throw in a timer callback must never kill the whole process (security review #4).
+    try {
+      const now = Date.now();
+      for (const ws of wss.clients) {
+        const conn = (ws as WebSocket & { _conn?: WsConn })._conn;
+        if (conn) {
+          if (now - conn.lastPong > PONG_TIMEOUT_MS) {
+            conn.close(1000, 'ping timeout');
+            continue;
+          }
+          ws.ping();
+        } else {
+          ws.ping();
         }
-        ws.ping();
-      } else {
-        ws.ping();
       }
+    } catch (e) {
+      console.error(`[server] ping sweep failed: ${String(e)}`);
     }
   }, PING_INTERVAL_MS);
 
-  const sweepTimer = setInterval(() => hub.sweep(), 60_000);
+  const sweepTimer = setInterval(() => {
+    try {
+      hub.sweep();
+    } catch (e) {
+      console.error(`[server] room sweep failed: ${String(e)}`);
+    }
+  }, 60_000);
 
   return new Promise((resolve, reject) => {
     httpServer.once('error', reject);
@@ -238,6 +301,7 @@ export function startServer(opts: ServerOptions = {}): Promise<ServerHandle> {
       resolve({
         port: (httpServer.address() as { port: number }).port,
         hub,
+        wss,
         close: async () => {
           clearInterval(pingTimer);
           clearInterval(sweepTimer);
