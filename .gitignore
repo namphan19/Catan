@@ -1,0 +1,17 @@
+team/workflow.json
+team/dispatch.log
+team/logs/*
+!team/logs/.gitkeep
+data/raw/
+__pycache__/
+node_modules/
+.venv/
+.env
+team/autoheal.json
+team/jobs/
+.pytest_cache/
+
+# commercial rulebooks: never commit
+docs/*.pdf
+dist/
+coverage/
