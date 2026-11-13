@@ -8,7 +8,7 @@ Open bugs: 0. Fixed/verified: 1 (BUG-QA-01: docs/API.md corrected to 5000 by lea
 
 ---
 
-## BUG-QA-01 - discard legal-action list exceeds the documented sample cap (minor, open)
+## BUG-QA-01 - discard legal-action list exceeds the documented sample cap (minor, fixed/verified)
 
 **Rule / contract:** `docs/API.md` > `getLegalActions`: "Open-ended spaces are sampled: offers = all
 1-for-1 offers, **discards = up to 200 combinations**". `docs/RULES.md` 5.3 only fixes the owed

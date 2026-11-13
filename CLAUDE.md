@@ -173,8 +173,10 @@ Allowed models (`team/allowed-models.conf`, all smoke-tested READY 2026-11-13) a
 
 | Tier | Model | Cost (USD per 1M in/out) | Limits |
 |---|---|---|---|
-| `default` | `opencode/deepseek-v4.1-flash-free` | free | 200k ctx / 32k out |
-| `fallback` | `opencode/glm-5.3-flash-free` | free | 200k ctx / 32k out |
+| `default` | `opencode-go/glm-5.3-flash` | 0.15 / 0.5 (Go subscription) | 1M ctx / 131k out |
+| `fallback` | `opencode-go/deepseek-v4.1-flash` | 0.15 / 0.6 (Go subscription) | 1M ctx / 384k out |
+
+**PO rule (2026-11-13): never use the free models (`*-free`) for opencode agents.**
 | `complex` | `opencode-go/glm-5.3-flash` | 0.15 / 0.5 (Go subscription) | 1M ctx / 131k out |
 | `complex-alt` | `opencode-go/deepseek-v4.1-flash` | 0.15 / 0.6, x2 Mon-Fri 01-04 and 06-10 UTC (08-11, 13-17 Vietnam time) | 1M ctx / 384k out |
 
