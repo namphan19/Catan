@@ -1,40 +1,26 @@
-# Task: QA for the base rules engine (milestone 1)
+# Task: browser E2E smoke tests + screenshots for the web UI
 
-Only write in: packages/engine/test/qa/ and docs/qa/ (create them). Do NOT edit packages/engine/src,
-other test files, docs/RULES*.md, team/, scripts/, tools/. You report defects; you do not fix engine code.
-
-Read first (by line ranges, grep before reading): docs/RULES.md, docs/RULES_DECISIONS.md, docs/API.md,
-packages/engine/test/helpers.ts (reuse newGame, blankGame, act, setHand, pl, findPath, graphOf,
-totalResources and the 'testdice' ruleset: set state.ext.forceDice = [a, b] to force a roll),
-then skim packages/engine/test/rules.test.ts to see what is already covered.
-
-## Deliverables
-1. docs/qa/TEST_PLAN.md: a table mapping every numbered section/bullet of docs/RULES.md and every
-   decision D1..D17 to the test(s) that cover it (file + test name), marking gaps.
-2. packages/engine/test/qa/*.test.ts (vitest) closing the gaps. At least these scenarios:
-   - 3-player and 6-player setup order and supply counts after setup
-   - large board (5-6 players): harbors 11, bank 24 per resource, deck 34 cards
-   - freeRoads with only 1 road left in supply; freeRoads rejected when no legal spot
-   - harvest when the bank has fewer than 2 cards total; harvest of a resource the bank lacks
-   - claim when nobody has the resource
-   - steal phase skipped when the only adjacent opponent has no cards
-   - discard legal actions all have the exact owed size; discard with many cards (20) still works
-   - city: NO_PIECES when 4 cities are built; settlement NO_PIECES when 5 are on the board
-   - bank trade multiples (8 timber -> 2 cards) and BANK_EMPTY
-   - trade: confirm fails if the acceptor no longer has the cards; offer replaced by a new offer;
-     offers cleared at end of turn; respondTrade by the offering player rejected
-   - longest route: own city in the middle does not cut; road through an opponent city is cut
-   - win: a player with 9 VP + relic bought on their turn wins immediately (hidden VP counts)
-   - a 6-player game: every player passes through every extra build window in seat order
-   Each test must state in a comment which RULES.md section / decision it checks.
-3. Full fuzz run (takes ~6 minutes, so do NOT run it yourself): submit it to the job runner:
-   bash scripts/job-submit.sh --name fuzz50 --role qa --task-file team/tasks/qa.md -- "cd packages/engine && npx tsx fuzz/randomGame.ts 50 0"
-   then finish your report with "JOB SUBMITTED <id>". When you are restarted with the job result,
-   put the summary line (games, actions, OK or the failure) into docs/qa/FUZZ.md.
-4. Any defect you find: docs/qa/BUGS.md with exact repro (seed or state setup + action list, expected vs
-   actual, which RULES.md section). A failing test for a real bug is fine: mark it with it.fails(...) and
-   reference the bug id, so the suite stays green.
-
-## Acceptance
-- cd packages/engine && npx vitest run  -> all green (paste the summary line).
-- Write files in small increments. Final report < 40 lines: files, commands + results, bugs found.
+Only write in: packages/e2e/ (new package) and docs/qa/ (UI_SMOKE.md, screenshots/). Do not edit
+packages/client, packages/engine, packages/server.
+1. Create package @hexgame/e2e with @playwright/test 1.48.2 (pin exact). Install via the proxy from the
+   repo root: export HTTP_PROXY=http://127.0.0.1:3128 HTTPS_PROXY=http://127.0.0.1:3128 ; pnpm install
+   then: pnpm --filter @hexgame/e2e exec playwright install chromium   (downloads through the proxy).
+   If the browser download is blocked, STOP and report it (do not work around it).
+2. playwright.config.ts: webServer = build the client and serve it with
+   "pnpm --filter @hexgame/client exec vite preview --port 4398 --strictPort" (reuseExistingServer false),
+   viewport 1440x900 plus one project at 1024x768 (tablet). Playwright starts and stops the server itself.
+3. Tests (keep the whole run under 3 minutes):
+   - home screen loads in Vietnamese (title Boschtan), language toggle switches to English and back
+   - start a 4-player hot-seat game with seed "e2e-1": the board renders 19 hexes with terrain images
+     loaded (check the <image>/<img> or <use> elements report naturalWidth > 0 or no fallback shapes)
+   - play setup by clicking highlighted spots until the first roll is possible (pass-device cover
+     appears between players and hides the hand until confirmed)
+   - roll, end turn; the log shows Vietnamese lines
+   - a 6-player game starts on the large board (30 hexes)
+   - no console errors during the run
+   Save full-page screenshots to docs/qa/screenshots/: home.png, setup.png, main-turn.png, trade-dialog.png
+   (open the trade panel), large-board.png.
+4. docs/qa/UI_SMOKE.md: what was tested, results, every visual problem you notice in the screenshots
+   (overlaps, clipped text, unreadable contrast, missing images), with the screenshot name.
+Acceptance: pnpm --filter @hexgame/e2e exec playwright test exits 0 (paste summary). Leave no server running.
+Final report < 40 lines.

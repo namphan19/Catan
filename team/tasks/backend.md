@@ -1,31 +1,24 @@
-# Task: authoritative WebSocket game server (M2)
+# Task: fix the server security review findings
 
-Only write in: packages/server/ (replace the placeholder). Do NOT edit packages/engine, packages/client,
-docs/, team/, scripts/, tools/.
-Contract: docs/PROTOCOL.md - implement it exactly. Engine API: docs/API.md and packages/engine/src/index.ts
-(use only exported functions: createGame, applyAction, validateAction, getLegalActions, getPlayerView,
-getEventsView, replay; IllegalActionError).
-
-Stack: Node 20+, TypeScript, `ws` 8.18.0 (pin exact), no framework. Static files: serve
-packages/client/dist (path configurable via env CLIENT_DIST) with correct content types and no directory
-listing; unknown paths fall back to index.html. Run with tsx (add tsx as a devDependency is not needed;
-it is in the root) : package scripts "start": "tsx src/main.ts", "test": "vitest run", "typecheck".
-Install via the proxy from the repo root:
-  export HTTP_PROXY=http://127.0.0.1:3128 HTTPS_PROXY=http://127.0.0.1:3128 ; pnpm install
-Code layout: src/main.ts (http server + ws wiring + static), src/rooms.ts (room model, seats, lobby,
-game), src/protocol.ts (message types + runtime validation of every incoming field), src/store.ts
-(persistence with atomic writes; directory from env DATA_DIR, default <repo>/data/rooms), src/limits.ts.
-Security: validate and bound every field (names, codes, sizes); never trust `player` from the client;
-never send a raw GameState, the seed or another seat's token; constant-time token hash compare.
-
-Tests (vitest, real server on an ephemeral port, real ws clients), at least:
-- create room, 3 clients join, ready, start -> each receives its own state with legal actions
-- a client receives only its own hand (other seats: counts only); no "seed"/"rng" in any message
-- an action from the wrong seat -> IMPERSONATION; an illegal action -> engine error code
-- reconnect with the sessionToken restores the seat and the state
-- server restart (new server instance on the same DATA_DIR) restores the game via replay
-- rate limit and oversized frame handling
-- a scripted full game by 3 clients choosing legal actions until a winner (keep it < 60 s; use the
-  engine with vpToWin option lowered if needed) to prove the loop works end to end.
-Acceptance: pnpm --filter @hexgame/server typecheck and test exit 0 (paste summaries). Do not leave the
-server running. Small increments. Final report < 40 lines.
+Only write in: packages/server/. Contract (updated by the lead): docs/PROTOCOL.md - read it again
+(kick message, token shape, seat take-over, connection caps, rename on hello).
+The full review is in team/logs/_reviewer.out (section "## Medium" onwards) - read it by line range.
+Fix every finding, each with a test:
+1. Seat reclaim while a live connection holds it: the new connection wins, old one closed (SEAT_TAKEN_OVER).
+2. Only server-issued token shape (exactly 22 base64url chars) is honoured; others -> new token.
+3. Failed joinRoom budget (10 per connection -> close); connection caps 200 total / 10 per IP in the upgrade
+   handler (HTTP 503); host-only `kick` in the lobby per PROTOCOL.md.
+4. try/catch around every room in sweep() and around every timer callback; log and continue.
+5. (covered by 3) global connection cap.
+6. Validate persisted rooms on load (code regex, seats length = playerCount 3-6, shapes); skip invalid files.
+7. IMPERSONATION reply must not echo client input.
+8. Cap JSON nesting depth (e.g. 20) in parseClientMessage -> error BAD_MESSAGE.
+9. Static: Cache-Control "public, max-age=31536000, immutable" for hashed /assets/ bundle files and
+   no-cache for index.html; X-Content-Type-Options: nosniff on every response; a CSP header on SVG responses
+   ("default-src 'none'; style-src 'unsafe-inline'").
+10. Repeated hello renames (lobby + game seat name), per PROTOCOL.md.
+Also: add tests for the static handler (traversal variants incl. %5c and ..%2f, content types, SPA fallback),
+corrupt persistence files, duplicate-token connections, weak tokens, ping/pong timeout (fake timers).
+Delete the scratch files packages/server/test/debug-one.mts and packages/server/test/measure.mts.
+Acceptance: pnpm --filter @hexgame/server typecheck and test exit 0 (paste summaries, run the suite twice).
+No server left running. Final report < 40 lines.

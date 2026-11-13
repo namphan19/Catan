@@ -12,9 +12,12 @@ redacted data (getPlayerView / getEventsView).
 - Heartbeat: server pings every 20 s; connections without pong for 60 s are closed (seat stays reserved).
 
 ## Identity and reconnect
-- On first `hello` the server returns a random `sessionToken` (128-bit, base64url). The client stores it
+- On first `hello` the server returns a random `sessionToken` (128-bit, exactly 22 base64url chars). A `hello`
+  with any other token shape is treated as a new session (a fresh token is issued). The client stores it
   in localStorage and sends it in later `hello`s; the same token gets the same seat back after a reload
-  or network drop. Tokens are room-scoped and never shown to other players.
+  or network drop. Tokens are room-scoped and never shown to other players. If a token reclaims a seat that already has a
+  live connection, the NEW connection wins and the old one is closed with code SEAT_TAKEN_OVER.
+- A repeated `hello` on an open connection renames the player (lobby and game).
 
 ## Client -> server
 | type | fields | when |
@@ -25,6 +28,7 @@ redacted data (getPlayerView / getEventsView).
 | leaveRoom | - | lobby (before start); after start the seat is kept for reconnect |
 | setReady | ready: boolean | lobby |
 | startGame | - | host only, all seats filled and ready |
+| kick | seat | host only, lobby only (before start): frees that seat and closes its connection with code KICKED |
 | action | action: Action (engine format; `player` must equal the sender's seat) | in game |
 | requestState | - | after reconnect / when the client is unsure |
 
@@ -43,6 +47,8 @@ that seat). Spectators are out of scope.
 ## Server rules
 - Validate every `action` with the engine; reject `player` != sender seat with code IMPERSONATION.
 - Rate limit: max 20 messages/s per connection (excess -> error RATE_LIMIT, 100 in a row -> close).
+- Connections: max 200 total and 10 per IP (excess upgrade -> HTTP 503). 10 failed joinRoom on one
+  connection -> close.
 - Rooms: max 50 concurrent rooms; a room with no connected player for 30 min is deleted.
 - Persistence: each room's `{ init, actions, seats(names, token hashes) }` is saved to
   `data/rooms/<code>.json` after every action (atomic write: temp file + rename) and reloaded with
