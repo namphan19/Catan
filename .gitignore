@@ -16,3 +16,5 @@ docs/*.pdf
 dist/
 coverage/
 data/rooms/
+test-results/
+playwright-report/
