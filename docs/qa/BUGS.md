@@ -4,7 +4,7 @@ Reported by: qa. This role reports defects; fixes belong to the owning role (lea
 Severity: **blocker** (illegal state, wrong result), **major** (rule violated in a reachable path),
 **minor** (contract/doc mismatch, no illegal state).
 
-Open bugs: 0. Fixed/verified: 1 (BUG-QA-01: docs/API.md corrected to 5000 by lead).
+Open bugs: 2. Fixed/verified: 1 (BUG-QA-01: docs/API.md corrected to 5000 by lead).
 
 ---
 
@@ -52,3 +52,47 @@ cap becomes 200, note that not every exact bag is then listed; `validateAction` 
   (`checkWinner` skips `setup`/`extraBuild`), wins at own turn start - matches D11.
 - Harbor spacing: consecutive harbor positions differ by at most one coast edge for standard and large
   boards (D14), pinned in `qa/setup-board.test.ts`.
+
+---
+
+## BUG-QA-02 - board clicks unreachable: setPointerCapture retargets `click` to the SVG (major, open)
+
+**Component:** `packages/client` `Board.tsx` (input pipeline). Found while writing the UI smoke suite
+(`packages/e2e/tests/helpers.ts` > `clickHit`).
+
+**Symptom:** a real (trusted) click on a highlighted board hit target never triggers its `onClick`:
+the setup phase cannot be played with a real mouse/touch input and the log stays empty. A
+`dispatchEvent('click')` (synthetic, untrusted) on the same element DOES register the move.
+
+**Repro (manual):**
+1. `pnpm --filter @hexgame/client dev`, open the app, start a 4-player game, confirm the cover.
+2. In devtools, run
+   `document.querySelector('.hit-vertex')`.
+3. Click a highlighted spot like a real user.
+4. Expected: settlement placed. Actual: nothing; a `dispatchEvent('click')` on the same element works.
+
+**Root cause (verified by probe):** the board calls `setPointerCapture` on the `<svg>` for every
+`pointerdown`, so Chromium retargets the subsequent `click` event to the `<svg>` element; the hit
+circle's listener never fires.
+
+**Impact:** the real hot-seat setup cannot be played with mouse input at all until this is fixed
+(the e2e suite drives board clicks synthetically as a workaround).
+
+---
+
+## BUG-QA-03 - disabled action buttons carry the untranslated English disable-reason as aria-label (minor, open)
+
+**Component:** `packages/client` `Button` component. Found via `packages/e2e` (BUG-QA-03 note in
+`packages/e2e/tests/helpers.ts`).
+
+**Symptom:** when an action button is disabled its accessible name / tooltip is the raw English
+validation tip, e.g. `aria-label="WRONG_PHASE: roll is not allowed in phase."`, so
+`getByRole('button', { name: 'Gieo xúc xắc' })` cannot find the button even though its visible label
+is Vietnamese. Visible to users as an untranslated English tooltip clipped at the screen edge
+(see `docs/qa/UI_SMOKE.md` V1, screenshots `main-turn.png`, `tablet/main-turn.png`).
+
+**Repro:** start any game, look at the Roll button in the setup phase (devtools > accessibility tree
+or hover it).
+
+**Fix suggestion:** translate the disable reason for the visible tooltip and keep `aria-label` to the
+actual label text (or `aria-disabled` semantics); expose the reason via `title` in the UI language.
