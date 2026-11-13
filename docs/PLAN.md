@@ -1,44 +1,53 @@
-# <Project name> - Tech Lead Plan
+# Hexgame - Tech Lead Plan
 
-Owner (PO): <name>. Tech lead: Claude. Workers: opencode agents per role in `team/ROLES.md`.
-Copy this file to `docs/PLAN.md` and fill every <placeholder>. Agents read it first.
+Owner (PO): the user. Tech lead: Claude. Workers: opencode agents per role in `team/ROLES.md`.
 
 ## 1. Goal
-<One paragraph: what we build and why, who the users are.>
+A web-based multiplayer implementation of an **original** hex-tile settlement/trading game (our own name,
+theme, rules text and art; not a copy of any commercial game) for 3-6 players, private use with friends.
+Later: an original "advanced" expansion ruleset that plugs into the same engine without rewrites.
 
-## 2. Scope (MVP) and out of scope
-| Area | MVP deliverable |
-|---|---|
-| <area> | <deliverable> |
+## 2. Scope
+| Milestone | Deliverable | Status |
+|---|---|---|
+| M1 | pnpm monorepo; pure engine with base rules incl. 5-6 player extra build phase; tests; fuzzer; hot-seat dev client; docs | done (see section 7) |
+| M2 | authoritative WebSocket server (rooms, reconnect, redacted views only) | todo |
+| M3 | advanced expansion ruleset as a separate module (hooks only) | todo, needs PO rules |
+| M4 | bots, real UI and art (theme from PO) | todo |
 
-Out of scope: <list>
+Out of scope for M1: expansion rules, networking/rooms, bots, polished UI, deployment.
 
 ## 3. Architecture
 ```
-<dir>/   <what lives here>
+packages/engine   pure rules (types, rng, board, ruleset pipeline, rules/base, view, fuzz, tests)
+packages/server   authoritative server (M2; placeholder now)
+packages/client   React + Vite + SVG (hot-seat dev client now)
 ```
-Contract-first: `docs/API.md` is written before backend/frontend start.
+Contract-first: `docs/API.md` (engine API + hooks), `docs/BOARD.md` (coordinates), `docs/RULES.md`.
 
-## 4. Team and ownership (one owner per directory!)
-| Role | Owns (directories) |
+## 4. Team and ownership (one owner per directory)
+| Role | Owns |
 |---|---|
-| lead (Claude) | docs/ (RULES.md, API.md, backlog, acceptance criteria, reviews) |
-| game-engine | engine/ |
-| frontend | web/ |
-| bot-ai | bots/ |
-| backend | server/ (only if online multiplayer is in scope) |
-| artist | assets/ |
-| qa | tests/ (except infra tests), docs/qa/ |
+| lead (Claude) | docs/, packages/engine (architecture, final edits), reviews |
+| game-engine | packages/engine/src/rules/<new ruleset>/ when delegated |
+| frontend | packages/client/ |
+| backend | packages/server/ (M2) |
+| bot-ai | packages/bots/ (M4) |
+| artist | packages/client/public/assets/ (M4) |
+| qa | packages/engine/test/qa/, docs/qa/ |
 | reviewer | read-only |
 
-## 5. Phases and quality gates
-0. Foundation  1. Discovery  2. Build  3. Integrate + QA  4. Demo
-Quality gate for "done": <measurable criteria, e.g. tests pass, metric >= X>.
+## 5. Quality gate for "done"
+`pnpm test` and `pnpm typecheck` green; fuzzer 50 games without invariant failure; every rule in
+RULES.md covered by a test; reviewer findings resolved or logged.
 
 ## 6. Risks
-- <risk> -> <mitigation>
-- Agent infrastructure: crashes, hangs and long jobs -> `tools/autoheal.py` and the job runner (see CLAUDE.md).
+- Rules ambiguity -> log in RULES_DECISIONS.md, PO confirms.
+- Engine speed (~3 ms/action due to JSON cloning + full legal-action scans) -> fine for play, optimise for bots in M4.
+- Hidden-info leaks -> server sends only getPlayerView / getEventsView; redaction tests.
+- Agent infrastructure: crashes, hangs and long jobs -> `tools/autoheal.py` and the job runner.
 
-## 7. Status and as-built notes (update at the end of every phase)
-Status: <phase, what is done>. Where the build differs from this plan, say so next to the original text
-("As built: ...") instead of rewriting it, so the plan stays auditable. Final results go in `docs/ACCEPTANCE.md`.
+## 7. Status and as-built notes
+Status (2026-11-13): M1 built. 58 engine tests green, fuzzer OK, client builds. Reviewer pass running.
+As built: names are neutral placeholders (timber/clay/fiber/grain/stone, guard/freeRoads/harvest/claim/relic,
+blocker, longestRoute/largestForce) until the PO picks a theme.

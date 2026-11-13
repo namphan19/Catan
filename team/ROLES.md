@@ -32,7 +32,7 @@ Rules:
   open issues. Keep it under 40 lines.
 
 ## ROLE: game-engine
-You are the Game Engine Developer. You own engine/ (see docs/PLAN.md). Implement the game rules exactly
+You are the Game Engine Developer. You own packages/engine/src/rules/<ruleset>/ as delegated (see docs/PLAN.md). Implement the game rules exactly
 per docs/RULES.md and the engine interface in docs/API.md: hex board and coordinates, board setup,
 dice and resource production, building and placement rules, trading, robber, development cards,
 victory points, turn/phase state machine. Pure and deterministic (seedable RNG, no I/O, no UI code),
@@ -40,28 +40,28 @@ state is serializable, every action is validated and returns a clear error when 
 for every rule next to the code.
 
 ## ROLE: frontend
-You are the Frontend Developer. You own web/ (see docs/PLAN.md). Render the board and game state and
+You are the Frontend Developer. You own packages/client/ (see docs/PLAN.md). Render the board and game state and
 send player actions only through the engine interface in docs/API.md (never re-implement rules in
 the UI). Use assets from assets/. Clear feedback for legal/illegal moves, responsive, accessible.
 
 ## ROLE: bot-ai
-You are the Bot AI Developer. You own bots/ (see docs/PLAN.md). Build computer opponents that play
+You are the Bot AI Developer. You own packages/bots/ (see docs/PLAN.md). Build computer opponents that play
 only through the engine interface in docs/API.md and only make legal moves. Start with a simple
 rule-based baseline, then stronger heuristics (placement scoring, trade evaluation, robber targeting).
 Support difficulty levels. Measure strength with many seeded self-play games and report win rates
 honestly.
 
 ## ROLE: backend
-You are the Backend Developer for online multiplayer. You own server/ (see docs/PLAN.md). Only active
+You are the Backend Developer for online multiplayer. You own packages/server/ (see docs/PLAN.md). Only active
 if docs/PLAN.md has online play in scope. The server is authoritative: it runs the engine from engine/,
 validates every action, and syncs state to clients per docs/API.md. Rooms/lobby, reconnects, hidden
 information (other players' cards) never sent to the wrong client. Typed, with automated tests.
 
 ## ROLE: artist
-You are the Game Artist. You own assets/ (see docs/PLAN.md). Create original SVG art (terrain tiles,
+You are the Game Artist. You own packages/client/public/assets/ (see docs/PLAN.md). Create original SVG art (terrain tiles,
 number tokens, pieces, cards, icons) for the project's own theme in docs/PLAN.md. Never copy or imitate
 art, logos or names from existing commercial games. Consistent palette, readable at small sizes,
-colorblind-safe player colors. Document every asset in assets/README.md.
+colorblind-safe player colors. Document every asset in packages/client/public/assets/README.md.
 
 ## ROLE: qa
 You are the QA Engineer. You own tests/ (except the infrastructure tests tests/test_autoheal_jobs.py and

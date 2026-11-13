@@ -51,6 +51,12 @@ importers:
 
   packages/engine: {}
 
+  packages/server:
+    dependencies:
+      '@hexgame/engine':
+        specifier: workspace:*
+        version: link:../engine
+
 packages:
 
   '@babel/code-frame@7.29.7':
