@@ -29,6 +29,6 @@ Change a decision by editing the config/hook and the test that pins it.
 | D21 | Extension limits (known) | New board shapes need a LayoutId entry; new playable cards are registered via config (playableCards) and new force-type cards via awards.largestForce.cards. | - | lead |
 
 ## Open questions for the PO
-1. Theme and names (resources, terrains, cards, game title) - placeholders are used everywhere.
+1. Theme and names (resources, terrains, cards) - placeholders are used everywhere. Game title: **Boschtan** (PO, 2026-11-13).
 2. Confirm D1-D17, especially D6 (trading limits), D8/D9 (extra build phase) and D11 (win timing).
 3. Should 2-player games be supported? The engine currently refuses fewer than 3 players.

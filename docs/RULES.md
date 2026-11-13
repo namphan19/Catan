@@ -1,4 +1,4 @@
-# Rules - base game (working title "Hexgame", placeholder theme)
+# Rules - Boschtan base game (placeholder theme)
 
 Our own rules text for an original hex-tile settlement game. Terms are neutral placeholders until the PO
 picks a theme. Every interpretation or choice that is not obvious is logged in `docs/RULES_DECISIONS.md`

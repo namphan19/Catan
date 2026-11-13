@@ -1,4 +1,4 @@
-# Hexgame - Tech Lead Plan
+# Boschtan - Tech Lead Plan
 
 Owner (PO): the user. Tech lead: Claude. Workers: opencode agents per role in `team/ROLES.md`.
 
