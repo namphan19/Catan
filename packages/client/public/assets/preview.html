@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Boschtan asset preview (review only)</title>
+<style>
+  :root { --parchment:#F3E9D2; --parchment-dark:#E4D3AE; --ink:#3B2F2F; --ink-soft:#6B5B4E;
+    --gold:#C9A227; --sea:#3E7CA6; --danger:#A23B2A; }
+  body { margin:0; padding:24px; background:var(--parchment); color:var(--ink); font-family:Georgia,serif; }
+  h1 { font-size:22px; } h2 { font-size:16px; margin:28px 0 8px; border-bottom:2px solid var(--ink); display:inline-block; }
+  .row { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+  .cell { background:var(--parchment-dark); border:1px solid var(--ink); border-radius:6px; padding:6px 8px; text-align:center; }
+  .cell svg { display:block; margin:0 auto 2px; }
+  .cell .s48 svg { width:48px; height:48px; }
+  .lab { font-size:10px; color:var(--ink-soft); }
+  .tile svg { width:100px; height:115px; }
+  .board { background:var(--sea); padding:10px; border:2px solid var(--ink); border-radius:8px; width:max-content; }
+  .players .cell svg { width:48px; height:48px; }
+</style>
+</head>
+<body>
+<h1>Boschtan — asset preview (artist review page, not part of the game)</h1>
+<div class="row"><div class="cell tile">
+  <img alt="hex tile" src="terrain/forest.svg" style="width:100px;height:115px">
+  <div class="lab">terrain at ~table size</div>
+</div></div>
+
+<h2>terrain/ (hexes, 200x230)</h2>
+<div class="row" id="terrain"></div>
+<h2>token.svg + dice/</h2>
+<div class="row" id="token"></div>
+<h2>harbor/ (64x64)</h2>
+<div class="row" id="harbor"></div>
+<h2>piece/ (currentColor)</h2>
+<div class="row" id="pieces"></div>
+<h2>resource/ (64x64)</h2>
+<div class="row" id="res"></div>
+<h2>icon/ (24x24, shown 1x and 48px)</h2>
+<div class="row" id="ico"></div>
+<h2>card/ (120x168)</h2>
+<div class="row" id="cards"></div>
+<h2>award/ · emblem/ · ui/</h2>
+<div class="row" id="misc"></div>
+<h2>Player colours + emblems (48px, each piece in its colour)</h2>
+<div class="row players" id="players"></div>
+
+<script>
+const T={terrain:["forest","claypit","meadow","field","quarry","waste"],harbor:["any","timber","clay","fiber","grain","stone"],
+piece:["road","settlement","city","blocker"],resource:["timber","clay","fiber","grain","stone"],
+card:["back","guard","freeRoads","harvest","claim","relic"],
+award:["longestRoute","largestForce"],emblem:["sun","wave","leaf","star","shield","flame"],
+ui:["build","trade","card","end","roll","undo","close","info"]};
+const PC={p1:"#E69F00",p2:"#56B4E9",p3:"#009E73",p4:"#F0E442",p5:"#0072B2",p6:"#D55E00"};
+const EM=["sun","wave","leaf","star","shield","flame"];
+function cell(dir,name,mode){const c=document.createElement("div");c.className="cell";
+  const w=(dir==="terrain")?"100px":(dir==="card")?"80px":(dir==="piece")?"60px":"48px";
+  const h=(dir==="terrain")?"115px":(dir==="card")?"112px":(dir==="piece")?"48px":"48px";
+  if(mode==="inline"){const s=document.createElement("img");s.src=`${dir}/${name}.svg`;s.style.width=w;s.style.height=h;c.appendChild(s);}
+  else if(mode==="cur"){fetch(`${dir}/${name}.svg`).then(r=>r.text()).then(t=>{const d=document.createElement("div");d.innerHTML=t;
+    const s=d.firstChild;s.style.width=w;s.style.height=h;c.appendChild(s);});}
+  else{const s=document.createElement("img");s.src=`${dir}/${name}.svg`;s.style.width=w;s.style.height=h;c.appendChild(s);}
+  const l=document.createElement("div");l.className="lab";l.textContent=name;c.appendChild(l);return c;}
+function fill(id,dir,names,mode){const r=document.getElementById(id);names.forEach(n=>r.appendChild(cell(dir,n,mode)));}
+fill("terrain","terrain",T.terrain);
+const tk=document.getElementById("token");["token"].forEach(n=>tk.appendChild(cell("",n)));["1","2","3","4","5","6"].forEach(n=>tk.appendChild(cell("dice",n)));
+fill("harbor","harbor",T.harbor);
+fill("pieces","piece",T.piece,"cur");
+fill("res","resource",T.resource);
+const ic=document.getElementById("ico");T.resource.forEach(n=>{const c=cell("icon",n);c.classList.add("s48");
+  const c2=cell("icon",n);c2.querySelector("img").style.width="24px";c2.querySelector("img").style.height="24px";c2.style.alignSelf="center";
+  ic.appendChild(c);ic.appendChild(c2);});
+fill("cards","card",T.card);
+const mi=document.getElementById("misc");T.award.forEach(n=>mi.appendChild(cell("award",n)));T.emblem.forEach(n=>mi.appendChild(cell("emblem",n)));T.ui.forEach(n=>mi.appendChild(cell("ui",n)));
+const pl=document.getElementById("players");
+Object.entries(PC).forEach(([k,col],i)=>{const c=document.createElement("div");c.className="cell";c.style.background=col;
+  fetch(`piece/settlement.svg`).then(r=>r.text()).then(t=>{const d=document.createElement("div");d.innerHTML=t;const s=d.firstChild;s.style.color=col;s.style.width="40px";s.style.height="40px";c.appendChild(s);});
+  fetch(`emblem/${EM[i]}.svg`).then(r=>r.text()).then(t=>{const d=document.createElement("div");d.innerHTML=t;const s=d.firstChild;s.style.color=col;s.style.width="48px";s.style.height="48px";c.appendChild(s);});
+  const l=document.createElement("div");l.className="lab";l.textContent=`${k} ${col}`;l.style.color="#fff";c.appendChild(l);pl.appendChild(c);});
+</script>
+</body>
+</html>

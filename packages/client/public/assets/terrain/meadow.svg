@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 230">
+  <path d="M100 3 L197 59 L197 171 L100 227 L3 171 L3 59 Z" fill="#8DB255" stroke="#3B2F2F" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M100 12 L176 56 L176 144 L100 188 L24 144 L24 56 Z" fill="none" stroke="#3B2F2F" stroke-width="2" opacity=".35"/>
+  <defs>
+    <g id="sheep">
+      <path d="M-12 14 v10 M-3 15 v10 M8 15 v10 M16 13 v10" stroke="#3B2F2F" stroke-width="3" stroke-linecap="round"/>
+      <ellipse cx="0" cy="0" rx="24" ry="16" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="2.5"/>
+      <path d="M-16 -6 q4 -6 10 -4 M-2 -13 q5 -3 9 1 M10 -10 q5 -1 6 4 M14 2 q4 3 1 8 M-18 4 q2 6 8 6" fill="none" stroke="#3B2F2F" stroke-width="1.5" opacity=".5"/>
+      <circle cx="24" cy="-7" r="8" fill="#6B5B4E" stroke="#3B2F2F" stroke-width="2.5"/>
+      <path d="M27 -14 l6 -4 l1 5" fill="#6B5B4E" stroke="#3B2F2F" stroke-width="2" stroke-linejoin="round"/>
+    </g>
+  </defs>
+  <use href="#sheep" transform="translate(72 148)"/>
+  <use href="#sheep" transform="translate(134 168) scale(.82)"/>
+  <path d="M40 190 q3 -10 0 -18 M50 192 q3 -10 0 -18 M60 190 q3 -10 0 -18 M148 190 q3 -10 0 -18 M158 192 q3 -10 0 -18" stroke="#5E7A3A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+</svg>

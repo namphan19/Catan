@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 230">
+  <path d="M100 3 L197 59 L197 171 L100 227 L3 171 L3 59 Z" fill="#E0B84C" stroke="#3B2F2F" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M100 12 L176 56 L176 144 L100 188 L24 144 L24 56 Z" fill="none" stroke="#3B2F2F" stroke-width="2" opacity=".35"/>
+  <defs>
+    <g id="sheaf">
+      <path d="M0 -34 C13 -30 16 2 8 8 L-8 8 C-16 2 -13 -30 0 -34 Z" fill="#C9A227" stroke="#3B2F2F" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M-7 -28 L-7 4 M0 -32 L0 6 M7 -28 L7 4" stroke="#3B2F2F" stroke-width="1.5" opacity=".45"/>
+      <rect x="-11" y="-8" width="22" height="8" fill="#8A5A2B" stroke="#3B2F2F" stroke-width="2"/>
+      <path d="M0 -34 l-6 -8 M0 -34 l6 -8 M0 -34 l0 -10" stroke="#3B2F2F" stroke-width="2" stroke-linecap="round"/>
+    </g>
+  </defs>
+  <use href="#sheaf" transform="translate(64 152)"/>
+  <use href="#sheaf" transform="translate(138 150) scale(.9)"/>
+  <use href="#sheaf" transform="translate(101 176) scale(.75)"/>
+  <path d="M36 196 h18 M148 196 h20" stroke="#3B2F2F" stroke-width="1.5" opacity=".3"/>
+</svg>
