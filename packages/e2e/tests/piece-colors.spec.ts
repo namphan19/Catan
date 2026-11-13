@@ -7,7 +7,7 @@
 // carries the owner's emblem seal, and the art keeps its ink outline.
 import { test, expect, type Page } from '@playwright/test';
 import { PLAYER_COLORS } from '../../client/src/ui/colors';
-import { VI, actionButton, captureErrors, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
 
 /** "#rrggbb" (or any css colour) as Chrome reports computed fills: "rgb(r, g, b)". */
 function asRgb(cssColor: string): string {
@@ -99,6 +99,7 @@ test('4-player setup: settlements and roads render in player colours, never blac
   expect(probe.emblemSeals, 'one emblem seal per settlement/city').toBe(probe.buildings);
   expect(probe.outlinedPaths, 'ink outline present in the inlined piece art').toBeGreaterThan(0);
 
+  await clearHover(page);
   await page.screenshot({ path: shotPath('pieces-colors.png', project), fullPage: true });
   expect(errors()).toEqual([]);
 });

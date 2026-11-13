@@ -144,11 +144,11 @@ button {
 .tipwrap::after {
   content: attr(data-tip);
   position: absolute;
-  /* --tip-lift is set by Tooltip.tsx for bottom-bar buttons so the tip clears the
-     hand panel's status line instead of covering it. */
-  bottom: calc(100% + 6px + var(--tip-lift, 0px));
+  /* Anchored centred directly ABOVE the control. --tip-shift (set by Tooltip.tsx on
+     hover/focus) slides the centred tip horizontally just enough to stay on screen. */
+  bottom: calc(100% + 8px);
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% + var(--tip-shift, 0px)));
   background: var(--ink);
   color: var(--parchment);
   padding: 4px 8px;
@@ -166,19 +166,6 @@ button {
 .tipwrap:hover::after,
 .tipwrap:focus-within::after {
   opacity: 1;
-}
-
-/* Keep edge-anchored tooltips inside the viewport: Tooltip.tsx measures the wrapped control
-   on hover/focus and sets data-pos="left"/"right" when a centred tooltip would overflow. */
-.tipwrap[data-pos='left']::after {
-  left: 0;
-  transform: none;
-}
-
-.tipwrap[data-pos='right']::after {
-  left: auto;
-  right: 0;
-  transform: none;
 }
 
 /* ---------- Panels / fieldsets ---------- */
@@ -590,14 +577,22 @@ button {
   font-weight: 700;
 }
 
-/* "(Bạn)" / acting tag: its own small pill so it never clips the name (V3).
+/* "(Bạn)" / acting tag: small pills sized to their text, side by side on their own line
+   under the name (V4: flex-basis:100% used to stretch them across the whole card).
    Readable on every player colour (ink on parchment with a 1 px ink border) — the
    yellow p4 card made the old currentColor-on-colour pill disappear. */
+.seat-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
 .seat-you,
 .seat-acting-tag {
   display: inline-block;
-  flex-basis: 100%;
-  align-self: flex-start;
+  flex: 0 0 auto;
   font-weight: 400;
   font-size: 0.72em;
   background: var(--parchment);
@@ -605,7 +600,7 @@ button {
   border: 1px solid var(--ink);
   border-radius: 999px;
   padding: 0 6px;
-  width: max-content;
+  width: fit-content;
   max-width: 100%;
   white-space: nowrap;
 }

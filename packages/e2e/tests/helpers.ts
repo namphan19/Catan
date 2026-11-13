@@ -75,6 +75,17 @@ export async function confirmCover(page: Page): Promise<void> {
 }
 
 /**
+ * Park the pointer and drop focus before a screenshot. Tooltips open on hover/focus only,
+ * so the last clicked button (e.g. a Roll button that just became disabled) would otherwise
+ * keep its translated tooltip painted into every QA screenshot.
+ */
+export async function clearHover(page: Page): Promise<void> {
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur?.());
+  await page.mouse.move(4, 4);
+  await page.waitForTimeout(150);
+}
+
+/**
  * Click a board hit target (vertex / edge / hex) through the real input pipeline.
  *
  * BUG-QA-02 (fixed): the board used to setPointerCapture on the <svg> for every pointerdown,

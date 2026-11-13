@@ -8,7 +8,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
-import { VI, actionButton, captureErrors, confirmCover, shot3dPath } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, confirmCover, shot3dPath } from './helpers';
 
 interface Projected {
   x: number;
@@ -88,6 +88,7 @@ test.describe('3D board', () => {
     await expect
       .poll(async () => page.evaluate(() => window.__boschtan3d!.targets().vertices.length), { timeout: 20_000 })
       .toBeGreaterThan(0);
+    await clearHover(page);
     await page.screenshot({ path: shot3dPath('setup.png'), fullPage: true });
 
     // Play the whole setup phase with projected, real clicks (covers between players).
@@ -117,6 +118,7 @@ test.describe('3D board', () => {
     await expect(roll).toBeEnabled();
     await roll.click();
     await page.waitForTimeout(400);
+    await clearHover(page);
     await page.screenshot({ path: shot3dPath('main-turn.png'), fullPage: true });
 
     // Back to 2D: the same game state (8 settlements, 8 roads) must still be there.
@@ -140,6 +142,7 @@ test.describe('3D board', () => {
     await expectCanvasRendered(page);
     await page.waitForTimeout(500);
     console.log('DEBUG instanced', JSON.stringify(await page.evaluate(() => window.__boschtan3d!.debug())));
+    await clearHover(page);
     await page.screenshot({ path: shot3dPath('large-board.png'), fullPage: true });
     expect(errors()).toEqual([]);
   });
@@ -162,6 +165,7 @@ test.describe('3D board', () => {
     const focused = await page.evaluate(() => window.__boschtan3d!.focus('h:0,-1', 4.6));
     expect(focused).toBe(true);
     await page.waitForTimeout(600);
+    await clearHover(page);
     await page.locator('.board-area').screenshot({ path: shot3dPath('close-up.png') });
     expect(errors()).toEqual([]);
   });

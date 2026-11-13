@@ -140,22 +140,47 @@ export function makeLabelTexture(text: string): THREE.CanvasTexture {
   return finish(canvas);
 }
 
-/** Owner emblem badge (parchment seal + glyph), matching the 2D emblem seal idea. */
-export function makeEmblemTexture(glyph: string): THREE.CanvasTexture {
-  const { canvas, ctx } = makeCanvas(128, 128);
-  ctx.clearRect(0, 0, 128, 128);
-  ctx.beginPath();
-  ctx.arc(64, 64, 58, 0, Math.PI * 2);
-  ctx.fillStyle = PARCHMENT;
+/**
+ * Owner plaque: shield silhouette with a player-colour rim, parchment face and the emblem
+ * glyph in ink. Drawn on the same shield outline as pieces3d's `shieldShape` so the flat
+ * face sits exactly on the extruded backing plate.
+ */
+export function makeShieldPlaqueTexture(glyph: string, border: string): THREE.CanvasTexture {
+  const W = 128;
+  const H = 152;
+  const { canvas, ctx } = makeCanvas(W, H);
+  ctx.clearRect(0, 0, W, H);
+  const sx = (x: number) => (x + 0.5) * W;
+  const sy = (y: number) => (0.5 - y) * H;
+  const path = (scale: number, dy = 0) => {
+    ctx.beginPath();
+    ctx.moveTo(sx(-0.5 * scale), sy(0.5 * scale + dy));
+    ctx.lineTo(sx(0.5 * scale), sy(0.5 * scale + dy));
+    ctx.lineTo(sx(0.5 * scale), sy(-0.04 * scale + dy));
+    ctx.quadraticCurveTo(sx(0.5 * scale), sy(-0.36 * scale + dy), sx(0), sy(-0.5 * scale + dy));
+    ctx.quadraticCurveTo(sx(-0.5 * scale), sy(-0.36 * scale + dy), sx(-0.5 * scale), sy(-0.04 * scale + dy));
+    ctx.closePath();
+  };
+
+  path(0.97);
+  ctx.fillStyle = border;
   ctx.fill();
-  ctx.lineWidth = 7;
+  ctx.lineWidth = 6;
   ctx.strokeStyle = INK;
   ctx.stroke();
+
+  path(0.72, 0.02);
+  ctx.fillStyle = PARCHMENT;
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = INK;
+  ctx.stroke();
+
   ctx.fillStyle = INK;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = '64px "Segoe UI Symbol", "Apple Symbols", Georgia, serif';
-  ctx.fillText(glyph, 64, 68);
+  ctx.font = '60px "Segoe UI Symbol", "Apple Symbols", Georgia, serif';
+  ctx.fillText(glyph, sx(0), sy(0.01) + 2);
   return finish(canvas);
 }
 

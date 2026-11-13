@@ -2,7 +2,7 @@
 // Screenshots: full-page, saved to docs/qa/screenshots/ (desktop project) and
 // docs/qa/screenshots/tablet/ (tablet project evidence).
 import { test, expect, type Page } from '@playwright/test';
-import { VI, actionButton, captureErrors, confirmCover, playSetupUntilRoll, shotPath, terrainImagesLoaded } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath, terrainImagesLoaded } from './helpers';
 
 async function newPage(page: Page, path = '/'): Promise<() => string[]> {
   const errors = captureErrors(page);
@@ -26,6 +26,7 @@ test('home screen is Vietnamese, language toggle switches EN and back', async ({
   await page.getByRole('button', { name: VI.langToVi }).click();
   await expect(page.getByText(VI.subtitle)).toBeVisible();
 
+  await clearHover(page);
   await page.screenshot({ path: shotPath('home.png', test.info().project.name), fullPage: true });
   expect(errors()).toEqual([]);
 });
@@ -62,6 +63,7 @@ test('4-player hot-seat game seed e2e-1: board, setup, roll, end turn, trade pan
 
   // Setup phase: settlement spots are highlighted and clickable.
   await expect(page.locator('.hit-vertex').first()).toBeVisible();
+  await clearHover(page);
   await page.screenshot({ path: shotPath('setup.png', project), fullPage: true });
 
   // Click highlighted spots (covers confirmed between players) until the roll is possible.
@@ -80,6 +82,7 @@ test('4-player hot-seat game seed e2e-1: board, setup, roll, end turn, trade pan
   expect(logText, 'log must not be the English fallback').not.toMatch(/Roll dice|End turn/);
   expect(logText, 'log must not contain raw board ids').not.toMatch(/[veh]:-?\d+,\d+|[NWS][EW]?\b/);
 
+  await clearHover(page);
   await page.screenshot({ path: shotPath('main-turn.png', project), fullPage: true });
 
   // End turn: next player's pass-device cover appears (hand hidden again).
@@ -93,6 +96,7 @@ test('4-player hot-seat game seed e2e-1: board, setup, roll, end turn, trade pan
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText(VI.tradeDialogTitle);
+  await clearHover(page);
   await page.screenshot({ path: shotPath('trade-dialog.png', project), fullPage: true });
 
   expect(errors()).toEqual([]);
@@ -112,6 +116,7 @@ test('6-player game starts on the large board (30 hexes)', async ({ page }) => {
   expect(board.tiles).toBe(30);
   expect(board.broken, `broken terrain images: ${board.broken.join(', ')}`).toEqual([]);
 
+  await clearHover(page);
   await page.screenshot({ path: shotPath('large-board.png', project), fullPage: true });
   expect(errors()).toEqual([]);
 });

@@ -22,11 +22,15 @@ export function OpponentStrip({ view }: { view: PlayerView }) {
             <div className="seat-head" style={{ color: playerColor(p.id) }}>
               <Emblem id={playerEmblem(p.id)} size={16} color={playerColor(p.id)} />
               <span className="seat-name">{name(p.id)}</span>
-              {p.id === view.viewer && <span className="seat-you">({t('you')})</span>}
-              {p.id === view.turn.current && (
-                <span className="seat-acting-tag">({t('turnTag')})</span>
-              )}
             </div>
+            {(p.id === view.viewer || p.id === view.turn.current) && (
+              <div className="seat-tags">
+                {p.id === view.viewer && <span className="seat-you">({t('you')})</span>}
+                {p.id === view.turn.current && (
+                  <span className="seat-acting-tag">({t('turnTag')})</span>
+                )}
+              </div>
+            )}
             <div className="seat-vp">
               {vp} <small>{t('vpShort')}</small>
             </div>

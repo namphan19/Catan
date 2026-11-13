@@ -15,9 +15,10 @@ import {
   hexCornersXZ,
   hexWorld,
   INK,
+  shade,
   vertexWorld,
 } from './world';
-import { makeEmblemTexture, useCanvasTexture } from './textures';
+import { makeShieldPlaqueTexture, useCanvasTexture } from './textures';
 
 const REDUCED_MOTION = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -86,6 +87,11 @@ function HoverTarget({
   );
 }
 
+/**
+ * Gable roof: a triangular prism with FLAT-shaded slopes (the old version averaged the
+ * vertex normals, which melted the roof into a dome from the overview camera), an ink
+ * ridge beam along the apex and the drei outline around the whole silhouette.
+ */
 function Roof({ width, height, depth, color }: { width: number; height: number; depth: number; color: string }) {
   const geometry = useMemo(() => {
     const shape = new THREE.Shape();
@@ -93,27 +99,95 @@ function Roof({ width, height, depth, color }: { width: number; height: number; 
     shape.lineTo(width / 2, 0);
     shape.lineTo(0, height);
     shape.closePath();
-    const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false });
+    const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 1 });
     g.translate(0, 0, -depth / 2);
-    g.computeVertexNormals();
+    // ExtrudeGeometry already emits per-face normals; do NOT recompute/average them or the
+    // two slopes lose their crease and read as a smooth dome.
     return g;
   }, [width, height, depth]);
   useEffect(() => () => geometry.dispose(), [geometry]);
+  const roofColor = shade(color, 0.78);
   return (
-    <mesh geometry={geometry} castShadow>
-      <meshStandardMaterial color={color} roughness={0.95} metalness={0} />
-      <Outlines thickness={0.012} color={INK} />
-    </mesh>
+    <group>
+      <mesh geometry={geometry} castShadow receiveShadow>
+        <meshStandardMaterial color={roofColor} roughness={0.92} metalness={0} flatShading />
+        <Outlines thickness={0.014} color={INK} />
+      </mesh>
+      {/* ridge beam: the strong line that makes the gable readable from above */}
+      <mesh position={[0, height - 0.012, 0]} castShadow>
+        <boxGeometry args={[Math.max(0.03, width * 0.06), 0.028, depth * 1.01]} />
+        <meshStandardMaterial color={INK} roughness={1} metalness={0} />
+      </mesh>
+      {/* eave boards: frame the roof edges against the walls */}
+      {[-1, 1].map((s) => (
+        <mesh key={s} position={[0, -0.006, (s * depth) / 2]} castShadow>
+          <boxGeometry args={[width * 1.02, 0.024, 0.026]} />
+          <meshStandardMaterial color={INK} roughness={1} metalness={0} />
+        </mesh>
+      ))}
+    </group>
   );
 }
 
-function EmblemBadge({ player, position, scale = 0.25 }: { player: PlayerId; position: [number, number, number]; scale?: number }) {
+/** Shield-shaped plaque silhouette (centred on the origin, point at the bottom). */
+function shieldShape(w: number, h: number): THREE.Shape {
+  const s = new THREE.Shape();
+  s.moveTo(-w / 2, h / 2);
+  s.lineTo(w / 2, h / 2);
+  s.lineTo(w / 2, -h * 0.04);
+  s.quadraticCurveTo(w / 2, -h * 0.36, 0, -h / 2);
+  s.quadraticCurveTo(-w / 2, -h * 0.36, -w / 2, -h * 0.04);
+  s.closePath();
+  return s;
+}
+
+/**
+ * Owner plaque: a small shield mounted FLAT on a building's front (+Z) wall, in front of the
+ * wall so it never z-fights and never cuts the roof. Player-colour rim, parchment face, ink
+ * emblem glyph. Replaces the old camera-facing white disc that read like a pie chart.
+ */
+function EmblemPlaque({
+  player,
+  position,
+  height = 0.26,
+}: {
+  player: PlayerId;
+  position: [number, number, number];
+  height?: number;
+}) {
+  const color = playerHex(player);
   const glyph = EMBLEM_GLYPHS[playerEmblem(player)] ?? '•';
-  const texture = useCanvasTexture(() => makeEmblemTexture(glyph), [glyph]);
+  const width = height * (128 / 152);
+  const texture = useCanvasTexture(() => makeShieldPlaqueTexture(glyph, color), [glyph, color]);
+  const backing = useMemo(() => {
+    const g = new THREE.ExtrudeGeometry(shieldShape(width * 0.98, height * 0.98), {
+      depth: 0.012,
+      bevelEnabled: false,
+      curveSegments: 8,
+    });
+    g.translate(0, 0, -0.012);
+    return g;
+  }, [width, height]);
+  useEffect(() => () => backing.dispose(), [backing]);
   return (
-    <sprite position={position} scale={[scale, scale, 1]}>
-      <spriteMaterial map={texture} transparent depthWrite={false} />
-    </sprite>
+    <group position={position}>
+      <mesh geometry={backing} castShadow receiveShadow>
+        <meshStandardMaterial color={color} roughness={0.88} metalness={0} />
+      </mesh>
+      <mesh position-z={0.005}>
+        <planeGeometry args={[width, height]} />
+        <meshStandardMaterial
+          map={texture}
+          transparent
+          alphaTest={0.4}
+          roughness={0.95}
+          metalness={0}
+          polygonOffset
+          polygonOffsetFactor={-2}
+          polygonOffsetUnits={-2}
+        />
+      </mesh>
+    </group>
   );
 }
 
@@ -139,14 +213,15 @@ function Settlement3D({ v, player }: { v: VertexId; player: PlayerId }) {
     <group position={[p.x, HEX_TOP + 0.01, p.z]}>
       <Pop>
         <mesh position={[0, 0.16, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.42, 0.32, 0.38]} />
+          <boxGeometry args={[0.44, 0.32, 0.40]} />
           <meshStandardMaterial color={color} roughness={0.9} metalness={0} />
           <Outlines thickness={0.013} color={INK} />
         </mesh>
         <group position={[0, 0.32, 0]}>
-          <Roof width={0.52} height={0.25} depth={0.46} color={color} />
+          <Roof width={0.56} height={0.30} depth={0.46} color={color} />
         </group>
-        <EmblemBadge player={player} position={[0.19, 0.34, 0.22]} scale={0.23} />
+        {/* front wall (z = +0.20) carries the owner plaque, clear of the roof eave */}
+        <EmblemPlaque player={player} position={[0, 0.135, 0.205]} height={0.24} />
       </Pop>
     </group>
   );
@@ -158,27 +233,33 @@ function City3D({ v, player }: { v: VertexId; player: PlayerId }) {
   return (
     <group position={[p.x, HEX_TOP + 0.01, p.z]}>
       <Pop>
-        {/* keep */}
-        <mesh position={[0.1, 0.18, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.56, 0.36, 0.46]} />
+        {/* main hall (x+ side): clearly longer/lower than the tower */}
+        <mesh position={[0.10, 0.17, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.52, 0.34, 0.44]} />
           <meshStandardMaterial color={color} roughness={0.9} metalness={0} />
           <Outlines thickness={0.014} color={INK} />
         </mesh>
-        <group position={[0.1, 0.36, 0]}>
-          <Roof width={0.64} height={0.26} depth={0.52} color={color} />
+        <group position={[0.10, 0.34, 0]}>
+          <Roof width={0.64} height={0.30} depth={0.50} color={color} />
         </group>
-        {/* tower */}
-        <mesh position={[-0.3, 0.34, -0.04]} castShadow receiveShadow>
-          <boxGeometry args={[0.26, 0.68, 0.26]} />
+        {/* tower (x- side): 1.0 unit tall, far above a 0.62 settlement */}
+        <mesh position={[-0.30, 0.41, -0.05]} castShadow receiveShadow>
+          <boxGeometry args={[0.28, 0.82, 0.28]} />
           <meshStandardMaterial color={color} roughness={0.9} metalness={0} />
           <Outlines thickness={0.014} color={INK} />
         </mesh>
-        <mesh position={[-0.3, 0.78, -0.04]} rotation-y={Math.PI / 4} castShadow>
-          <coneGeometry args={[0.22, 0.2, 4]} />
-          <meshStandardMaterial color={color} roughness={0.9} metalness={0} />
+        {/* arrow slit so the tower reads as masonry, not a box */}
+        <mesh position={[-0.30, 0.62, 0.091]}>
+          <boxGeometry args={[0.05, 0.16, 0.012]} />
+          <meshStandardMaterial color={INK} roughness={1} metalness={0} />
+        </mesh>
+        <mesh position={[-0.30, 0.92, -0.05]} rotation-y={Math.PI / 4} castShadow>
+          <coneGeometry args={[0.24, 0.24, 4]} />
+          <meshStandardMaterial color={shade(color, 0.78)} roughness={0.92} metalness={0} flatShading />
           <Outlines thickness={0.012} color={INK} />
         </mesh>
-        <EmblemBadge player={player} position={[0.26, 0.46, 0.25]} scale={0.22} />
+        {/* front wall (z = +0.22) carries the owner plaque, clear of the roof eave */}
+        <EmblemPlaque player={player} position={[0.10, 0.145, 0.225]} height={0.26} />
       </Pop>
     </group>
   );
