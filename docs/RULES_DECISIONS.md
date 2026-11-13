@@ -23,9 +23,9 @@ Change a decision by editing the config/hook and the test that pins it.
 | D15 | Large board contents | 30 hexes (rows 3-4-5-6-5-4-3): forest 6, claypit 5, meadow 6, field 6, quarry 5, waste 2; tokens add one each of 2..12 (no 7) -> 28; bank 24 per resource; deck 20/3/3/3/5. | board: generation | open |
 | D16 | Number placement | Random tokens, reshuffled until no 6/8 are adjacent (deterministic per seed). No fixed spiral order. | board: hot numbers | open |
 | D17 | Supply exhaustion | No settlements left -> cannot place one; building a city returns the settlement to the supply. | rules: building | open |
-| D18 | Discard visibility | Discards are public (cards go face up to the bank): the discard action incl. its bag stays in the public log/view. Stolen cards and bought cards stay private. | review-fixes | open |
-| D19 | Harvest with an empty bank | Not playable when the bank has 0 cards (the card is not wasted). | review-fixes | open |
-| D20 | Trade responses | Each player responds once per offer; the answer cannot be changed (a new offer resets responses). | review-fixes | open |
+| D18 | Discard visibility | Discards are public (cards go face up to the bank): the discard action incl. its bag stays in the public log/view. Stolen cards and bought cards stay private. | review-fixes | PO |
+| D19 | Harvest with an empty bank | Not playable when the bank has 0 cards (the card is not wasted). | review-fixes | PO |
+| D20 | Trade responses | Each player responds once per offer; the answer cannot be changed (a new offer resets responses). | review-fixes | PO |
 | D21 | Extension limits (known) | New board shapes need a LayoutId entry; new playable cards are registered via config (playableCards) and new force-type cards via awards.largestForce.cards. | - | lead |
 
 ## Open questions for the PO
