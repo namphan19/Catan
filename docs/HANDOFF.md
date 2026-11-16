@@ -74,3 +74,20 @@ Run: `pnpm install` / `pnpm test` / `pnpm typecheck` / `pnpm build` / `pnpm star
   the Write tool or one heredoc per command. A local "fact-forcing" hook blocks the first Write of every new
   file once; state importers/purpose and retry.
 - Ports used in tests: 4398 (e2e preview), ephemeral for server tests. Stop servers only by PID.
+
+## 7. Update 2026-11-16: M3 "Strongholds" expansion built (lead worked alone, no agent team)
+- Engine: `packages/engine/src/rules/strongholds/` (config, state, ops, flow, wardens, city, cards, resolve,
+  index). Base engine got generic extension points only (docs/API.md, last section). 204 engine tests
+  (43 for the expansion), fuzzer: `pnpm --filter @hexgame/engine exec tsx fuzz/randomGame.ts 4 0 strongholds`.
+- Rules in our own words: docs/RULES_STRONGHOLDS.md (S-decisions at the end). **S1/S2 need the PO**: costs
+  of wardens / ramparts, die ranges, track length and event-die faces are printed only as icons in the PDF
+  and could not be read; standard values of the game family are used.
+- Server: room option `expansion: 'strongholds'` (73 tests). Client: checkbox on the hot-seat home screen and
+  in "create room"; UI in `packages/client/src/strongholds/` (panel, board overlay, staged chooser).
+  E2E: `packages/e2e/tests/strongholds.spec.ts` + fixture `fixtures/strongholds-game.json` (23 e2e tests total).
+- Known limits: expansion games are forced to the 2D board (3D has no warden / rampart / capital / caravan
+  models yet); the side panel is cramped on 900 px high screens (it scrolls); expansion error codes other
+  than HAND_LIMIT show the generic "not possible now" text; engine speed about 10 ms per action in
+  expansion games (legal-move enumeration), fine for humans.
+- The PO changed the working mode on 2026-11-16: no opencode agent team, the lead does the work itself.
+- Uncommitted on purpose: team/*.conf, team/tasks/*, tools/*.py (runtime state / edits of another session).
