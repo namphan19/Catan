@@ -103,6 +103,8 @@ function isPersistedOptions(o: RoomOptions): boolean {
   if (o === null || typeof o !== 'object') return false;
   const mode = (o as RoomOptions).largeTableMode;
   if (mode !== undefined && mode !== 'paired' && mode !== 'extraBuild') return false;
+  const exp = (o as RoomOptions).expansion;
+  if (exp !== undefined && exp !== 'strongholds') return false;
   const vp = (o as RoomOptions).vpToWin;
   return vp === undefined || (typeof vp === 'number' && Number.isInteger(vp) && vp >= 1 && vp <= 100);
 }

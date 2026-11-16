@@ -6,6 +6,8 @@ import type { Action } from '@hexgame/engine';
 export interface RoomOptions {
   largeTableMode?: 'paired' | 'extraBuild';
   vpToWin?: number;
+  /** Play with the Strongholds expansion ruleset (5-6 players: paired mode only). */
+  expansion?: 'strongholds';
 }
 
 /** Client -> server. `reqId` is echoed back on error replies. */
@@ -117,6 +119,13 @@ function parseCreateRoom(msg: Record<string, unknown>, reqId?: string): ClientMs
       if (typeof vp !== 'number' || !Number.isInteger(vp) || vp < 1 || vp > 100)
         throwErr('BAD_MESSAGE', 'options.vpToWin must be an integer between 1 and 100.');
       clean.vpToWin = vp;
+    }
+    const expansion = options.expansion;
+    if (expansion !== undefined) {
+      if (expansion !== 'strongholds') throwErr('BAD_MESSAGE', "options.expansion must be 'strongholds'.");
+      if (clean.largeTableMode === 'extraBuild')
+        throwErr('BAD_MESSAGE', 'The expansion needs paired players for 5-6 players.');
+      clean.expansion = expansion;
     }
     out.options = clean;
   }

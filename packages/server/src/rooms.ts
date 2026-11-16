@@ -17,7 +17,7 @@ import {
   type GameState,
   type PlayerId,
 } from '@hexgame/engine';
-import { CODE_RE, parseClientMessage, type ClientMsg, type ServerMsg } from './protocol';
+import { CODE_RE, parseClientMessage, type ClientMsg, type RoomOptions, type ServerMsg } from './protocol';
 import { RoomStore, type PersistedRoom } from './store';
 
 export interface Conn {
@@ -47,7 +47,7 @@ interface RoomPlayer {
 interface Room {
   code: string;
   playerCount: number;
-  options: { largeTableMode?: 'paired' | 'extraBuild'; vpToWin?: number };
+  options: RoomOptions;
   /** Host is tracked by token hash so seat compaction cannot break it. */
   hostHash: string;
   started: boolean;
@@ -421,6 +421,7 @@ export class Hub {
       playerCount: room.playerCount,
       ...(opts.largeTableMode !== undefined ? { largeTableMode: opts.largeTableMode } : {}),
       ...(opts.vpToWin !== undefined ? { vpToWin: opts.vpToWin } : {}),
+      ...(opts.expansion ? { rulesets: ['base', opts.expansion] } : {}),
     });
     room.started = true;
     room.game = { state, actions: [] };
