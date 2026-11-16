@@ -79,9 +79,9 @@ Run: `pnpm install` / `pnpm test` / `pnpm typecheck` / `pnpm build` / `pnpm star
 - Engine: `packages/engine/src/rules/strongholds/` (config, state, ops, flow, wardens, city, cards, resolve,
   index). Base engine got generic extension points only (docs/API.md, last section). 204 engine tests
   (43 for the expansion), fuzzer: `pnpm --filter @hexgame/engine exec tsx fuzz/randomGame.ts 4 0 strongholds`.
-- Rules in our own words: docs/RULES_STRONGHOLDS.md (S-decisions at the end). **S1/S2 need the PO**: costs
-  of wardens / ramparts, die ranges, track length and event-die faces are printed only as icons in the PDF
-  and could not be read; standard values of the game family are used.
+- Rules in our own words: docs/RULES_STRONGHOLDS.md (S-decisions at the end). **S1/S2 verified 2026-11-16**:
+  the icon-only costs, commodity mapping and red-die ranges match the printed boards/panels in the 2025 rulebook
+  (pages 3, 8, 9); the PO confirmed the raid track is 7 moves. No value changes needed.
 - Server: room option `expansion: 'strongholds'` (73 tests). Client: checkbox on the hot-seat home screen and
   in "create room"; UI in `packages/client/src/strongholds/` (panel, board overlay, staged chooser).
   E2E: `packages/e2e/tests/strongholds.spec.ts` + fixture `fixtures/strongholds-game.json` (23 e2e tests total).

@@ -69,6 +69,11 @@ producing hex next to that city (no commodities).
 | promote a warden | 1 fiber + 1 stone | to the next rank, once per turn per warden; rank 3 needs council level 3 |
 | activate a warden | 1 grain | it may not act in the turn it was activated |
 
+The costs above and the per-level commodity amounts were checked against the printed building-cost panels and
+improvement boards in the 2025 rulebook (pages 3, 8 and 9); they match. The red-die range per level is 1..L+1
+(level 1 draws on 1-2, level 5 on 1-6), as printed on the improvement boards. The raid track takes 7 moves
+from its starting space (PO-confirmed on the frame).
+
 - **Level 3 perks:** commerce - trade commodities 2:1; council - promote to rank 3; learning - a player
   who receives nothing in a production (not on a 7) takes 1 resource of their choice.
 - **Capitals:** the first player to reach level 4 on a track puts its capital on one of their cities
@@ -148,8 +153,8 @@ immediately on reaching 13 VP.
 ## 11. Decisions (S-numbers)
 | ID | Topic | Decision | Status |
 |---|---|---|---|
-| S1 | Costs printed only as icons | The rulebook PDF shows the costs of wardens (recruit/promote 1 fiber + 1 stone, activate 1 grain), ramparts (2 clay), the commodity per track, the die ranges per level and the track length (7) as pictures that the text extraction cannot read. The values above are the standard ones of this game family. **PO: please check them against the printed player aid.** | open |
-| S2 | Event die faces | 3 fleet faces and 1 per track (not stated in the text). | open |
+| S1 | Costs printed only as icons | Costs, commodity per track, improvement cost = L and red-die range 1..L+1 are verified against the printed boards/panels in the 2025 rulebook (pages 3, 8, 9). The raid track takes 7 moves from the starting space, confirmed by the PO on the frame. | verified |
+| S2 | Event die faces | 3 fleet faces and 1 per track, confirmed on the event-die art and the rulebook text (page 6). | verified |
 | S3 | Hidden choices | Discarded and stolen advance cards, cards taken by tithe / dowry / informant and the bazaar answer are visible only to the players involved. Sabotage discards are public like 7-discards (D18). | lead |
 | S4 | Order of choices | Pending choices are made one after another (turn order), not simultaneously; forced choices (one option) are resolved automatically. | lead |
 | S5 | Activated wardens | Wardens activated by rally or placed active by turncoat may not act in the same turn either. | lead |
