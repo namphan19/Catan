@@ -12,14 +12,20 @@ interface DialogProps {
 export function Dialog({ title, children, locked, onClose }: DialogProps) {
   const boxRef = useRef<HTMLDivElement>(null);
 
+  // The listener must stay registered across re-renders: callers pass a fresh `onClose`
+  // on every render, and re-subscribing while another Esc listener re-renders the parent
+  // (in the middle of the same key event) used to drop the key press. Keep the latest
+  // callback in a ref instead.
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     if (locked) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose?.();
+      if (e.key === 'Escape') closeRef.current?.();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [locked, onClose]);
+  }, [locked]);
 
   useEffect(() => {
     // Move focus into the dialog for keyboard users.

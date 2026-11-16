@@ -1,8 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <g stroke="#3B2F2F" stroke-width="2" stroke-linejoin="round">
-    <rect x="3" y="12" width="16" height="4" rx="1" fill="#8A5A2B"/>
-    <rect x="5" y="7" width="16" height="4" rx="1" fill="#8A5A2B"/>
-    <circle cx="19" cy="14" r="1.8" fill="#C9A227"/>
-    <circle cx="21" cy="9" r="1.8" fill="#C9A227"/>
+  <g stroke="#3B2F2F" stroke-linejoin="round">
+    <rect x="2" y="14" width="17" height="6.5" rx="3.25" fill="#8A5A2B" stroke-width="2"/>
+    <ellipse cx="19" cy="17.25" rx="2.8" ry="3.25" fill="#C9A227" stroke-width="1.7"/>
+    <path d="M18.3 15.8 v2.9 M19.7 16 v2.5" stroke="#8A5A2B" stroke-width=".8"/>
+    <rect x="4.5" y="7.5" width="15" height="6.5" rx="3.25" fill="#A6743E" stroke-width="2"/>
+    <ellipse cx="19.5" cy="10.75" rx="2.6" ry="3.1" fill="#D9B46A" stroke-width="1.7"/>
+    <path d="M18.9 9.4 v2.7 M20.1 9.6 v2.3" stroke="#8A5A2B" stroke-width=".8"/>
+    <path d="M5.5 10 h4.5 M4.5 16.5 h5" stroke="#5B4126" stroke-width="1" opacity=".45" stroke-linecap="round"/>
   </g>
 </svg>

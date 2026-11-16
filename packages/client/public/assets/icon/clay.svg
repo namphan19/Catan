@@ -1,8 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <g stroke="#3B2F2F" stroke-width="2" stroke-linejoin="round">
-    <path d="M10 12 q-3 -6 2 -8 q5 2 2 8 q-2 1 -4 0 Z" fill="#B5562B"/>
-    <rect x="4" y="14" width="8" height="4" fill="#D98E4A"/>
-    <rect x="13" y="14" width="8" height="4" fill="#D98E4A"/>
-    <rect x="8" y="19" width="8" height="4" fill="#D98E4A"/>
+  <g stroke="#3B2F2F" stroke-linejoin="round">
+    <path d="M3.5 14.5 q2 -7 8.5 -7 q6.5 0 8.5 7 Z" fill="#B5562B" stroke-width="2"/>
+    <path d="M7 10.5 q2 -2 5 -2" stroke="#D98E4A" stroke-width="1.2" fill="none" opacity=".8"/>
+    <rect x="2.5" y="14" width="9" height="5.5" fill="#D98E4A" stroke-width="1.8"/>
+    <rect x="12.5" y="14" width="9" height="5.5" fill="#D98E4A" stroke-width="1.8"/>
+    <rect x="7.5" y="19" width="9" height="4.5" fill="#C97A45" stroke-width="1.8"/>
+    <path d="M4.2 15.8 h5 M14.2 15.8 h5 M9.2 20.7 h5" stroke="#8A3A1B" stroke-width="1" opacity=".6" stroke-linecap="round"/>
+    <path d="M4.5 14.4 h3 M14.5 14.4 h3" stroke="#F0B878" stroke-width="1" opacity=".8" stroke-linecap="round"/>
   </g>
 </svg>

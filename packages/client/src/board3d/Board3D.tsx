@@ -14,7 +14,8 @@ import { EMPTY_HIGHLIGHTS, type Highlights } from '../board/Highlights';
 import { useI18n } from '../i18n';
 import { getBoardGraph } from '../board/geom';
 import { boardFit, edgeWorld, HEX_TOP, vertexWorld, hexWorld, type BoardFit, type WorldXZ } from './world';
-import { Harbors, NumberTokens, SeaPlane, TerrainField } from './terrain';
+import { Harbors, NumberTokens, SeaFoam, SeaPlane, TerrainField } from './terrain';
+import { TerrainDecor } from './decor';
 import { Blocker3D, Highlights3D, Pieces3D } from './pieces3d';
 import type { Boschtan3DApi } from './testApi';
 
@@ -104,17 +105,17 @@ function Lights({ fit }: { fit: BoardFit }) {
   const bound = fit.radius + 3;
   return (
     <>
-      <ambientLight intensity={0.62} color="#fff0d2" />
-      <hemisphereLight args={['#f6e7c8', '#8a6d3b', 0.45]} />
+      <ambientLight intensity={0.72} color="#fff1d6" />
+      <hemisphereLight args={['#f8ecd2', '#7a8f6a', 0.6]} />
       <directionalLight
         ref={light}
         position={[fit.cx + 9, 18, fit.cz + 11]}
-        intensity={1.75}
+        intensity={1.9}
         color="#ffe2b0"
         castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-bias={-0.0006}
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-bias={-0.0005}
         shadow-camera-left={-bound}
         shadow-camera-right={bound}
         shadow-camera-top={bound}
@@ -122,7 +123,7 @@ function Lights({ fit }: { fit: BoardFit }) {
         shadow-camera-near={1}
         shadow-camera-far={60}
       />
-      <directionalLight position={[fit.cx - 10, 8, fit.cz - 8]} intensity={0.35} color="#cfe0ef" />
+      <directionalLight position={[fit.cx - 10, 8, fit.cz - 8]} intensity={0.35} color="#d8e8f2" />
     </>
   );
 }
@@ -284,19 +285,23 @@ export default function Board3D(props: Board3DProps) {
         gl={{ antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' }}
         camera={{ fov: 40, near: 0.2, far: 260, position: [0, 18, 14] }}
         onCreated={({ gl, scene }) => {
-          gl.setClearColor(new THREE.Color('#efe3c6'), 1);
+          gl.setClearColor(new THREE.Color('#e9dcc0'), 1);
           gl.shadowMap.type = THREE.PCFSoftShadowMap;
-          scene.background = new THREE.Color('#efe3c6');
+          gl.toneMapping = THREE.ACESFilmicToneMapping;
+          gl.toneMappingExposure = 1.05;
+          scene.background = new THREE.Color('#e9dcc0');
         }}
       >
         <CameraRig fit={fit} resetKey={resetKey} controls={controls} />
         <Lights fit={fit} />
         <SeaPlane fit={fit} />
+        <SeaFoam graph={graph} fit={fit} />
         <TerrainField board={board} />
+        <TerrainDecor hexes={board.hexes} />
         <NumberTokens hexes={board.hexes} />
         <Harbors board={board} graph={graph} fit={fit} />
         <Pieces3D pieces={pieces} graph={graph} />
-        <Blocker3D hexId={board.blocker} />
+        {board.blocker && <Blocker3D hexId={board.blocker} />}
         <Highlights3D hl={hl} graph={graph} onVertex={onVertex} onEdge={onEdge} onHex={onHex} />
         {/* Clicking open sea cancels a pending pick, like clicking the SVG sea in 2D. */}
         <mesh

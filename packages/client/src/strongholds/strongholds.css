@@ -1,0 +1,112 @@
+/* Strongholds expansion UI. Uses the tokens of ui/tokens.css (parchment, ink, gold, danger). */
+.sh-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--parchment-dark);
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  font-size: 14px;
+  /* The side column has a fixed height: the panel scrolls inside it instead of pushing the log out. */
+  flex: 0 1 auto;
+  max-height: 52%;
+  min-height: 150px;
+  overflow-y: auto;
+}
+.sh-head {
+  margin: 0;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+}
+.sh-label {
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+}
+.sh-muted { color: var(--ink-soft); }
+.sh-bad { color: var(--danger); font-weight: 700; }
+.sh-good { color: #2f5d3a; font-weight: 700; }
+.sh-empty { margin: 2px 0; }
+
+.sh-raid { display: flex; flex-direction: column; gap: 4px; }
+.sh-raid-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sh-raid-info { margin: 0; font-size: 13px; }
+.sh-track {
+  display: flex;
+  gap: 3px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.sh-track li {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--parchment);
+  font-size: 13px;
+  line-height: 1;
+}
+.sh-track li.done { background: var(--sea); }
+.sh-track li.ship { background: var(--gold); }
+.sh-track li.shore { border-radius: 4px; background: var(--danger); color: var(--parchment); }
+
+.sh-levels { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.sh-levels th, .sh-levels td { padding: 2px 4px; text-align: center; border-bottom: 1px solid color-mix(in srgb, var(--ink) 25%, transparent); }
+.sh-levels th[scope='row'] { text-align: left; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.sh-levels tr.me { background: color-mix(in srgb, var(--gold) 22%, transparent); }
+.sh-star { color: var(--gold); margin-left: 2px; text-shadow: 0 0 1px var(--ink); }
+
+.sh-group { display: flex; flex-direction: column; gap: 4px; }
+.sh-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
+.sh-panel .btn.sh-btn { padding: 2px 8px; font-size: 13px; min-height: 26px; }
+.sh-cost { display: inline-flex; align-items: center; gap: 1px; margin-left: 6px; font-weight: 700; }
+
+.sh-cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.sh-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 6px;
+  background: var(--parchment);
+  border: 1px solid var(--ink);
+  border-radius: 4px;
+}
+.sh-card-text { display: flex; flex-direction: column; min-width: 0; }
+.sh-card-text span { font-size: 12px; color: var(--ink-soft); }
+.sh-card-btns { display: flex; gap: 4px; flex-shrink: 0; }
+
+/* Prompt bar of the staged chooser, over the top of the board. */
+.sh-pickbar {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 140px);
+  padding: 6px 12px;
+  background: var(--gold);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  font-weight: 600;
+  box-shadow: 0 2px 0 var(--ink);
+}
+.sh-pickbar .btn { padding: 2px 8px; min-height: 26px; font-size: 13px; }
+
+.sh-options { max-height: 50vh; overflow-y: auto; }
+.sh-stepper { display: inline-flex; align-items: center; gap: 8px; }
+.sh-stepper b { min-width: 1.5em; text-align: center; font-variant-numeric: tabular-nums; }
+.sh-count { margin-left: 6px; }
+
+.sh-warden.inactive { opacity: 0.9; }
+.sh-extras { pointer-events: none; }

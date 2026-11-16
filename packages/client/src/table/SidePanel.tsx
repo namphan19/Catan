@@ -1,23 +1,23 @@
-// Side panel tabs: Nhật ký (log) / Đổi bài (trade status) / Chi phí (base config costs).
+// Side panel tabs under the player cards: Nhật ký (log) / Đổi bài (trade status).
+// The price list moved to the always-visible CostCard on the board.
 import { useState } from 'react';
-import { baseConfig, type PlayerView } from '@hexgame/engine';
-import { useI18n, resKey, RESOURCE_ORDER } from '../i18n';
+import type { PlayerView } from '@hexgame/engine';
+import { useI18n, resKey } from '../i18n';
 import { useName } from '../shell/names';
 import { playerColor, playerEmblem } from '../ui/colors';
 import { Emblem } from '../ui/Emblem';
-import { ResourceIcon } from '../ui/ResourceIcon';
 import { LogPanel } from './LogPanel';
 
-type Tab = 'log' | 'trade' | 'costs';
+type Tab = 'log' | 'trade';
 
 export function SidePanel({ view }: { view: PlayerView }) {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>('log');
 
   return (
-    <aside className="sidepanel">
+    <div className="sidepanel">
       <nav className="tabs" role="tablist" aria-label={t('appTitle')}>
-        {(['log', 'trade', 'costs'] as const).map((k) => (
+        {(['log', 'trade'] as const).map((k) => (
           <button
             key={k}
             type="button"
@@ -27,15 +27,15 @@ export function SidePanel({ view }: { view: PlayerView }) {
             onClick={() => setTab(k)}
           >
             {t(`side_${k}`)}
+            {k === 'trade' && view.trade ? <span className="badge" aria-hidden="true">1</span> : null}
           </button>
         ))}
       </nav>
       <div className="sidepanel-body" role="tabpanel">
         {tab === 'log' && <LogPanel view={view} />}
         {tab === 'trade' && <TradeTab view={view} />}
-        {tab === 'costs' && <CostsTab />}
       </div>
-    </aside>
+    </div>
   );
 }
 
@@ -87,43 +87,4 @@ function bagChips(bag: Record<string, number>, t: (k: string, p?: Record<string,
     .filter(([, n]) => (n || 0) > 0)
     .map(([r, n]) => `${n}× ${t(resKey(r))}`)
     .join(', ');
-}
-
-const COST_ROWS: Array<{ key: string; item: keyof typeof baseConfig.costs }> = [
-  { key: 'side_costsRoad', item: 'road' },
-  { key: 'side_costsSettlement', item: 'settlement' },
-  { key: 'side_costsCity', item: 'city' },
-  { key: 'side_costsCard', item: 'card' },
-];
-
-function CostsTab() {
-  const { t } = useI18n();
-  const costs = baseConfig.costs;
-  return (
-    <div className="costs">
-      <p className="hint">{t('side_costsNote')}</p>
-      <table className="cost-table">
-        <tbody>
-          {COST_ROWS.map(({ key, item }) => {
-            const bag = costs[item] as Record<string, number> | undefined;
-            if (!bag) return null;
-            return (
-              <tr key={item}>
-                <th scope="row">{t(key)}</th>
-                <td>
-                  {RESOURCE_ORDER.map((r) =>
-                    (bag[r] ?? 0) > 0 ? (
-                      <span key={r} className="cost-chip" title={t(resKey(r))}>
-                        <ResourceIcon res={r} size={16} /> × {bag[r]}
-                      </span>
-                    ) : null,
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
 }

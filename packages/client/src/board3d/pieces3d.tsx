@@ -194,17 +194,34 @@ function EmblemPlaque({
 export function Road3D({ edge, player, graph }: { edge: EdgeId; player: PlayerId; graph: Graph }) {
   const e = edgeWorld(graph, edge);
   const color = playerHex(player);
+  const trim = shade(color, 0.62);
   return (
-    <group position={[e.mid.x, HEX_TOP + 0.055, e.mid.z]} rotation-y={e.rotY}>
+    <group position={[e.mid.x, HEX_TOP + 0.05, e.mid.z]} rotation-y={e.rotY}>
       <Pop>
-        <RoundedBox args={[e.len * 0.9, 0.075, 0.175]} radius={0.028} smoothness={2} castShadow receiveShadow>
-          <meshStandardMaterial color={color} roughness={0.85} metalness={0.02} />
+        <RoundedBox args={[e.len * 0.9, 0.07, 0.21]} radius={0.028} smoothness={2} castShadow receiveShadow>
+          <meshStandardMaterial color={color} roughness={0.82} metalness={0.02} />
           <Outlines thickness={0.013} color={INK} />
         </RoundedBox>
+        {/* centre groove: reads as a plank road instead of a plain bar */}
+        <mesh position={[0, 0.04, 0]}>
+          <boxGeometry args={[e.len * 0.84, 0.012, 0.03]} />
+          <meshStandardMaterial color={trim} roughness={1} metalness={0} />
+        </mesh>
+        {/* two darker edge rails */}
+        {[-0.088, 0.088].map((z) => (
+          <mesh key={z} position={[0, 0.03, z]}>
+            <boxGeometry args={[e.len * 0.9, 0.016, 0.024]} />
+            <meshStandardMaterial color={trim} roughness={1} metalness={0} />
+          </mesh>
+        ))}
       </Pop>
     </group>
   );
 }
+
+const PARCHMENT_MAT = '#F3E9D2';
+const STONE_MAT = '#D9C79E';
+const WOOD_MAT = '#6B4E2E';
 
 function Settlement3D({ v, player }: { v: VertexId; player: PlayerId }) {
   const p = vertexWorld(v);
@@ -212,16 +229,56 @@ function Settlement3D({ v, player }: { v: VertexId; player: PlayerId }) {
   return (
     <group position={[p.x, HEX_TOP + 0.01, p.z]}>
       <Pop>
-        <mesh position={[0, 0.16, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.44, 0.32, 0.40]} />
-          <meshStandardMaterial color={color} roughness={0.9} metalness={0} />
-          <Outlines thickness={0.013} color={INK} />
+        {/* stone plinth */}
+        <RoundedBox args={[0.5, 0.07, 0.44]} radius={0.02} smoothness={2} position={[0, 0.035, 0]} castShadow receiveShadow>
+          <meshStandardMaterial color={STONE_MAT} roughness={1} />
+          <Outlines thickness={0.012} color={INK} />
+        </RoundedBox>
+        {/* plastered walls in the player colour */}
+        <mesh position={[0, 0.21, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.36, 0.28, 0.34]} />
+          <meshStandardMaterial color={color} roughness={0.88} metalness={0} />
+          <Outlines thickness={0.012} color={INK} />
         </mesh>
-        <group position={[0, 0.32, 0]}>
-          <Roof width={0.56} height={0.30} depth={0.46} color={color} />
+        {/* timber corner posts */}
+        {[-0.165, 0.165].map((x) => (
+          <mesh key={x} position={[x, 0.21, 0.165]} castShadow>
+            <boxGeometry args={[0.028, 0.28, 0.028]} />
+            <meshStandardMaterial color={shade(color, 0.55)} roughness={1} />
+          </mesh>
+        ))}
+        {/* gable roof */}
+        <group position={[0, 0.35, 0]}>
+          <Roof width={0.48} height={0.24} depth={0.42} color={color} />
         </group>
-        {/* front wall (z = +0.20) carries the owner plaque, clear of the roof eave */}
-        <EmblemPlaque player={player} position={[0, 0.135, 0.205]} height={0.24} />
+        {/* stone chimney */}
+        <mesh position={[0.115, 0.5, 0.06]} castShadow>
+          <boxGeometry args={[0.07, 0.17, 0.07]} />
+          <meshStandardMaterial color="#B9A67E" roughness={1} />
+        </mesh>
+        <mesh position={[0.115, 0.588, 0.06]}>
+          <boxGeometry args={[0.085, 0.022, 0.085]} />
+          <meshStandardMaterial color="#8F7A55" roughness={1} />
+        </mesh>
+        {/* door and window */}
+        <mesh position={[-0.075, 0.14, 0.172]}>
+          <boxGeometry args={[0.105, 0.155, 0.014]} />
+          <meshStandardMaterial color={PARCHMENT_MAT} roughness={0.95} />
+        </mesh>
+        <mesh position={[-0.075, 0.14, 0.18]}>
+          <boxGeometry args={[0.012, 0.12, 0.006]} />
+          <meshStandardMaterial color={WOOD_MAT} roughness={1} />
+        </mesh>
+        <mesh position={[-0.075, 0.265, 0.172]}>
+          <boxGeometry args={[0.075, 0.07, 0.012]} />
+          <meshStandardMaterial color={PARCHMENT_MAT} roughness={0.95} />
+        </mesh>
+        <mesh position={[-0.075, 0.265, 0.18]}>
+          <boxGeometry args={[0.01, 0.06, 0.005]} />
+          <meshStandardMaterial color={WOOD_MAT} roughness={1} />
+        </mesh>
+        {/* front wall (z = +0.17) carries the owner plaque, beside the door */}
+        <EmblemPlaque player={player} position={[0.105, 0.16, 0.176]} height={0.2} />
       </Pop>
     </group>
   );
@@ -230,65 +287,170 @@ function Settlement3D({ v, player }: { v: VertexId; player: PlayerId }) {
 function City3D({ v, player }: { v: VertexId; player: PlayerId }) {
   const p = vertexWorld(v);
   const color = playerHex(player);
+  const roof = shade(color, 0.72);
+  const trim = shade(color, 0.56);
   return (
     <group position={[p.x, HEX_TOP + 0.01, p.z]}>
       <Pop>
-        {/* main hall (x+ side): clearly longer/lower than the tower */}
-        <mesh position={[0.10, 0.17, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.52, 0.34, 0.44]} />
-          <meshStandardMaterial color={color} roughness={0.9} metalness={0} />
-          <Outlines thickness={0.014} color={INK} />
+        {/* broad stone plinth */}
+        <RoundedBox args={[0.72, 0.075, 0.58]} radius={0.025} smoothness={2} position={[0, 0.038, 0]} castShadow receiveShadow>
+          <meshStandardMaterial color={STONE_MAT} roughness={1} />
+          <Outlines thickness={0.013} color={INK} />
+        </RoundedBox>
+        {/* courtyard wall with merlons */}
+        <mesh position={[0, 0.13, 0.24]} castShadow receiveShadow>
+          <boxGeometry args={[0.56, 0.12, 0.07]} />
+          <meshStandardMaterial color={STONE_MAT} roughness={1} />
+          <Outlines thickness={0.01} color={INK} />
         </mesh>
-        <group position={[0.10, 0.34, 0]}>
-          <Roof width={0.64} height={0.30} depth={0.50} color={color} />
+        {[-0.21, -0.07, 0.07, 0.21].map((x) => (
+          <mesh key={x} position={[x, 0.205, 0.24]} castShadow>
+            <boxGeometry args={[0.075, 0.055, 0.075]} />
+            <meshStandardMaterial color={shade(color, 0.88)} roughness={1} />
+          </mesh>
+        ))}
+        {/* main keep */}
+        <mesh position={[0.02, 0.26, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.4, 0.36, 0.34]} />
+          <meshStandardMaterial color={color} roughness={0.88} metalness={0} />
+          <Outlines thickness={0.013} color={INK} />
+        </mesh>
+        <group position={[0.02, 0.44, 0]}>
+          <Roof width={0.5} height={0.24} depth={0.42} color={color} />
         </group>
-        {/* tower (x- side): 1.0 unit tall, far above a 0.62 settlement */}
-        <mesh position={[-0.30, 0.41, -0.05]} castShadow receiveShadow>
-          <boxGeometry args={[0.28, 0.82, 0.28]} />
-          <meshStandardMaterial color={color} roughness={0.9} metalness={0} />
-          <Outlines thickness={0.014} color={INK} />
+        {/* corner towers with conical roofs */}
+        {[
+          { x: -0.31, z: 0.16, h: 0.5 },
+          { x: 0.33, z: -0.12, h: 0.44 },
+        ].map((t) => (
+          <group key={`${t.x}-${t.z}`} position={[t.x, 0, t.z]}>
+            <mesh position={[0, t.h / 2 + 0.075, 0]} castShadow receiveShadow>
+              <cylinderGeometry args={[0.1, 0.11, t.h, 10]} />
+              <meshStandardMaterial color={shade(color, 0.94)} roughness={0.9} />
+              <Outlines thickness={0.012} color={INK} />
+            </mesh>
+            <mesh position={[0, t.h + 0.075, 0]} castShadow>
+              <coneGeometry args={[0.13, 0.2, 10]} />
+              <meshStandardMaterial color={roof} roughness={0.92} flatShading />
+              <Outlines thickness={0.012} color={INK} />
+            </mesh>
+            <mesh position={[0, t.h * 0.62 + 0.075, 0.095]}>
+              <boxGeometry args={[0.028, 0.09, 0.014]} />
+              <meshStandardMaterial color={PARCHMENT_MAT} roughness={1} />
+            </mesh>
+          </group>
+        ))}
+        {/* gate and windows on the keep */}
+        <mesh position={[-0.06, 0.18, 0.172]}>
+          <boxGeometry args={[0.13, 0.19, 0.014]} />
+          <meshStandardMaterial color={PARCHMENT_MAT} roughness={0.95} />
         </mesh>
-        {/* arrow slit so the tower reads as masonry, not a box */}
-        <mesh position={[-0.30, 0.62, 0.091]}>
-          <boxGeometry args={[0.05, 0.16, 0.012]} />
-          <meshStandardMaterial color={INK} roughness={1} metalness={0} />
+        {[-0.115, -0.06, -0.005].map((x) => (
+          <mesh key={x} position={[x, 0.18, 0.18]}>
+            <boxGeometry args={[0.012, 0.17, 0.006]} />
+            <meshStandardMaterial color={trim} roughness={1} />
+          </mesh>
+        ))}
+        {[-0.09].map((x) => (
+          <mesh key={x} position={[x, 0.32, 0.172]}>
+            <boxGeometry args={[0.065, 0.075, 0.012]} />
+            <meshStandardMaterial color={PARCHMENT_MAT} roughness={0.95} />
+          </mesh>
+        ))}
+        {/* banner on the keep ridge */}
+        <mesh position={[0.12, 0.7, 0]} castShadow>
+          <cylinderGeometry args={[0.008, 0.01, 0.2, 6]} />
+          <meshStandardMaterial color={WOOD_MAT} roughness={1} />
         </mesh>
-        <mesh position={[-0.30, 0.92, -0.05]} rotation-y={Math.PI / 4} castShadow>
-          <coneGeometry args={[0.24, 0.24, 4]} />
-          <meshStandardMaterial color={shade(color, 0.78)} roughness={0.92} metalness={0} flatShading />
-          <Outlines thickness={0.012} color={INK} />
+        <mesh position={[0.17, 0.755, 0]} rotation-z={-Math.PI / 2} scale={[1, 1, 0.12]} castShadow>
+          <coneGeometry args={[0.05, 0.11, 3]} />
+          <meshStandardMaterial color={PARCHMENT_MAT} roughness={0.95} side={THREE.DoubleSide} flatShading />
         </mesh>
-        {/* front wall (z = +0.22) carries the owner plaque, clear of the roof eave */}
-        <EmblemPlaque player={player} position={[0.10, 0.145, 0.225]} height={0.26} />
+        {/* front wall (z = +0.17) carries the owner plaque above the courtyard wall */}
+        <EmblemPlaque player={player} position={[0.13, 0.28, 0.176]} height={0.22} />
       </Pop>
     </group>
   );
 }
+
+const cloakGeo = (() => {
+  const points = [
+    new THREE.Vector2(0.01, 0),
+    new THREE.Vector2(0.255, 0),
+    new THREE.Vector2(0.26, 0.05),
+    new THREE.Vector2(0.21, 0.2),
+    new THREE.Vector2(0.16, 0.38),
+    new THREE.Vector2(0.13, 0.5),
+    new THREE.Vector2(0.12, 0.57),
+    new THREE.Vector2(0.001, 0.6),
+  ];
+  return new THREE.LatheGeometry(points, 9);
+})();
 
 export function Blocker3D({ hexId }: { hexId: string }) {
   const p = hexWorld(hexId);
   return (
     <group position={[p.x, HEX_TOP + 0.01, p.z]}>
       <Pop>
-        {/* hooded figure: cone robe + sphere head + hood / eyes */}
-        <mesh position={[0, 0.31, 0]} castShadow>
-          <coneGeometry args={[0.25, 0.62, 9]} />
-          <meshStandardMaterial color="#2b2320" roughness={1} metalness={0} />
+        {/* dark base disc so the figure reads as a game miniature */}
+        <mesh position={[0, 0.016, 0]} receiveShadow>
+          <cylinderGeometry args={[0.3, 0.32, 0.032, 18]} />
+          <meshStandardMaterial color="#4A3B2A" roughness={1} />
         </mesh>
-        <mesh position={[0, 0.58, 0]} castShadow>
-          <sphereGeometry args={[0.135, 12, 10]} />
-          <meshStandardMaterial color="#2b2320" roughness={1} />
+        {/* hooded cloak: lathe profile with flat-shaded folds */}
+        <mesh geometry={cloakGeo} position={[0, 0.03, 0]} castShadow receiveShadow>
+          <meshStandardMaterial color="#2B2320" roughness={1} metalness={0} flatShading />
         </mesh>
-        <mesh position={[0, 0.67, 0]} castShadow>
-          <coneGeometry args={[0.155, 0.22, 9]} />
-          <meshStandardMaterial color="#1d1815" roughness={1} />
+        {/* head + pointed hood */}
+        <mesh position={[0, 0.62, 0]} castShadow>
+          <sphereGeometry args={[0.135, 10, 8]} />
+          <meshStandardMaterial color="#2B2320" roughness={1} />
+        </mesh>
+        <mesh position={[0, 0.72, 0]} castShadow>
+          <coneGeometry args={[0.165, 0.24, 9]} />
+          <meshStandardMaterial color="#1D1815" roughness={1} flatShading />
+        </mesh>
+        {/* shadowed face with glowing eyes */}
+        <mesh position={[0, 0.62, 0.1]}>
+          <sphereGeometry args={[0.09, 10, 8]} />
+          <meshStandardMaterial color="#100D0C" roughness={1} />
         </mesh>
         {[-0.05, 0.05].map((x) => (
-          <mesh key={x} position={[x, 0.58, 0.115]}>
-            <sphereGeometry args={[0.018, 6, 6]} />
-            <meshStandardMaterial color={GOLD} emissive={GOLD} emissiveIntensity={0.9} />
+          <mesh key={x} position={[x, 0.625, 0.16]}>
+            <sphereGeometry args={[0.017, 6, 6]} />
+            <meshStandardMaterial color={GOLD} emissive={GOLD} emissiveIntensity={1.1} />
           </mesh>
         ))}
+        {/* belt rope */}
+        <mesh position={[0, 0.28, 0]} rotation-x={Math.PI / 2}>
+          <torusGeometry args={[0.175, 0.015, 6, 18]} />
+          <meshStandardMaterial color="#6B4E2E" roughness={1} />
+        </mesh>
+        {/* staff with lantern */}
+        <group position={[-0.26, 0.4, 0.06]} rotation-z={0.16}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.014, 0.018, 0.78, 6]} />
+            <meshStandardMaterial color="#6B4E2E" roughness={1} />
+          </mesh>
+          <mesh position={[0, 0.33, 0]} rotation-z={Math.PI / 2} castShadow>
+            <torusGeometry args={[0.055, 0.014, 6, 10, Math.PI]} />
+            <meshStandardMaterial color="#6B4E2E" roughness={1} />
+          </mesh>
+          <group position={[0, 0.16, 0.06]}>
+            <mesh>
+              <boxGeometry args={[0.1, 0.12, 0.1]} />
+              <meshStandardMaterial color="#2B2320" roughness={1} />
+            </mesh>
+            <mesh position={[0, -0.005, 0.052]}>
+              <sphereGeometry args={[0.04, 8, 8]} />
+              <meshStandardMaterial color={GOLD} emissive={GOLD} emissiveIntensity={1.4} />
+            </mesh>
+            <mesh position={[0, 0.068, 0]}>
+              <boxGeometry args={[0.12, 0.018, 0.12]} />
+              <meshStandardMaterial color="#1D1815" roughness={1} />
+            </mesh>
+          </group>
+        </group>
       </Pop>
     </group>
   );

@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import type { Action, GameEvent, PlayerId } from '@hexgame/engine';
 import { cardKey, resKey } from '../i18n';
 import { ResourceIcon } from '../ui/ResourceIcon';
+import { describeShAction, describeShEvent } from '../strongholds/labels';
 
 export type TFn = (key: string, params?: Record<string, string | number>) => string;
 export type NameFn = (id: PlayerId) => string;
@@ -106,7 +107,7 @@ export function describeAction(a: Action, t: TFn, name: NameFn): ReactNode {
     case 'endTurn':
       return t('log_endTurn', { name: who });
     default:
-      return t('log_other', { name: who, action: a.t });
+      return describeShAction(a, t, name) ?? t('log_other', { name: who, action: a.t });
   }
 }
 
@@ -188,7 +189,7 @@ export function describeEvent(ev: GameEvent, t: TFn, name: NameFn): ReactNode {
     case 'turnStarted':
       return t('toast_turnStarted', { name: name(ev.player) });
     case 'ext':
-      return t('phase_ext', { id: ev.id });
+      return ev.id === 'strongholds' ? describeShEvent(ev, t, name) : '';
     default:
       return '';
   }

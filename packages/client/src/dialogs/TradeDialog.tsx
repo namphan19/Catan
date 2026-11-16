@@ -4,7 +4,7 @@
 // getLegalActions / validateAction; the UI only composes bags from display data.
 import { useState } from 'react';
 import type { Action, Bag, PlayerView, Validation } from '@hexgame/engine';
-import { useI18n, resKey, RESOURCE_ORDER } from '../i18n';
+import { useI18n, resKey, resourceKinds } from '../i18n';
 import { useName } from '../shell/names';
 import { playerColor, playerEmblem, RESOURCE_COLORS } from '../ui/colors';
 import { Emblem } from '../ui/Emblem';
@@ -84,7 +84,7 @@ function BankTab({ view, legal, onAction }: { view: PlayerView; legal: Action[];
       <p className="hint">{t('dlg_bankTabHint')}</p>
       <Fieldset label={t('dlg_give')}>
         <ul className="option-list">
-          {RESOURCE_ORDER.map((r) =>
+          {resourceKinds(view.bank.hand).map((r) =>
             rates[r] != null ? (
               <li key={r}>
                 <Button
@@ -380,7 +380,7 @@ function BagSteppers({
 }) {
   return (
     <ul className="pick-list">
-      {RESOURCE_ORDER.map((r) => (
+      {resourceKinds(hand).map((r) => (
         <li key={r} className="pick-row">
           <span className="res-chip" style={{ '--res': RESOURCE_COLORS[r] } as React.CSSProperties}>
             <ResourceIcon res={r} size={18} />

@@ -1,16 +1,91 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 230">
-  <path d="M100 3 L197 59 L197 171 L100 227 L3 171 L3 59 Z" fill="#2F5D3A" stroke="#3B2F2F" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M100 12 L176 56 L176 144 L100 188 L24 144 L24 56 Z" fill="none" stroke="#3B2F2F" stroke-width="2" opacity=".35"/>
   <defs>
-    <g id="fir">
-      <path d="M0 -50 L21 -22 L10 -22 L26 4 L-26 4 L-10 -22 L-21 -22 Z" fill="#24492E" stroke="#3B2F2F" stroke-width="2.5" stroke-linejoin="round"/>
-      <path d="M-10 -30 L10 -30 M-14 -14 L14 -14" stroke="#3B2F2F" stroke-width="1.5" opacity=".4"/>
-      <rect x="-4" y="4" width="8" height="10" fill="#5B4632" stroke="#3B2F2F" stroke-width="2"/>
+    <clipPath id="hex">
+      <path d="M100 3 L197 59 L197 171 L100 227 L3 171 L3 59 Z"/>
+    </clipPath>
+    <g id="pine">
+      <rect x="-3.5" y="3" width="7" height="10" fill="#5B4632" stroke="#3B2F2F" stroke-width="2"/>
+      <path d="M0 -47 L14 -25 L7 -25 L22 -5 L-22 -5 L-7 -25 L-14 -25 Z" fill="#1E4A31" stroke="#3B2F2F" stroke-width="2.2" stroke-linejoin="round"/>
+      <path d="M0 -32 L9 -18 L4 -18 L14 -4 L-14 -4 L-4 -18 L-9 -18 Z" fill="#2A5D3D" stroke="#3B2F2F" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M0 -18 L6 -9 L2 -9 L9 2 L-9 2 L-2 -9 L-6 -9 Z" fill="#357149" stroke="#3B2F2F" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M0 -42 v9 M0 -27 v8 M0 -13 v6" stroke="#9CC7A4" stroke-width="1" opacity=".28" stroke-linecap="round"/>
+    </g>
+    <g id="pine-light">
+      <rect x="-3" y="3" width="6" height="9" fill="#6B5238" stroke="#3B2F2F" stroke-width="1.8"/>
+      <path d="M0 -43 L12 -23 L6 -23 L19 -5 L-19 -5 L-6 -23 L-12 -23 Z" fill="#2A6341" stroke="#3B2F2F" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M0 -30 L8 -17 L3 -17 L12 -4 L-12 -4 L-3 -17 L-8 -17 Z" fill="#377A4C" stroke="#3B2F2F" stroke-width="1.7" stroke-linejoin="round"/>
+      <path d="M0 -16 L5 -8 L2 -8 L8 2 L-8 2 L-2 -8 L-5 -8 Z" fill="#428B58" stroke="#3B2F2F" stroke-width="1.5" stroke-linejoin="round"/>
+    </g>
+    <g id="bush">
+      <path d="M-9 2 q-5 -4 -3 -9 q1 -6 8 -5 q3 -6 9 -2 q7 2 5 8 q4 5 -2 8 q-8 4 -17 0 Z" fill="#357148" stroke="#3B2F2F" stroke-width="1.8" stroke-linejoin="round"/>
+      <path d="M-6 -5 q3 -3 6 0 M3 -7 q3 -2 5 1" stroke="#9CC7A4" stroke-width=".9" fill="none" opacity=".3"/>
     </g>
   </defs>
-  <use href="#fir" transform="translate(58 148)"/>
-  <use href="#fir" transform="translate(142 148)"/>
-  <use href="#fir" transform="translate(100 104) scale(1.15)"/>
-  <path d="M40 176 q4 -8 0 -14 M48 178 q4 -8 0 -14 M150 180 q4 -8 0 -14 M158 176 q4 -8 0 -14" stroke="#24492E" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  <path d="M30 190 h20 M150 194 h24" stroke="#3B2F2F" stroke-width="1.5" opacity=".3"/>
+
+  <g clip-path="url(#hex)">
+    <rect width="200" height="230" fill="#477F53"/>
+    <!-- mossy ground patches -->
+    <g stroke="none">
+      <ellipse cx="64" cy="76" rx="44" ry="26" fill="#3C7549" opacity=".75"/>
+      <ellipse cx="138" cy="146" rx="48" ry="30" fill="#3C7549" opacity=".7"/>
+      <ellipse cx="100" cy="200" rx="72" ry="30" fill="#548F60" opacity=".75"/>
+      <ellipse cx="134" cy="66" rx="44" ry="20" fill="#548F60" opacity=".55"/>
+      <ellipse cx="44" cy="128" rx="32" ry="18" fill="#548F60" opacity=".5"/>
+    </g>
+    <!-- woodcut hatching -->
+    <g fill="none" stroke="#1E4A31" stroke-width="1.4" opacity=".24" stroke-linecap="round">
+      <path d="M28 96 q10 -6 20 0 M38 104 q10 -6 20 0 M148 96 q10 -6 20 0"/>
+      <path d="M24 154 q12 -5 24 0 M150 178 q12 -5 24 0 M116 214 q12 -5 24 0"/>
+    </g>
+    <!-- winding forest trail -->
+    <path d="M22 174 Q52 156 74 170 Q94 182 116 168 Q138 154 178 166 L178 184 Q138 174 120 184 Q96 196 76 184 Q54 172 24 188 Z" fill="#8A6A43" opacity=".5"/>
+    <path d="M28 180 q22 -8 44 0 q20 8 46 -4" fill="none" stroke="#5B4632" stroke-width="1.4" opacity=".4" stroke-dasharray="4 6"/>
+
+    <!-- pines: back row to front -->
+    <use href="#pine-light" transform="translate(58 90) scale(.8)"/>
+    <use href="#pine" transform="translate(100 78) scale(.92)"/>
+    <use href="#pine-light" transform="translate(146 92) scale(.75)"/>
+    <use href="#pine" transform="translate(38 116) scale(.7)"/>
+    <use href="#pine" transform="translate(78 126) scale(1.02)"/>
+    <use href="#pine-light" transform="translate(124 124) scale(.88)"/>
+    <use href="#pine" transform="translate(168 130) scale(.78)"/>
+    <use href="#pine-light" transform="translate(54 158) scale(.95)"/>
+    <use href="#pine" transform="translate(104 160) scale(1.08)"/>
+    <use href="#pine-light" transform="translate(152 160) scale(.9)"/>
+    <use href="#pine" transform="translate(72 198) scale(.8)"/>
+    <use href="#pine-light" transform="translate(126 202) scale(.86)"/>
+    <use href="#pine" transform="translate(168 198) scale(.7)"/>
+
+    <!-- undergrowth -->
+    <use href="#bush" transform="translate(30 74)"/>
+    <use href="#bush" transform="translate(170 74) scale(.9)"/>
+    <use href="#bush" transform="translate(24 196) scale(1.1)"/>
+    <use href="#bush" transform="translate(176 176) scale(.85)"/>
+    <path d="M44 208 q3 -10 0 -18 M53 210 q3 -10 0 -18 M140 214 q3 -10 0 -18 M149 212 q3 -10 0 -18" stroke="#1E4A31" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <!-- mushrooms -->
+    <g transform="translate(92 186)">
+      <path d="M0 8 v-5" stroke="#F3E9D2" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M-6 -2 q6 -7 12 0 Z" fill="#A23B2A" stroke="#3B2F2F" stroke-width="1.5"/>
+      <circle cx="-2" cy="-3" r="1" fill="#F3E9D2"/><circle cx="3" cy="-2" r=".8" fill="#F3E9D2"/>
+    </g>
+    <g transform="translate(116 192) scale(.8)">
+      <path d="M0 8 v-5" stroke="#F3E9D2" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M-6 -2 q6 -7 12 0 Z" fill="#A23B2A" stroke="#3B2F2F" stroke-width="1.5"/>
+      <circle cx="-1" cy="-3" r="1" fill="#F3E9D2"/>
+    </g>
+    <!-- fallen log -->
+    <g transform="translate(40 202) rotate(-6)">
+      <rect x="-16" y="-4" width="32" height="8" rx="4" fill="#7A5A38" stroke="#3B2F2F" stroke-width="1.8"/>
+      <ellipse cx="16" cy="0" rx="3.4" ry="4" fill="#C9A227" stroke="#3B2F2F" stroke-width="1.4"/>
+      <path d="M-10 -1 h14 M-10 2 h10" stroke="#3B2F2F" stroke-width=".9" opacity=".35"/>
+    </g>
+    <!-- rocks -->
+    <g fill="#7C8570" stroke="#3B2F2F" stroke-width="1.6" stroke-linejoin="round">
+      <path d="M160 206 l4 -8 l10 -1 l5 7 l-4 6 Z"/>
+      <path d="M30 186 l3 -6 l8 0 l3 6 l-3 5 Z" opacity=".85"/>
+    </g>
+    <!-- inner tile rim -->
+    <path d="M100 13 L187 62 L187 168 L100 217 L13 168 L13 62 Z" fill="none" stroke="#F3E9D2" stroke-width="1.6" opacity=".14"/>
+  </g>
+  <path d="M100 3 L197 59 L197 171 L100 227 L3 171 L3 59 Z" fill="none" stroke="#3B2F2F" stroke-width="4" stroke-linejoin="round"/>
 </svg>

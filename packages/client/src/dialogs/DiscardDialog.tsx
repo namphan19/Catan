@@ -2,7 +2,7 @@
 // The bag is checked with validateAction before sending — the UI never counts rules itself.
 import { useMemo, useState } from 'react';
 import type { Action, Bag, PlayerView, Validation } from '@hexgame/engine';
-import { useI18n, resKey, RESOURCE_ORDER } from '../i18n';
+import { useI18n, resKey, resourceKinds } from '../i18n';
 import { RESOURCE_COLORS } from '../ui/colors';
 import { ResourceIcon } from '../ui/ResourceIcon';
 import { Dialog } from '../ui/Dialog';
@@ -48,7 +48,7 @@ export function DiscardDialog({ view, legal, validate, onAction, onClose }: Disc
     <Dialog title={t('dlg_discardTitle', { n: owed })} locked onClose={onClose}>
       <p className="hint">{t('dlg_discardLeft', { n: owed - total })}</p>
       <ul className="pick-list">
-        {RESOURCE_ORDER.map((r) => (
+        {resourceKinds(hand).map((r) => (
           <li key={r} className="pick-row">
             <span className="res-chip" style={{ '--res': RESOURCE_COLORS[r] } as React.CSSProperties}>
               <ResourceIcon res={r} size={18} />

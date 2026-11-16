@@ -22,6 +22,7 @@ export function OnlineHome({ name, onName, onCreate, onJoin, onBack, onLangToggl
   const [count, setCount] = useState(3);
   const [mode, setMode] = useState<'paired' | 'extraBuild'>('paired');
   const [vp, setVp] = useState('');
+  const [expansion, setExpansion] = useState(false);
   const [code, setCode] = useState<string>(() => {
     const fromLink = new URLSearchParams(location.search).get('room') ?? '';
     return isValidCode(fromLink.toUpperCase()) ? fromLink.toUpperCase() : '';
@@ -31,7 +32,8 @@ export function OnlineHome({ name, onName, onCreate, onJoin, onBack, onLangToggl
   const submitCreate = () => {
     const parsedVp = Number.parseInt(vp, 10);
     const options: RoomOptions = {};
-    if (count >= 5) options.largeTableMode = mode;
+    if (count >= 5) options.largeTableMode = expansion ? 'paired' : mode;
+    if (expansion) options.expansion = 'strongholds';
     if (vp.trim() && Number.isInteger(parsedVp) && parsedVp >= 1 && parsedVp <= 100) options.vpToWin = parsedVp;
     onCreate(count, Object.keys(options).length ? options : undefined);
   };
@@ -88,12 +90,16 @@ export function OnlineHome({ name, onName, onCreate, onJoin, onBack, onLangToggl
             {t('online_mode')}
             <select
               value={mode}
-              disabled={count < 5}
+              disabled={count < 5 || expansion}
               onChange={(e) => setMode(e.target.value === 'extraBuild' ? 'extraBuild' : 'paired')}
             >
               <option value="paired">{t('online_mode_paired')}</option>
               <option value="extraBuild">{t('online_mode_extraBuild')}</option>
             </select>
+          </label>
+          <label className="exp-check">
+            <input type="checkbox" checked={expansion} onChange={(e) => setExpansion(e.target.checked)} />
+            {t('exp_enable')}
           </label>
           <label>
             {t('online_vp')}

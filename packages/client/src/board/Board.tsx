@@ -1,7 +1,7 @@
 // The SVG game board: sea frame, terrain hexes with number tokens, harbors, pieces.
 // Zoom (wheel / buttons) and pan (drag). Highlights and click targets come in as props and
 // are derived by GameTable from getLegalActions — this file has no rules logic.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type {
   Board as EngineBoard,
   EdgeId,
@@ -28,6 +28,10 @@ export interface BoardProps {
   onHex?: (h: HexId) => void;
   /** Background click (no pending action or nothing there) — used to cancel a selection. */
   onMiss?: () => void;
+  /** Hexes that just produced (pulse once after a roll). Display only; 2D board. */
+  producing?: ReadonlySet<string>;
+  /** Extra SVG drawn over the pieces in board coordinates (expansion pieces). 2D board only. */
+  overlay?: ReactNode;
 }
 
 interface Tf {
@@ -36,13 +40,16 @@ interface Tf {
   ty: number;
 }
 
+/** How far the sea rectangle extends past the board extent (user units). */
+const SEA_PAD = SIZE * 30;
+
 const MIN_SCALE = 0.6;
 const MAX_SCALE = 3;
 
 /** A press must move this far (in client px) before it counts as a pan (BUG-QA-02). */
 const PAN_THRESHOLD = 5;
 
-export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onHex, onMiss }: BoardProps) {
+export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onHex, onMiss, producing, overlay }: BoardProps) {
   const { t } = useI18n();
   const graph = useMemo(() => getBoardGraph(layout), [layout]);
   const ext = useMemo(() => boardExtent(graph), [graph]);
@@ -124,22 +131,25 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
           </pattern>
         </defs>
         <g transform={`translate(${tf.tx} ${tf.ty}) scale(${tf.s})`}>
+          {/* The sea reaches far beyond the viewBox: the letterboxed area around the fitted
+              board (and any pan / zoom-out) shows the same wave pattern, never a flat seam. */}
           <rect
-            x={ext.x - SIZE}
-            y={ext.y - SIZE}
-            width={ext.w + 2 * SIZE}
-            height={ext.h + 2 * SIZE}
+            x={ext.x - SEA_PAD}
+            y={ext.y - SEA_PAD}
+            width={ext.w + 2 * SEA_PAD}
+            height={ext.h + 2 * SEA_PAD}
             fill={seaOk ? 'url(#seaPat)' : 'var(--sea)'}
             onClick={() => onMiss?.()}
           />
           {board.hexes.map((h) => (
-            <HexTile key={h.id} hex={h} />
+            <HexTile key={h.id} hex={h} producing={producing?.has(h.id)} />
           ))}
           {board.harbors.map((hb, i) => (
             <Harbor key={i} harbor={hb} graph={graph} />
           ))}
           <PiecesLayer pieces={pieces} graph={graph} />
-          <Blocker hexId={board.blocker} />
+          {board.blocker && <Blocker hexId={board.blocker} />}
+          {overlay}
           <HighlightsLayer hl={hl} graph={graph} />
 
           {/* Click targets: only highlighted spots are interactive (pointer-events in CSS). */}

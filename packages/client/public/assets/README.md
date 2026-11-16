@@ -15,12 +15,12 @@ No commercial game art, logos or names were copied or imitated.
 ## terrain/ — pointy-top hex tiles, viewBox `0 0 200 230`
 | file | motif | size | licence |
 |---|---|---|---|
-| terrain/forest.svg | conifer forest (3 firs, undergrowth) | 1.1 KB | original, made for Boschtan |
-| terrain/claypit.svg | clay pit + stacked bricks | 1.3 KB | original, made for Boschtan |
-| terrain/meadow.svg | two sheep grazing, grass tufts | 1.2 KB | original, made for Boschtan |
-| terrain/field.svg | grain sheaves (3, banded) | 1.1 KB | original, made for Boschtan |
-| terrain/quarry.svg | boulders + mason's pick | 1.2 KB | original, made for Boschtan |
-| terrain/waste.svg | dunes + dry scrub | 1.1 KB | original, made for Boschtan |
+| terrain/forest.svg | dense conifer woodland, path + undergrowth | 5.7 KB | original, made for Boschtan |
+| terrain/claypit.svg | stepped clay pit, brick stacks, cart | 5.1 KB | original, made for Boschtan |
+| terrain/meadow.svg | sheep flock, flowers, fence | 4.4 KB | original, made for Boschtan |
+| terrain/field.svg | wheat field, furrows + stooks | 5.8 KB | original, made for Boschtan |
+| terrain/quarry.svg | snow-capped peaks + mine adit | 4.9 KB | original, made for Boschtan |
+| terrain/waste.svg | dunes, cacti, sun-bleached skull | 4.4 KB | original, made for Boschtan |
 
 ## terrain/sea.svg — tileable pattern, viewBox `0 0 100 100` (0.6 KB)
 Wave bands repeat seamlessly across x/y edges. Original, made for Boschtan.
@@ -32,12 +32,12 @@ Original, made for Boschtan.
 ## harbor/ — harbour trade icons, viewBox `0 0 64 64`
 | file | motif | size |
 |---|---|---|
-| harbor/any.svg | cog ship under sail (generic trade) | 0.7 KB |
-| harbor/timber.svg | stacked logs | 0.5 KB |
-| harbor/clay.svg | clay amphora + bricks | 0.5 KB |
-| harbor/fiber.svg | flax bundle | 0.5 KB |
-| harbor/grain.svg | grain sheaf | 0.6 KB |
-| harbor/stone.svg | ashlar stone blocks | 0.5 KB |
+| harbor/any.svg | cog ship under sail (generic trade) | 1.4 KB |
+| harbor/timber.svg | stacked logs | 1.5 KB |
+| harbor/clay.svg | raw clay mound + brick stack | 1.5 KB |
+| harbor/fiber.svg | ball of yarn on the meadow | 1.2 KB |
+| harbor/grain.svg | bound grain sheaf | 1.9 KB |
+| harbor/stone.svg | ashlar stone stack | 1.1 KB |
 
 All original, made for Boschtan.
 
@@ -53,9 +53,10 @@ All original, made for Boschtan.
 
 ## resource/ (card art) and icon/ (small glyphs)
 Same five goods; resources are framed card art (`0 0 64 64`), icons are
-frameless glyphs (`0 0 24 24`): timber (log pile), clay (amphora + bricks),
-fiber (flax bundle), grain (sheaf), stone (ashlar blocks).
-Each 0.4–0.8 KB. All original, made for Boschtan.
+frameless glyphs (`0 0 24 24`): timber (stacked logs), clay (brick pile),
+fiber (basket of yarn), grain (wheat sheaf), stone (ashlar blocks).
+The `fiber` motif is wool/yarn (the Vietnamese label is "Len"), not a plant.
+Each 0.5–1.9 KB. All original, made for Boschtan.
 
 ## card/ — development-style cards, viewBox `0 0 120 168`
 | file | art | size |

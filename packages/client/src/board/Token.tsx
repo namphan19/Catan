@@ -9,6 +9,9 @@ export function Token({ n, cx, cy }: { n: number; cx: number; cy: number }) {
   const ok = useAssets([path])[path];
   const hot = (baseConfig.hotNumbers ?? []).includes(n);
   const d = SIZE * 0.94;
+  // Probability pips: how many of the 36 two-dice results give this number (2/12 -> 1 ... 6/8 -> 5).
+  const pips = Math.max(0, 6 - Math.abs(7 - n));
+  const gap = 5.4;
   return (
     <g className="token">
       {ok ? (
@@ -18,13 +21,22 @@ export function Token({ n, cx, cy }: { n: number; cx: number; cy: number }) {
       )}
       <text
         x={cx}
-        y={cy}
+        y={pips > 0 ? cy - 4.5 : cy}
         textAnchor="middle"
         dominantBaseline="central"
         className={hot ? 'token-num hot' : 'token-num'}
       >
         {n}
       </text>
+      {Array.from({ length: pips }, (_, i) => (
+        <circle
+          key={i}
+          className={hot ? 'token-pip hot' : 'token-pip'}
+          cx={cx + (i - (pips - 1) / 2) * gap}
+          cy={cy + 12.5}
+          r={1.9}
+        />
+      ))}
     </g>
   );
 }

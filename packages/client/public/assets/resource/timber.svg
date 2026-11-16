@@ -1,14 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect x="4" y="4" width="56" height="56" rx="10" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="2.5"/>
-  <g stroke="#3B2F2F" stroke-width="2" stroke-linejoin="round">
-    <rect x="12" y="40" width="40" height="10" rx="2" fill="#8A5A2B"/>
-    <rect x="16" y="29" width="40" height="10" rx="2" fill="#8A5A2B"/>
-    <rect x="12" y="18" width="32" height="10" rx="2" fill="#8A5A2B"/>
-    <circle cx="52" cy="45" r="4.5" fill="#C9A227"/>
-    <circle cx="56" cy="34" r="4.5" fill="#C9A227"/>
-    <circle cx="44" cy="23" r="4.5" fill="#C9A227"/>
-    <path d="M48 45 h8 M52 34 h8 M40 23 h8" stroke-width="1.2" opacity=".5"/>
-    <path d="M16 45 v0 M16 34 v0" stroke-width="1.5" opacity=".35"/>
-    <path d="M18 43 h28 M22 32 h30" stroke-width="1.2" opacity=".3"/>
+  <!-- forest floor -->
+  <path d="M9 48 Q20 40 32 43 Q44 46 55 41 V56 H9 Z" fill="#2F5D3A" opacity=".16"/>
+  <!-- pine sprig -->
+  <g transform="translate(48 18) rotate(18)" fill="none" stroke="#2F5D3A" stroke-width="2.2" stroke-linecap="round">
+    <path d="M0 10 V-8"/>
+    <path d="M0 5 l-5 -4 M0 2 l-6 -3 M0 -1 l-5 -3 M0 5 l5 -4 M0 2 l6 -3 M0 -1 l5 -3"/>
   </g>
+  <!-- stacked logs, cut ends facing right -->
+  <g stroke="#3B2F2F" stroke-linejoin="round">
+    <rect x="8.5" y="41" width="38" height="11" rx="5.5" fill="#8A5A2B" stroke-width="2.2"/>
+    <ellipse cx="47" cy="46.5" rx="5" ry="5.5" fill="#C9A227" stroke-width="2"/>
+    <path d="M45.8 44.5 v4 M48 44.8 v3.6" stroke="#8A5A2B" stroke-width="1.2"/>
+    <rect x="12" y="31" width="36" height="11" rx="5.5" fill="#A6743E" stroke-width="2.2"/>
+    <ellipse cx="48" cy="36.5" rx="5" ry="5.5" fill="#D9B46A" stroke-width="2"/>
+    <path d="M46.8 34.5 v4 M49 34.8 v3.6" stroke="#8A5A2B" stroke-width="1.2"/>
+    <rect x="16" y="21" width="32" height="11" rx="5.5" fill="#B98B52" stroke-width="2.2"/>
+    <ellipse cx="48" cy="26.5" rx="4.6" ry="5.5" fill="#E4C98E" stroke-width="2"/>
+    <path d="M46.9 24.7 v3.6 M48.9 25 v3.2" stroke="#8A5A2B" stroke-width="1.2"/>
+    <path d="M12 45 h10 M15 35 h10 M19 25 h8" stroke="#5B4126" stroke-width="1.2" opacity=".45" stroke-linecap="round"/>
+  </g>
+  <!-- grass tufts -->
+  <path d="M13 55 q2 -7 0 -11 M18 56 q2 -7 0 -11 M52 55 q2 -7 0 -11" stroke="#2F5D3A" stroke-width="2" fill="none" stroke-linecap="round"/>
 </svg>

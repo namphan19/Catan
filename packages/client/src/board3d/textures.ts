@@ -15,48 +15,86 @@ interface Entry {
 
 const cache = new Map<string, Entry>();
 
-function acquireSvg(url: string): THREE.Texture {
-  const hit = cache.get(url);
+function acquireSvg(url: string, flipY: boolean): THREE.Texture {
+  const key = `${url}|${flipY ? 'flip' : 'keep'}`;
+  const hit = cache.get(key);
   if (hit) {
     hit.refs += 1;
     return hit.tex;
   }
-  const tex = new THREE.TextureLoader().load(url);
+  const tex = new THREE.Texture();
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
-  // The hex prisms' UVs start at the north corner (v=0 = top of the SVG). Disable the
-  // default vertical flip so the terrain art is not mirrored north/south.
-  tex.flipY = false;
+  // Terrain prisms' UVs start at the north corner (v=0 = top of the SVG), so those textures
+  // must not be flipped; sprites (harbor medallions) use the regular image orientation.
+  tex.flipY = flipY;
   tex.wrapS = THREE.ClampToEdgeWrapping;
   tex.wrapT = THREE.ClampToEdgeWrapping;
-  cache.set(url, { tex, refs: 1 });
+
+  const apply = (img: HTMLImageElement) => {
+    tex.image = img;
+    tex.needsUpdate = true;
+  };
+
+  // Rasterise the SVG ourselves at ~768 px instead of the browser's tiny intrinsic size:
+  // terrain textures stay crisp in the 3D close-up. Same-origin fetch, Blob URL image.
+  fetch(url)
+    .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`texture ${r.status}`))))
+    .then((svg) => {
+      const vb = /viewBox\s*=\s*"([^"]+)"/i.exec(svg)?.[1]?.split(/\s+/).map(Number);
+      const ratio = vb && vb.length === 4 && vb[2] > 0 ? vb[3] / vb[2] : 1;
+      const w = 768;
+      const h = Math.max(1, Math.round(w * ratio));
+      const sized = svg.replace(/<svg\b([^>]*)>/i, (_m, attrs: string) => {
+        const cleaned = attrs.replace(/\s(?:width|height)\s*=\s*"[^"]*"/gi, '');
+        return `<svg${cleaned} width="${w}" height="${h}">`;
+      });
+      const blob = new Blob([sized], { type: 'image/svg+xml' });
+      const objectUrl = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        apply(img);
+        URL.revokeObjectURL(objectUrl);
+      };
+      img.onerror = () => URL.revokeObjectURL(objectUrl);
+      img.src = objectUrl;
+    })
+    .catch(() => {
+      // Dev server without asset / offline: plain TextureLoader as a safe fallback.
+      const img = new Image();
+      img.onload = () => apply(img);
+      img.src = url;
+    });
+
+  cache.set(key, { tex, refs: 1 });
   return tex;
 }
 
-function releaseSvg(url: string): void {
-  const hit = cache.get(url);
+function releaseSvg(key: string): void {
+  const hit = cache.get(key);
   if (!hit) return;
   hit.refs -= 1;
   if (hit.refs <= 0) {
     hit.tex.dispose();
-    cache.delete(url);
+    cache.delete(key);
   }
 }
 
 /** Terrain / sea SVG as a texture, ref-counted and disposed when the last board unmounts. */
-export function useSvgTexture(url: string | null): THREE.Texture | null {
+export function useSvgTexture(url: string | null, flipY = false): THREE.Texture | null {
   const [tex, setTex] = useState<THREE.Texture | null>(null);
+  const key = url ? `${url}|${flipY ? 'flip' : 'keep'}` : null;
   useEffect(() => {
-    if (!url) {
+    if (!url || !key) {
       setTex(null);
       return;
     }
-    setTex(acquireSvg(url));
+    setTex(acquireSvg(url, flipY));
     return () => {
       setTex(null);
-      releaseSvg(url);
+      releaseSvg(key);
     };
-  }, [url]);
+  }, [url, flipY, key]);
   return tex;
 }
 
@@ -106,8 +144,15 @@ export function makeTokenTexture(n: number, hot: boolean): THREE.CanvasTexture {
   ctx.fillStyle = hot ? DANGER : INK;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = `${hot ? '900' : '700'} 138px Cinzel, Georgia, serif`;
-  ctx.fillText(String(n), 128, hot ? 134 : 132);
+  // Probability pips under the number, like the 2D token: 6 - |7 - n| dots.
+  const pips = Math.max(0, 6 - Math.abs(7 - n));
+  ctx.font = `${hot ? '900' : '700'} ${pips > 0 ? 118 : 138}px Cinzel, Georgia, serif`;
+  ctx.fillText(String(n), 128, pips > 0 ? 112 : hot ? 134 : 132);
+  for (let i = 0; i < pips; i += 1) {
+    ctx.beginPath();
+    ctx.arc(128 + (i - (pips - 1) / 2) * 24, 186, 8.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
   return finish(canvas);
 }
 

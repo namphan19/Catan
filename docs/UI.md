@@ -44,10 +44,18 @@ Every SVG: viewBox given below, no external refs, no embedded raster, player-col
 The frontend must fall back to simple shapes when an asset file is missing (assets arrive in parallel).
 
 ## Screens
-1. Home: new hot-seat game (3-6 players, names, seed) / join online room (M2) / load log.
-2. Game table (see layout): top bar (turn, phase, dice, all players' public VP), opponents strip,
-   SVG board centre (zoom + pan), side panel tabs (Log / Trade / Costs), bottom: own hand + contextual
-   action bar. Winner overlay.
+1. Home ("guild hall", 2026-11-16): a parchment chart on a dark desk. Left: sea-chart medallion
+   (island illustration built from the game's terrain/piece art) + online ticket; right: the new-game
+   ledger (players, seed + randomise, named seats with emblems, wax-sealed start, marginal tip);
+   below: the logbook archive (load a saved log). Two columns at >= 900 px, stacked on tablet/mobile.
+2. Game table (UX2 layout, 2026-11-16; CSS in src/table/table.css): slim top bar (wordmark, turn, "?" quick
+   help, 2D/3D, language); status banner = one sentence "what to do now" (gold when it is the viewer's move,
+   "Đang chờ <name>…" otherwise); board fills the centre (zoom + pan) with overlays: zoom top-left, dice box
+   top-right, collapsible cost card bottom-right (marks what the viewer can pay), toasts bottom-left; right
+   column: one card per player (VP, hand / card / guard counts, pieces left, awards, acting marker) above the
+   Log / Trade tabs; bottom: own hand as cards (all 5 resources always shown, +N/-N on change, development
+   cards) + action bar (build group, trade group, one large primary button: Roll or End turn). Number tokens
+   carry probability pips; hexes that just produced pulse (2D). Winner overlay.
 3. Hot-seat: "Pass the device to <name>" cover between actors so hands stay hidden.
 
 ## Interaction rules
@@ -65,6 +73,7 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
 
 ## Component structure (packages/client/src)
 ui/ (tokens.css, Button, Panel, Dialog, Toast, Tooltip), board/ (Board, HexTile, Token, Harbor, Piece,
-Highlights), table/ (GameTable, TopBar, OpponentStrip, HandPanel, ActionBar, SidePanel, LogPanel),
-dialogs/ (DiscardDialog, StealDialog, TradeDialog, CardDialog), shell/ (HotseatShell, PassDeviceCover),
-i18n/. GameTable takes { view, legal, onAction, events } only, so the online client reuses it.
+Highlights), board3d/ (Board3D, terrain, decor, pieces3d), table/ (GameTable, TopBar, PlayerCards, ActionBar,
+CostCard, HandPanel), dialogs/ (DiscardDialog, StealDialog, TradeDialog, CardDialog), shell/ (HomeScreen,
+HomeMap, home.css, OnlineHome, Lobby, HotseatShell, PassDeviceCover), i18n/. GameTable takes
+{ view, legal, onAction, events } only, so the online client reuses it.

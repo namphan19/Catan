@@ -1,0 +1,974 @@
+/* Game table: layout and every component under src/table (top bar, status banner, board
+   overlays, player cards, side panel, hand, action bar, toasts). Loaded after styles.css.
+   Colours and fonts are the tokens of ui/tokens.css (docs/UI.md). */
+
+/* ---------- Layout ---------- */
+.table {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.table-main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.board-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidecol {
+  width: 320px;
+  flex: 0 0 320px;
+  border-left: 2px solid var(--ink);
+  background: var(--parchment-dark);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.table-bottom {
+  border-top: 2px solid var(--ink);
+  background: var(--parchment-dark);
+  padding: 8px 12px;
+  display: flex;
+  align-items: flex-end;
+  gap: 18px;
+}
+
+/* ---------- Top bar ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 10px;
+  border-bottom: 2px solid var(--ink);
+  background: var(--parchment-dark);
+}
+
+.topbar-left {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+
+.game-title {
+  font-family: var(--font-logo);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* The wordmark only: Cinzel has no lowercase and no Vietnamese diacritics. */
+.logo {
+  font-family: var(--font-logo);
+  letter-spacing: 0.06em;
+}
+
+.turn-label {
+  font-weight: 700;
+}
+
+.topbar .btn {
+  min-height: 30px;
+  padding: 2px 10px;
+}
+
+.btn-help {
+  width: 30px;
+  justify-content: center;
+  border-radius: 50%;
+  font-family: var(--font-logo);
+  font-weight: 700;
+}
+
+/* ---------- Status banner: "what do I do now?" ---------- */
+.status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 5px 12px;
+  border-bottom: 2px solid var(--ink);
+  background: var(--parchment);
+  color: var(--ink-soft);
+  font-size: 1.15rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.status-banner[data-mine='true'] {
+  background: #f1dc92;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 2px var(--gold);
+}
+
+/* The emblem sits in a parchment seal so every player colour reads on the gold banner. */
+.status-banner .emblem {
+  box-sizing: content-box;
+  padding: 3px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  background: var(--parchment);
+}
+
+.status-cancel {
+  min-height: 28px;
+  padding: 2px 10px;
+  font-size: 0.9rem;
+  background: var(--parchment);
+}
+
+/* ---------- Board overlays ---------- */
+.board-zoom {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 5;
+}
+
+.dice-box {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 6;
+  padding: 8px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: rgba(243, 233, 210, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.dice-roll {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: dice-in 0.45s ease;
+}
+
+@keyframes dice-in {
+  from {
+    transform: scale(0.4) rotate(-30deg);
+    opacity: 0;
+  }
+}
+
+.die {
+  display: block;
+  filter: drop-shadow(1px 1px 0 rgba(59, 47, 47, 0.4));
+}
+
+.dice-sum {
+  font-family: var(--font-logo);
+  font-size: 1.6rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dice-sum[data-blocker='true'] {
+  color: var(--danger);
+}
+
+.cost-card {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 6;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: rgba(243, 233, 210, 0.96);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  font-size: 0.92rem;
+}
+
+.cost-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-head);
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.cost-card-head:hover {
+  background: rgba(201, 162, 39, 0.3);
+}
+
+.cost-card-caret {
+  margin-left: auto;
+}
+
+.cost-rows {
+  list-style: none;
+  margin: 0;
+  padding: 4px 10px 4px;
+  border-top: 1px solid var(--ink-soft);
+  display: grid;
+  gap: 3px;
+}
+
+.cost-row {
+  display: grid;
+  grid-template-columns: 28px minmax(84px, auto) 1fr 14px;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 4px;
+  border-radius: 5px;
+}
+
+.cost-row.can {
+  background: rgba(47, 93, 58, 0.14);
+}
+
+.cost-icon {
+  display: inline-grid;
+  place-items: center;
+}
+
+.cost-name {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.cost-vp {
+  font-weight: 400;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+.cost-units {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.cost-unit {
+  display: inline-grid;
+}
+
+/* Still recognisable (a new player reads the price here), just visibly "not yet". */
+.cost-unit.missing {
+  opacity: 0.45;
+}
+
+.cost-ok {
+  color: var(--forest);
+  font-weight: 800;
+}
+
+.cost-note {
+  margin: 0;
+  padding: 2px 10px 6px;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+/* Toasts: bottom-left corner of the board area (open sea next to the hex island), clear
+   of the zoom buttons (top-left), the dice (top-right) and the cost card (bottom-right).
+   Newest at the bottom. */
+.toast-stack {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  width: max-content;
+  max-width: min(340px, calc(100% - 20px));
+  pointer-events: none;
+}
+
+.toast {
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: var(--parchment);
+  padding: 6px 12px;
+  font-size: 0.92rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  animation: toast-in 0.25s ease;
+  pointer-events: auto;
+}
+
+.toast-error {
+  border-color: var(--danger);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.toast-gold {
+  border-color: var(--gold);
+  background: #f1dc92;
+}
+
+@keyframes toast-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+
+/* Number-token probability pips and the "this hex just produced" pulse (2D board). */
+.token-pip {
+  fill: var(--ink);
+  pointer-events: none;
+}
+
+.token-pip.hot {
+  fill: var(--danger);
+}
+
+.hex-produced {
+  fill: var(--gold);
+  fill-opacity: 0;
+  stroke: var(--gold);
+  stroke-width: 5;
+  stroke-opacity: 0;
+  pointer-events: none;
+  animation: hex-produced 0.7s ease-in-out 3;
+}
+
+@keyframes hex-produced {
+  50% {
+    fill-opacity: 0.4;
+    stroke-opacity: 1;
+  }
+}
+
+/* ---------- Player cards (right column) ---------- */
+.seats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 2px solid var(--ink);
+}
+
+/* 5-6 players: same one-card-per-row list (names stay readable), just tighter. */
+.seats-compact {
+  gap: 4px;
+  padding: 6px 8px;
+}
+
+.seats-compact .seat {
+  padding: 1px 8px 2px;
+}
+
+.seats-compact .seat-stats {
+  margin-top: 0;
+  min-height: 22px;
+}
+
+.seat {
+  --seat: var(--ink-soft);
+  min-width: 0;
+  border: 2px solid var(--ink);
+  border-left: 9px solid var(--seat);
+  border-radius: 8px;
+  background: var(--parchment);
+  padding: 3px 8px 4px;
+}
+
+.seat.me {
+  background: #fbf5e4;
+}
+
+.seat.acting {
+  box-shadow: 0 0 0 3px var(--gold);
+}
+
+.seat-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.seat-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+/* "Bạn" pill and the "▶" acting marker: ink on parchment / gold, readable next to every
+   player colour. */
+.seat-you,
+.seat-acting-tag {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  background: var(--parchment);
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+.seat-acting-tag {
+  background: var(--gold);
+  font-weight: 700;
+}
+
+.seat-vp {
+  margin-left: auto;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.seat-vp strong {
+  font-family: var(--font-logo);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.seat-vp small {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+.seat-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 9px;
+  margin-top: 2px;
+  min-height: 24px;
+}
+
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat b {
+  font-weight: 600;
+}
+
+.stat.warn b {
+  color: var(--danger);
+  font-weight: 800;
+}
+
+.seat-sep {
+  width: 1px;
+  height: 16px;
+  background: var(--ink-soft);
+  opacity: 0.5;
+}
+
+.seat-award {
+  width: 24px;
+  height: 24px;
+  margin-left: auto;
+}
+
+.seat-award + .seat-award {
+  margin-left: 0;
+}
+
+.uiicon,
+.pieceicon {
+  flex: none;
+  display: block;
+}
+
+.pieceicon-fallback {
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+}
+
+/* ---------- Side panel (log / trade) ---------- */
+.sidepanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  border-bottom: 1px solid var(--ink-soft);
+}
+
+.tab {
+  border: 1px solid var(--ink);
+  border-radius: 4px;
+  background: var(--parchment);
+  color: var(--ink);
+  padding: 3px 10px;
+  font-size: 0.9rem;
+}
+
+.tab.active,
+.tab[aria-selected='true'] {
+  background: var(--ink);
+  color: var(--parchment);
+}
+
+.sidepanel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  min-height: 0;
+}
+
+.logpanel .log-list {
+  margin: 0;
+  padding-left: 30px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.logpanel .log-list li::marker {
+  color: var(--ink-soft);
+  font-size: 0.8em;
+}
+
+.logpanel .log-list .emblem {
+  vertical-align: -2px;
+}
+
+.log-new {
+  font-weight: 700;
+}
+
+.trade-status p,
+.trade-status ul {
+  margin: 4px 0;
+}
+
+.trade-responses {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+
+.trade-responses li {
+  border: 1px solid var(--ink-soft);
+  border-left-width: 4px;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: var(--parchment);
+}
+
+.resp-yes {
+  color: var(--forest);
+  font-weight: 700;
+}
+
+.resp-no {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.resp-counter {
+  color: var(--sea);
+  font-weight: 700;
+}
+
+.resp-pending {
+  color: var(--ink-soft);
+}
+
+/* ---------- Own hand ---------- */
+.hand {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.hand-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hand-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.hand-total {
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.hand-empty {
+  color: var(--ink-soft);
+  font-size: 0.85rem;
+  min-height: 62px;
+  display: flex;
+  align-items: center;
+}
+
+.hand-res,
+.dev-cards {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.res-card {
+  position: relative;
+  width: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3px 2px 2px;
+  border: 2px solid var(--ink);
+  border-radius: 7px;
+  background: var(--parchment);
+  box-shadow: 1px 2px 0 rgba(59, 47, 47, 0.4);
+}
+
+.res-card img {
+  display: block;
+  width: 38px;
+  height: 38px;
+}
+
+.res-card-name {
+  font-size: 0.75rem;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.res-card.empty {
+  opacity: 0.45;
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.res-card-count {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--parchment);
+  border-radius: 12px;
+  background: var(--ink);
+  color: var(--parchment);
+  font-family: var(--font-logo);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.res-card.changed {
+  animation: card-pop 0.55s ease;
+}
+
+@keyframes card-pop {
+  40% {
+    transform: translateY(-5px) scale(1.07);
+    box-shadow: 0 0 0 3px var(--gold);
+  }
+}
+
+.res-delta {
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  pointer-events: none;
+  text-shadow:
+    0 0 3px var(--parchment),
+    0 0 3px var(--parchment),
+    0 0 3px var(--parchment);
+  animation: delta-float 1.35s ease-out forwards;
+}
+
+.res-delta.plus {
+  color: var(--forest);
+}
+
+.res-delta.minus {
+  color: var(--danger);
+}
+
+@keyframes delta-float {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  15% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -34px);
+  }
+}
+
+.dev-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 52px;
+}
+
+.dev-card img,
+.dev-card-blank {
+  display: block;
+  width: 34px;
+  height: 48px;
+  border-radius: 4px;
+  box-shadow: 1px 2px 0 rgba(59, 47, 47, 0.4);
+}
+
+.dev-card-blank {
+  border: 2px solid var(--ink);
+  background: var(--parchment);
+}
+
+.dev-card-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.dev-card-new {
+  position: absolute;
+  top: -8px;
+  left: -2px;
+  padding: 0 5px;
+  border-radius: 8px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.66rem;
+  line-height: 1.4;
+}
+
+/* ---------- Action bar ---------- */
+.actionbar {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 16px;
+}
+
+.act-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.act-primary .btn {
+  min-height: 48px;
+  padding: 0.5em 1.3em;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.btn:disabled .pieceicon,
+.btn:disabled .uiicon {
+  opacity: 0.45;
+}
+
+/* Compact action bar (tablet ~1024 px, V6): short labels; the full label moves into the
+   button tooltip. */
+.lbl-short {
+  display: none;
+}
+
+/* ---------- Help dialog ---------- */
+.help h3 {
+  margin: 12px 0 2px;
+  font-size: 1rem;
+}
+
+.help p,
+.help ol {
+  margin: 2px 0;
+}
+
+.help ol {
+  padding-left: 22px;
+}
+
+.help-goal {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1180px) {
+  .sidecol {
+    width: 264px;
+    flex-basis: 264px;
+  }
+
+  /* Narrow column: one stat line per card, so drop the "/10" (it stays in the tooltip
+     and the aria-label). */
+  .seat {
+    padding: 2px 6px 3px;
+  }
+
+  .seat-stats {
+    gap: 2px 5px;
+    font-size: 0.9rem;
+  }
+
+  .seat-stats .uiicon {
+    width: 15px;
+    height: 15px;
+  }
+
+  .seat-sep {
+    display: none;
+  }
+
+  .seat-vp small {
+    display: none;
+  }
+
+  .table-bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 6px 10px;
+  }
+
+  .actionbar {
+    flex: none;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 6px;
+    overflow-x: auto;
+  }
+
+  .act-group {
+    flex-wrap: nowrap;
+  }
+
+  .act-primary {
+    margin-left: auto;
+  }
+
+  .actionbar .btn {
+    padding: 0.35em 0.55em;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    flex: none;
+  }
+
+  .act-primary .btn {
+    min-height: 36px;
+    font-size: 1rem;
+  }
+
+  .actionbar .lbl-full {
+    display: none;
+  }
+
+  .actionbar .lbl-short {
+    display: inline;
+  }
+
+  .status-banner {
+    font-size: 1.02rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .table-main {
+    flex-direction: column;
+  }
+
+  .sidecol {
+    width: auto;
+    flex: none;
+    max-height: 38vh;
+    border-left: none;
+    border-top: 2px solid var(--ink);
+  }
+
+  .seats,
+  .seats-compact {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(230px, 1fr);
+    overflow-x: auto;
+  }
+
+  .board-area {
+    min-height: 40vh;
+  }
+
+  .hand {
+    overflow-x: auto;
+    padding-top: 10px;
+  }
+
+  .winner-card {
+    padding: 16px 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dice-roll,
+  .res-card.changed,
+  .toast,
+  .hex-produced {
+    animation: none;
+  }
+
+  .res-delta {
+    animation: none;
+    transform: translate(-50%, -22px);
+  }
+}

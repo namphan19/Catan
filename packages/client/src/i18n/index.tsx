@@ -2,10 +2,11 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import { vi } from './vi';
 import { en } from './en';
+import { shEn, shVi } from '../strongholds/i18n';
 
 export type Lang = 'vi' | 'en';
 
-const DICTS: Record<Lang, Record<string, string>> = { vi, en };
+const DICTS: Record<Lang, Record<string, string>> = { vi: { ...vi, ...shVi }, en: { ...en, ...shEn } };
 
 export interface I18n {
   lang: Lang;
@@ -72,4 +73,10 @@ export function bagText(
     .filter(([, n]) => n > 0)
     .map(([r, n]) => `${n}× ${t(resKey(r))}`);
   return parts.length ? parts.join(', ') : t('toast_none');
+}
+
+/** Base resources in display order, then whatever else a ruleset puts into hands (commodities). */
+export function resourceKinds(bag: Record<string, unknown> | undefined): string[] {
+  const extra = Object.keys(bag ?? {}).filter((r) => !(RESOURCE_ORDER as readonly string[]).includes(r));
+  return [...RESOURCE_ORDER, ...extra];
 }

@@ -1,9 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <rect x="4" y="4" width="56" height="56" rx="10" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="2.5"/>
-  <g stroke="#3B2F2F" stroke-width="2" stroke-linejoin="round">
-    <path d="M14 46 L14 30 L34 30 L34 24 L50 24 L50 46 Z" fill="#8A8D91"/>
-    <path d="M34 30 L34 46" fill="none" stroke-width="1.5" opacity=".5"/>
-    <path d="M20 34 h8 M38 28 h8 M20 39 h8 M38 34 h8 M20 44 h8 M38 40 h8" stroke-width="1.5" opacity=".4"/>
-    <path d="M12 46 h40" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- rocky ground -->
+  <path d="M9 47 Q20 40 32 43 Q44 46 55 40 V56 H9 Z" fill="#8A8D91" opacity=".16"/>
+  <path d="M12 51 q3 -6 10 -4 q7 -2 11 3 q7 -2 11 3 q4 1 5 5 Z" fill="#8A8D91" opacity=".38"/>
+  <!-- ashlar blocks -->
+  <g stroke="#3B2F2F" stroke-linejoin="round">
+    <path d="M12 40 h18 v11 H12 Z" fill="#8A8D91" stroke-width="2.2"/>
+    <path d="M31 41 h16 v10 H31 Z" fill="#9AA0A6" stroke-width="2.2"/>
+    <path d="M19 28 h20 v12 H19 Z" fill="#A7ADB3" stroke-width="2.2"/>
+    <path d="M15 42 h9 M34 43 h8 M22 30 h11" stroke="#F3E9D2" stroke-width="1.4" opacity=".45" stroke-linecap="round"/>
+    <path d="M20 44 l3 5 M36 45 l3 4 M24 31 l3 5" stroke="#5C5F63" stroke-width="1.2" opacity=".6" stroke-linecap="round"/>
+  </g>
+  <!-- pickaxe -->
+  <g transform="translate(47 33) rotate(-16)" stroke="#3B2F2F" stroke-linejoin="round">
+    <rect x="-2" y="-14" width="4" height="28" rx="2" fill="#8A5A2B" stroke-width="1.8"/>
+    <path d="M-11 -16 q11 -7 22 0 q-9 -2 -11 5 q-2 -7 -11 -5 Z" fill="#6F747A" stroke-width="2"/>
+    <path d="M-8 -14 q8 -4 16 0" stroke="#F3E9D2" stroke-width="1" opacity=".35" fill="none" stroke-linecap="round"/>
   </g>
 </svg>

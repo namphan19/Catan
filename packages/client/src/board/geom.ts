@@ -54,7 +54,8 @@ export function boardExtent(graph: Graph): { x: number; y: number; w: number; h:
     maxX = Math.max(maxX, c.x);
     maxY = Math.max(maxY, c.y);
   }
-  const m = SIZE * 2.4;
+  // Hex radius (1.0) + the harbor badge and its ratio chip just outside the coast (~0.6).
+  const m = SIZE * 1.6;
   return { x: minX - m, y: minY - m, w: maxX - minX + 2 * m, h: maxY - minY + 2 * m };
 }
 

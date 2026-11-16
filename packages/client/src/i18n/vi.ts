@@ -18,6 +18,14 @@ export const vi: Record<string, string> = {
   home_onlineHint: 'Chơi qua mạng: tạo phòng rồi mời bạn bè bằng mã phòng, hoặc vào phòng có sẵn.',
   home_onlineCreate: 'Tạo phòng',
   home_onlineJoin: 'Vào phòng',
+  home_kicker: 'Hội quán lữ khách',
+  home_newGameTitle: 'Ván mới',
+  home_localTag: 'chơi chung máy',
+  home_intro: 'Chọn số người, đặt tên cho từng ghế rồi gieo một hạt giống mới.',
+  home_randomSeed: 'Đổi ngẫu nhiên',
+  home_atlasCaption: 'Hải đồ Boschtan',
+  home_footerNote: 'Bàn 3–6 người · hải đồ 19 hoặc 30 ô',
+  home_tip: 'Mẹo: 6 và 8 cho nhiều tài nguyên nhất — nhưng cũng dễ bị cướp nhất.',
 
   // Shell strip
   strip_export: 'Xuất log',
@@ -51,7 +59,7 @@ export const vi: Record<string, string> = {
   player: 'Người chơi {n}',
   seat_list: 'Người chơi',
   you: 'Bạn',
-  turnTag: 'lượt',
+  turnTag: 'đang đi',
   waitingFor: 'Đang chờ {name}…',
   award_route: 'Đường bộ dài nhất',
   award_force: 'Đạo quân hùng mạnh nhất',
@@ -124,7 +132,7 @@ export const vi: Record<string, string> = {
   // Hand
   hand_title: 'Bài của bạn',
   hand_empty: 'Chưa có tài nguyên',
-  hand_cards: 'Thẻ của bạn:',
+  hand_cards: 'Thẻ phát triển',
   hand_noCards: 'Chưa có thẻ nào',
   hand_total: 'Tổng: {n}',
 
@@ -187,7 +195,7 @@ export const vi: Record<string, string> = {
 
   // Toasts / events
   toast_rolled: '{name} gieo được {a} + {b} = {sum}',
-  toast_produced: '{name} nhận: {bag}',
+  toast_produced: '{name} nhận',
   toast_producedMany: 'Sản lượng: {text}',
   toast_placed: '{name} đặt {kind} (miễn phí)',
   toast_built: '{name} xây {kind}',
@@ -343,4 +351,66 @@ export const vi: Record<string, string> = {
   err_BAD_VERTEX: 'Đỉnh không hợp lệ.',
   err_KICKED: 'Bạn đã bị chủ phòng mời ra khỏi phòng.',
   err_SEAT_TAKEN_OVER: 'Một phiên khác đã vào chỗ của bạn. Hãy vào lại phòng để lấy lại chỗ.',
+
+  // Status banner: one sentence telling the viewer what to do now.
+  status_roll: 'Đến lượt bạn: hãy gieo xúc xắc',
+  status_main: 'Lượt của bạn: xây dựng, đổi bài hoặc kết thúc lượt',
+  status_buildOrEnd: 'Bạn có thể xây dựng thêm, hoặc bấm kết thúc',
+  status_act: 'Đến lượt bạn hành động',
+  status_setupSettlement: 'Lập trại: đặt một ngôi làng vào điểm đang sáng trên bàn cờ',
+  status_setupRoad: 'Lập trại: đặt một con đường cạnh ngôi làng vừa đặt',
+  status_freeRoads: 'Đặt đường miễn phí vào cạnh đang sáng (còn {n})',
+  status_blocker: 'Di chuyển Băng cướp: chọn một ô đang sáng',
+  status_steal: 'Chọn một người chơi để cướp 1 thẻ',
+  status_discard: 'Bạn phải bỏ bớt thẻ',
+  status_discardN: 'Bạn phải bỏ {n} thẻ',
+  status_respond: '{name} đề nghị đổi bài: hãy trả lời',
+  status_confirm: 'Đã có người chấp nhận: hãy chốt đổi bài hoặc hủy đề nghị',
+  status_offerOpen: 'Đề nghị đổi bài của bạn đang chờ trả lời',
+  status_pickSettlement: 'Chọn điểm đang sáng để xây làng',
+  status_pickRoad: 'Chọn cạnh đang sáng để xây đường',
+  status_pickCity: 'Chọn ngôi làng đang sáng để nâng cấp thành thành phố',
+  status_cancel: 'Hủy (Esc)',
+  status_wait: 'Đang chờ người chơi khác…',
+  status_over: 'Ván đã kết thúc: {name} chiến thắng',
+  status_yourTurnTitle: 'Đến lượt bạn',
+
+  // Dice box, player cards, cost card
+  dice_title: '{name} gieo được {sum}',
+  stat_vp: 'Điểm chiến thắng: {n}/{m}',
+  stat_hand: 'Thẻ tài nguyên trên tay',
+  stat_handWarn: 'hơn {n} thẻ: phải bỏ một nửa khi Băng cướp xuất hiện',
+  stat_cards: 'Thẻ phát triển',
+  stat_guards: 'Hiệp sĩ đã dùng',
+  stat_roadsLeft: 'Đường còn lại',
+  stat_settlementsLeft: 'Làng còn lại',
+  stat_citiesLeft: 'Thành phố còn lại',
+  cost_can: 'bạn đủ tài nguyên',
+  cost_toggle: 'Ẩn / hiện bảng chi phí',
+  cost_bank: 'Ngân hàng: {r} thẻ cùng loại đổi 1 thẻ bất kỳ',
+
+  // Quick help
+  help_title: 'Hướng dẫn nhanh',
+  help_goal: 'Mục tiêu: đạt {n} điểm chiến thắng (ĐP) trong lượt của mình để thắng ván.',
+  help_turnTitle: 'Một lượt gồm',
+  help_turn1:
+    'Gieo xúc xắc. Mọi ô mang số vừa gieo sinh tài nguyên: mỗi ngôi làng ở góc ô đó nhận 1 thẻ, mỗi thành phố nhận 2 thẻ.',
+  help_turn2: 'Đổi bài với người chơi khác, với ngân hàng ({r}:1) hoặc qua cảng của bạn ({g}:1 hoặc {s}:1).',
+  help_turn3: 'Xây đường, làng, thành phố hoặc mua thẻ phát triển (xem bảng Chi phí ở góc bàn cờ).',
+  help_turn4: 'Bấm “Kết thúc lượt” để chuyển cho người kế tiếp.',
+  help_blockerTitle: 'Khi gieo ra {n}',
+  help_blocker:
+    'Không ô nào sinh tài nguyên. Ai có hơn {limit} thẻ tài nguyên phải bỏ một nửa. Người gieo dời Băng cướp sang ô khác (ô đó ngừng sinh tài nguyên) và cướp 1 thẻ của một người có nhà cạnh ô đó.',
+  help_buildTitle: 'Luật xây dựng',
+  help_build:
+    'Đường phải nối với đường hoặc nhà của bạn. Làng phải nằm trên đường của bạn và cách mọi ngôi nhà khác ít nhất 2 cạnh. Thành phố được nâng cấp từ một ngôi làng của bạn.',
+  help_pointsTitle: 'Điểm chiến thắng',
+  help_points:
+    'Làng {a} ĐP, thành phố {b} ĐP. “Đường bộ dài nhất” (từ {rmin} đoạn liền nhau) +{rvp} ĐP. “Đạo quân hùng mạnh nhất” (từ {fmin} thẻ Hiệp sĩ đã dùng) +{fvp} ĐP. Mỗi thẻ Thánh tích 1 ĐP, được giữ kín.',
+  help_cardsTitle: 'Thẻ phát triển',
+  help_cards:
+    'Hiệp sĩ: dời Băng cướp và cướp 1 thẻ. Làm đường: đặt {roads} con đường miễn phí. Bội thu: lấy {take} tài nguyên tùy chọn từ ngân hàng. Độc quyền: mọi người khác đưa bạn toàn bộ một loại tài nguyên. Thánh tích: 1 ĐP. Thẻ vừa mua phải chờ lượt sau mới dùng được; mỗi lượt chỉ dùng 1 thẻ.',
+  help_boardTitle: 'Trên bàn cờ',
+  help_board:
+    'Các chấm dưới mỗi số cho biết số đó dễ ra đến đâu: càng nhiều chấm càng hay ra (số đỏ hay ra nhất). Muốn xây: bấm nút ở thanh dưới rồi bấm vào vị trí đang sáng; Esc để hủy. Lăn chuột để phóng to, kéo để di chuyển bàn cờ.',
 };

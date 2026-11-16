@@ -1,11 +1,16 @@
 // Contextual action bar. Every button's enabled state comes from getLegalActions; the tooltip
 // reason of a disabled button comes from validateAction (passed by the shell), translated by
 // error code (BUG-QA-03). No rules logic here.
+//
+// Three groups: build (road / settlement / city / card, plus card plays), trade, and ONE large
+// primary button on the right: "Roll" until the turn can be ended, then "End turn".
 import { useEffect, useState } from 'react';
 import type { Action, PlayerId, PlayerView, Validation } from '@hexgame/engine';
 import { useI18n, cardKey } from '../i18n';
 import { validationText } from '../net/errors';
 import { Button } from '../ui/Button';
+import { playerColor } from '../ui/colors';
+import { PieceIcon, UiIcon } from '../ui/Icon';
 
 export type Pending = 'placeSettlement' | 'placeRoad' | 'buildCity' | 'moveBlocker' | null;
 
@@ -39,6 +44,7 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
   const { t } = useI18n();
   const compact = useCompact();
   const me = (view.viewer ?? 'p1') as PlayerId;
+  const color = playerColor(me);
   const has = (tt: string) => legal.some((a) => a.t === tt);
 
   /** Disabled reason from validateAction on a probe action, translated by code (unknown
@@ -72,105 +78,103 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
 
   return (
     <div className="actionbar" role="toolbar" aria-label={t('appTitle')}>
-      <Button
-        variant="primary"
-        disabled={!has('roll')}
-        tip={tipOf('roll', 'act_roll')}
-        onClick={() => send({ t: 'roll', player: me })}
-      >
-        🎲 {label('act_roll', 'act_roll_s')}
-      </Button>
-
-      <Button
-        disabled={!has('placeSettlement')}
-        tip={tipOf('placeSettlement', 'act_buildSettlement')}
-        aria-pressed={pending === 'placeSettlement'}
-        className={pending === 'placeSettlement' ? 'active' : undefined}
-        onClick={() => toggle('placeSettlement')}
-      >
-        ⌂ {label('act_buildSettlement', 'act_settlement_s')}
-      </Button>
-
-      <Button
-        disabled={!has('placeRoad')}
-        tip={tipOf('placeRoad', 'act_buildRoad')}
-        aria-pressed={pending === 'placeRoad'}
-        className={pending === 'placeRoad' ? 'active' : undefined}
-        onClick={() => toggle('placeRoad')}
-      >
-        — {label('act_buildRoad', 'act_road_s')}
-      </Button>
-
-      <Button
-        disabled={!has('buildCity')}
-        tip={tipOf('buildCity', 'act_buildCity')}
-        aria-pressed={pending === 'buildCity'}
-        className={pending === 'buildCity' ? 'active' : undefined}
-        onClick={() => toggle('buildCity')}
-      >
-        🏛 {label('act_buildCity', 'act_city_s')}
-      </Button>
-
-      {has('moveBlocker') && (
+      <div className="act-group act-build">
         <Button
-          variant="primary"
-          aria-pressed={pending === 'moveBlocker'}
-          className={pending === 'moveBlocker' ? 'active' : undefined}
-          onClick={() => toggle('moveBlocker')}
+          disabled={!has('placeRoad')}
+          tip={tipOf('placeRoad', 'act_buildRoad')}
+          aria-pressed={pending === 'placeRoad'}
+          className={pending === 'placeRoad' ? 'active' : undefined}
+          onClick={() => toggle('placeRoad')}
         >
-          ☠ {t('act_moveBlocker')}
+          <PieceIcon kind="road" color={color} size={14} /> {label('act_buildRoad', 'act_road_s')}
         </Button>
-      )}
 
-      <Button disabled={!has('buyCard')} tip={tipOf('buyCard', 'act_buyCard')} onClick={() => send({ t: 'buyCard', player: me })}>
-        🃏 {label('act_buyCard', 'act_buyCard_s')}
-      </Button>
+        <Button
+          disabled={!has('placeSettlement')}
+          tip={tipOf('placeSettlement', 'act_buildSettlement')}
+          aria-pressed={pending === 'placeSettlement'}
+          className={pending === 'placeSettlement' ? 'active' : undefined}
+          onClick={() => toggle('placeSettlement')}
+        >
+          <PieceIcon kind="settlement" color={color} size={20} /> {label('act_buildSettlement', 'act_settlement_s')}
+        </Button>
 
-      {playable.map((card) =>
-        card === 'harvest' || card === 'claim' ? (
-          <Button key={card} onClick={() => onOpenCards(card)}>
-            ✨ {t(cardKey(card))}
+        <Button
+          disabled={!has('buildCity')}
+          tip={tipOf('buildCity', 'act_buildCity')}
+          aria-pressed={pending === 'buildCity'}
+          className={pending === 'buildCity' ? 'active' : undefined}
+          onClick={() => toggle('buildCity')}
+        >
+          <PieceIcon kind="city" color={color} size={20} /> {label('act_buildCity', 'act_city_s')}
+        </Button>
+
+        <Button disabled={!has('buyCard')} tip={tipOf('buyCard', 'act_buyCard')} onClick={() => send({ t: 'buyCard', player: me })}>
+          <UiIcon name="card" size={18} /> {label('act_buyCard', 'act_buyCard_s')}
+        </Button>
+
+        {has('moveBlocker') && (
+          <Button
+            variant="primary"
+            aria-pressed={pending === 'moveBlocker'}
+            className={pending === 'moveBlocker' ? 'active' : undefined}
+            onClick={() => toggle('moveBlocker')}
+          >
+            {t('act_moveBlocker')}
+          </Button>
+        )}
+
+        {playable.map((card) => (
+          <Button
+            key={card}
+            className="btn-play"
+            onClick={() =>
+              card === 'harvest' || card === 'claim' ? onOpenCards(card) : send({ t: 'playCard', player: me, card } as Action)
+            }
+          >
+            <UiIcon name="card" size={18} /> {t('act_playCards')}: {t(cardKey(card))}
+          </Button>
+        ))}
+      </div>
+
+      <div className="act-group act-trade">
+        <Button
+          variant={mustRespond ? 'primary' : 'ghost'}
+          className={mustRespond ? 'pulse' : undefined}
+          tip={mustRespond ? undefined : tipOf('bankTrade', 'act_bankTrade')}
+          onClick={() => onOpenTrade('bank')}
+        >
+          <UiIcon name="trade" size={18} /> {label('act_bankTrade', 'act_bankTrade_s')}
+        </Button>
+
+        <Button
+          variant={mustRespond || confirmables.length > 0 ? 'primary' : 'ghost'}
+          className={mustRespond ? 'pulse' : undefined}
+          tip={mustRespond || confirmables.length > 0 ? t('tradeBadge') : tipOf('offerTrade', 'act_playerTrade')}
+          onClick={() => onOpenTrade('players')}
+        >
+          <UiIcon name="trade" size={18} /> {label('act_playerTrade', 'act_playerTrade_s')}
+          {mustRespond ? <span className="badge" aria-label={t('tradeBadge')}>1</span> : null}
+        </Button>
+
+        {has('cancelTrade') && (
+          <Button variant="danger" onClick={() => send({ t: 'cancelTrade', player: me })}>
+            ✖ {t('act_cancelOffer')}
+          </Button>
+        )}
+      </div>
+
+      <div className="act-group act-primary">
+        {has('endTurn') ? (
+          <Button variant="primary" onClick={() => send({ t: 'endTurn', player: me })}>
+            <UiIcon name="end" size={20} /> {label('act_endTurn', 'act_endTurn_s')}
           </Button>
         ) : (
-          <Button key={card} onClick={() => send({ t: 'playCard', player: me, card } as Action)}>
-            ✨ {t(cardKey(card))}
+          <Button variant="primary" disabled={!has('roll')} tip={tipOf('roll', 'act_roll')} onClick={() => send({ t: 'roll', player: me })}>
+            <UiIcon name="roll" size={20} /> {label('act_roll', 'act_roll_s')}
           </Button>
-        ),
-      )}
-
-      <Button
-        variant={mustRespond ? 'primary' : 'ghost'}
-        className={mustRespond ? 'pulse' : undefined}
-        tip={mustRespond ? undefined : tipOf('bankTrade', 'act_bankTrade')}
-        onClick={() => onOpenTrade('bank')}
-      >
-        🏦 {label('act_bankTrade', 'act_bankTrade_s')}
-      </Button>
-
-      <Button
-        variant={mustRespond || confirmables.length > 0 ? 'primary' : 'ghost'}
-        className={mustRespond ? 'pulse' : undefined}
-        tip={mustRespond || confirmables.length > 0 ? t('tradeBadge') : tipOf('offerTrade', 'act_playerTrade')}
-        onClick={() => onOpenTrade('players')}
-      >
-        🤝 {label('act_playerTrade', 'act_playerTrade_s')}
-        {mustRespond ? <span className="badge" aria-label={t('tradeBadge')}>1</span> : null}
-      </Button>
-
-      {has('cancelTrade') && (
-        <Button variant="danger" onClick={() => send({ t: 'cancelTrade', player: me })}>
-          ✖ {t('act_cancelOffer')}
-        </Button>
-      )}
-
-      <Button
-        variant="primary"
-        disabled={!has('endTurn')}
-        tip={tipOf('endTurn', 'act_endTurn')}
-        onClick={() => send({ t: 'endTurn', player: me })}
-      >
-        ⏭ {label('act_endTurn', 'act_endTurn_s')}
-      </Button>
+        )}
+      </div>
     </div>
   );
 }

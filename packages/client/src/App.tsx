@@ -83,9 +83,13 @@ function GameApp() {
     [state, actor, t],
   );
 
-  const onNew = useCallback((seed: string, playerNames: string[]) => {
+  const onNew = useCallback((seed: string, playerNames: string[], expansion = false) => {
     try {
-      const s = createGame({ seed, playerCount: playerNames.length });
+      const s = createGame({
+        seed,
+        playerCount: playerNames.length,
+        ...(expansion ? { rulesets: ['base', 'strongholds'] } : {}),
+      });
       const nm: Record<PlayerId, string> = {};
       s.players.forEach((p, i) => {
         nm[p.id] = playerNames[i];

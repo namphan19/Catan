@@ -6,6 +6,7 @@
 export interface RoomOptions {
   largeTableMode?: 'paired' | 'extraBuild';
   vpToWin?: number;
+  expansion?: 'strongholds';
 }
 
 /** Client -> server. */

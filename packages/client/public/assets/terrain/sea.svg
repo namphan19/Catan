@@ -1,10 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <rect width="100" height="100" fill="#3E7CA6"/>
+  <!-- deep swells -->
   <g fill="none" stroke-linecap="round">
-    <path d="M0 25 Q12.5 15 25 25 T50 25 T75 25 T100 25" stroke="#2F5A78" stroke-width="3"/>
-    <path d="M0 62 Q12.5 52 25 62 T50 62 T75 62 T100 62" stroke="#2F5A78" stroke-width="3"/>
-    <path d="M25 88 Q37.5 80 50 88 T75 88 T100 88" stroke="#2F5A78" stroke-width="2" opacity=".7"/>
-    <path d="M0 4 H100 M0 46 H100 M0 83 H100" stroke="#7FB2D4" stroke-width="1.5" opacity=".35"/>
-    <path d="M12 40 h10 M62 20 h10 M80 72 h10" stroke="#7FB2D4" stroke-width="2.5" opacity=".6"/>
+    <path d="M-25 15 Q-12.5 6 0 15 T25 15 T50 15 T75 15 T100 15 T125 15" stroke="#356F96" stroke-width="3.4"/>
+    <path d="M-25 12 Q-12.5 3 0 12 T25 12 T50 12 T75 12 T100 12 T125 12" stroke="#77AED0" stroke-width="1.3" opacity=".55"/>
+    <path d="M-25 18 Q-12.5 9 0 18 T25 18 T50 18 T75 18 T100 18 T125 18" stroke="#2C5F84" stroke-width="1.4" opacity=".45"/>
+
+    <path d="M-38 47 Q-25.5 38 -13 47 T12 47 T37 47 T62 47 T87 47 T112 47" stroke="#356F96" stroke-width="3.2"/>
+    <path d="M-38 44 Q-25.5 35 -13 44 T12 44 T37 44 T62 44 T87 44 T112 44" stroke="#77AED0" stroke-width="1.3" opacity=".5"/>
+    <path d="M-38 50 Q-25.5 41 -13 50 T12 50 T37 50 T62 50 T87 50 T112 50" stroke="#2C5F84" stroke-width="1.4" opacity=".4"/>
+
+    <path d="M-12 79 Q0.5 70 13 79 T38 79 T63 79 T88 79 T113 79" stroke="#356F96" stroke-width="3.4"/>
+    <path d="M-12 76 Q0.5 67 13 76 T38 76 T63 76 T88 76 T113 76" stroke="#77AED0" stroke-width="1.3" opacity=".55"/>
+    <path d="M-12 82 Q0.5 73 13 82 T38 82 T63 82 T88 82 T113 82" stroke="#2C5F84" stroke-width="1.4" opacity=".45"/>
+  </g>
+  <!-- foam flecks and glints -->
+  <g fill="none" stroke="#BFE0EE" stroke-linecap="round" opacity=".75">
+    <path d="M10 32 h7 M38 66 h6 M72 30 h8 M88 60 h7 M20 92 h6 M58 8 h7"/>
+    <path d="M30 25 q3 -3 6 0 M60 55 q3 -3 6 0 M82 88 q3 -3 6 0" stroke-width="1.4"/>
+  </g>
+  <g fill="#2C5F84" opacity=".5">
+    <circle cx="16" cy="52" r="1.2"/><circle cx="46" cy="24" r="1"/><circle cx="68" cy="70" r="1.2"/>
+    <circle cx="92" cy="40" r="1"/><circle cx="6" cy="86" r="1.1"/><circle cx="54" cy="92" r="1"/>
+  </g>
+  <g fill="#8FC6DC" opacity=".6">
+    <circle cx="26" cy="70" r=".9"/><circle cx="76" cy="20" r=".9"/><circle cx="96" cy="74" r=".8"/>
+    <circle cx="44" cy="86" r=".8"/>
   </g>
 </svg>

@@ -1,9 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <clipPath id="badge"><circle cx="32" cy="32" r="29"/></clipPath>
+  </defs>
   <circle cx="32" cy="32" r="29" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="2.5"/>
-  <g stroke="#3B2F2F" stroke-width="2" stroke-linejoin="round">
-    <path d="M32 14 C44 18 44 38 36 44 L28 44 C20 38 20 18 32 14 Z" fill="#8DB255"/>
-    <path d="M27 20 L27 40 M32 16 L32 42 M37 20 L37 40" stroke-width="1.5" opacity=".5" fill="none"/>
-    <path d="M22 44 h20" stroke-width="2.5" stroke-linecap="round"/>
-    <rect x="26" y="44" width="12" height="6" fill="#8A5A2B"/>
+  <g clip-path="url(#badge)">
+    <path d="M10 47 Q20 39 32 42 Q44 45 54 39 V54 H10 Z" fill="#8DB255" opacity=".2"/>
+    <!-- ball of yarn -->
+    <g stroke="#3B2F2F" stroke-linejoin="round">
+      <circle cx="29" cy="32" r="15" fill="#E4D3AE" stroke-width="2.2"/>
+      <path d="M14.5 28 q14.5 6 29 0 M14 35 q15 6 30 0 M20 20 q8 10 15 12 M17 44 q9 -12 23 -10" fill="none" stroke="#C9B184" stroke-width="1.5" opacity=".9"/>
+      <path d="M20 22 q4 -3 9 -3" fill="none" stroke="#F3E9D2" stroke-width="1.5" opacity=".8" stroke-linecap="round"/>
+      <path d="M43 28 q7 2 5 9 q-1.5 4.5 -6 4" fill="none" stroke="#8A5A2B" stroke-width="2" stroke-linecap="round"/>
+    </g>
+    <path d="M15 55 q2 -6 0 -10 M20 56 q2 -6 0 -10 M48 55 q2 -6 0 -10" stroke="#5E7A3A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <path d="M12 44 q-4 -2 -5 2 q4 2 5 -2 Z" fill="#8DB255" stroke="#3B2F2F" stroke-width="1.4"/>
   </g>
+  <circle cx="32" cy="32" r="24.5" fill="none" stroke="#3B2F2F" stroke-width="1" opacity=".25"/>
 </svg>

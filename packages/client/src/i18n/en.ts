@@ -17,6 +17,14 @@ export const en: Record<string, string> = {
   home_onlineHint: 'Play over the network: create a room and invite friends with its code, or join an existing one.',
   home_onlineCreate: 'Create room',
   home_onlineJoin: 'Join room',
+  home_kicker: "Wayfarers' hall",
+  home_newGameTitle: 'New game',
+  home_localTag: 'hot-seat',
+  home_intro: 'Choose the table, name each seat, then sow a new seed.',
+  home_randomSeed: 'Randomise',
+  home_atlasCaption: 'The Boschtan chart',
+  home_footerNote: '3–6 players · 19 or 30-hex charts',
+  home_tip: 'Tip: 6 and 8 produce the most — and attract the raider most.',
 
   strip_export: 'Export log',
   strip_home: 'Home',
@@ -47,7 +55,7 @@ export const en: Record<string, string> = {
   player: 'Player {n}',
   seat_list: 'Players',
   you: 'You',
-  turnTag: 'turn',
+  turnTag: 'playing',
   waitingFor: 'Waiting for {name}…',
   award_route: 'Longest trail',
   award_force: 'Largest force',
@@ -113,7 +121,7 @@ export const en: Record<string, string> = {
 
   hand_title: 'Your hand',
   hand_empty: 'No resources yet',
-  hand_cards: 'Your cards:',
+  hand_cards: 'Development cards',
   hand_noCards: 'No cards yet',
   hand_total: 'Total: {n}',
 
@@ -171,7 +179,7 @@ export const en: Record<string, string> = {
   winner_export: 'Export this game log',
 
   toast_rolled: '{name} rolled {a} + {b} = {sum}',
-  toast_produced: '{name} gained: {bag}',
+  toast_produced: '{name} gained',
   toast_producedMany: 'Production: {text}',
   toast_placed: '{name} placed a free {kind}',
   toast_built: '{name} built a {kind}',
@@ -327,4 +335,66 @@ export const en: Record<string, string> = {
   err_BAD_VERTEX: 'Invalid vertex.',
   err_KICKED: 'The host removed you from the room.',
   err_SEAT_TAKEN_OVER: 'Another session took over your seat. Rejoin the room to reclaim it.',
+
+  // Status banner: one sentence telling the viewer what to do now.
+  status_roll: 'Your turn: roll the dice',
+  status_main: 'Your turn: build, trade or end your turn',
+  status_buildOrEnd: 'You may build more, or press end',
+  status_act: 'It is your move',
+  status_setupSettlement: 'Setup: place a settlement on a highlighted spot',
+  status_setupRoad: 'Setup: place a road next to the settlement you just placed',
+  status_freeRoads: 'Place a free road on a highlighted edge ({n} left)',
+  status_blocker: 'Move the Raider band: pick a highlighted hex',
+  status_steal: 'Pick a player to steal 1 card from',
+  status_discard: 'You must discard cards',
+  status_discardN: 'You must discard {n} cards',
+  status_respond: '{name} offers a trade: please answer',
+  status_confirm: 'Someone accepted: confirm the trade or cancel your offer',
+  status_offerOpen: 'Your trade offer is waiting for answers',
+  status_pickSettlement: 'Pick a highlighted spot to build a settlement',
+  status_pickRoad: 'Pick a highlighted edge to build a road',
+  status_pickCity: 'Pick a highlighted settlement to upgrade to a city',
+  status_cancel: 'Cancel (Esc)',
+  status_wait: 'Waiting for the other players…',
+  status_over: 'Game over: {name} wins',
+  status_yourTurnTitle: 'Your turn',
+
+  // Dice box, player cards, cost card
+  dice_title: '{name} rolled {sum}',
+  stat_vp: 'Victory points: {n}/{m}',
+  stat_hand: 'Resource cards in hand',
+  stat_handWarn: 'more than {n} cards: half must be discarded when the Raider band strikes',
+  stat_cards: 'Development cards',
+  stat_guards: 'Guards played',
+  stat_roadsLeft: 'Roads left',
+  stat_settlementsLeft: 'Settlements left',
+  stat_citiesLeft: 'Cities left',
+  cost_can: 'you can pay this',
+  cost_toggle: 'Show / hide the cost card',
+  cost_bank: 'Bank: {r} cards of one kind for 1 card of your choice',
+
+  // Quick help
+  help_title: 'Quick guide',
+  help_goal: 'Goal: reach {n} victory points (VP) during your own turn to win.',
+  help_turnTitle: 'A turn',
+  help_turn1:
+    'Roll the dice. Every hex with the rolled number produces: each settlement on a corner of that hex gets 1 card, each city 2 cards.',
+  help_turn2: 'Trade with other players, with the bank ({r}:1) or through your harbors ({g}:1 or {s}:1).',
+  help_turn3: 'Build roads, settlements, cities or buy a development card (see the Costs card on the board).',
+  help_turn4: 'Press “End turn” to pass to the next player.',
+  help_blockerTitle: 'When a {n} is rolled',
+  help_blocker:
+    'No hex produces. Everyone holding more than {limit} resource cards discards half. The roller moves the Raider band to another hex (it stops producing) and steals 1 card from a player with a building next to it.',
+  help_buildTitle: 'Building rules',
+  help_build:
+    'A road must connect to your own road or building. A settlement must sit on your road and be at least 2 edges away from every other building. A city upgrades one of your settlements.',
+  help_pointsTitle: 'Victory points',
+  help_points:
+    'Settlement {a} VP, city {b} VP. “Longest trail” (from {rmin} connected roads) +{rvp} VP. “Largest force” (from {fmin} Guard cards played) +{fvp} VP. Each Relic card is 1 VP and stays hidden.',
+  help_cardsTitle: 'Development cards',
+  help_cards:
+    'Guard: move the Raider band and steal 1 card. Free roads: place {roads} free roads. Bountiful harvest: take {take} resources of your choice from the bank. Monopoly: every other player gives you all of one resource. Relic: 1 VP. A card cannot be played in the turn it was bought; one card per turn.',
+  help_boardTitle: 'On the board',
+  help_board:
+    'The dots under each number show how likely it is: more dots come up more often (red numbers most of all). To build, press a button in the bottom bar, then click a highlighted spot; Esc cancels. Scroll to zoom, drag to move the board.',
 };
