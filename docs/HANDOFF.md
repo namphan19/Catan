@@ -84,9 +84,9 @@ Run: `pnpm install` / `pnpm test` / `pnpm typecheck` / `pnpm build` / `pnpm star
   (pages 3, 8, 9); the PO confirmed the raid track is 7 moves. No value changes needed.
 - Server: room option `expansion: 'strongholds'` (73 tests). Client: checkbox on the hot-seat home screen and
   in "create room"; UI in `packages/client/src/strongholds/` (panel, board overlay, staged chooser).
-  E2E: `packages/e2e/tests/strongholds.spec.ts` + fixture `fixtures/strongholds-game.json` (23 e2e tests total).
-- Known limits: expansion games are forced to the 2D board (3D has no warden / rampart / capital / caravan
-  models yet); the side panel is cramped on 900 px high screens (it scrolls); expansion error codes other
+  E2E: `packages/e2e/tests/strongholds.spec.ts` (2D) + 3D piece tests in `board3d.spec.ts` + fixtures
+  `strongholds-game.json`, `strongholds-pieces.json` and `strongholds-active.json` (26 e2e tests total).
+- Known limits: the side panel is cramped on 900 px high screens (it scrolls); expansion error codes other
   than HAND_LIMIT show the generic "not possible now" text; engine speed about 10 ms per action in
   expansion games (legal-move enumeration), fine for humans.
 - The PO changed the working mode on 2026-11-16: no opencode agent team, the lead does the work itself.

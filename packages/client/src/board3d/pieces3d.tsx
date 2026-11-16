@@ -23,7 +23,7 @@ import { makeShieldPlaqueTexture, useCanvasTexture } from './textures';
 const REDUCED_MOTION = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Drop-in animation for newly placed pieces (respects prefers-reduced-motion). */
-function Pop({ children }: { children: ReactNode }) {
+export function Pop({ children }: { children: ReactNode }) {
   const ref = useRef<THREE.Group>(null);
   const t = useRef(REDUCED_MOTION ? 1 : 0);
   useFrame((_, dt) => {
@@ -146,16 +146,19 @@ function shieldShape(w: number, h: number): THREE.Shape {
  * wall so it never z-fights and never cuts the roof. Player-colour rim, parchment face, ink
  * emblem glyph. Replaces the old camera-facing white disc that read like a pie chart.
  */
-function EmblemPlaque({
+export function EmblemPlaque({
   player,
   position,
   height = 0.26,
+  color: colorProp,
 }: {
   player: PlayerId;
   position: [number, number, number];
   height?: number;
+  /** Override the rim colour (e.g. a faded shield for an inactive piece). */
+  color?: string;
 }) {
-  const color = playerHex(player);
+  const color = colorProp ?? playerHex(player);
   const glyph = EMBLEM_GLYPHS[playerEmblem(player)] ?? '•';
   const width = height * (128 / 152);
   const texture = useCanvasTexture(() => makeShieldPlaqueTexture(glyph, color), [glyph, color]);

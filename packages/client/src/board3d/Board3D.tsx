@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObjec
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import type { EdgeId, Graph, HexId, VertexId } from '@hexgame/engine';
+import type { EdgeId, Graph, HexId, StrongholdsView, VertexId } from '@hexgame/engine';
 import type { BoardProps } from '../board/Board';
 import { EMPTY_HIGHLIGHTS, type Highlights } from '../board/Highlights';
 import { useI18n } from '../i18n';
@@ -17,11 +17,14 @@ import { boardFit, edgeWorld, HEX_TOP, vertexWorld, hexWorld, type BoardFit, typ
 import { Harbors, NumberTokens, SeaFoam, SeaPlane, TerrainField } from './terrain';
 import { TerrainDecor } from './decor';
 import { Blocker3D, Highlights3D, Pieces3D } from './pieces3d';
+import { Strongholds3D } from './strongholds3d';
 import type { Boschtan3DApi } from './testApi';
 
 export interface Board3DProps extends BoardProps {
   /** Called when WebGL is unavailable/lost so the wrapper can switch back to 2D + toast. */
   onFallback?: (reason: 'context-lost' | 'error') => void;
+  /** Expansion pieces (Strongholds) rendered inside the scene. */
+  strongholds?: StrongholdsView | null;
 }
 
 const E2E_ENABLED =
@@ -194,6 +197,14 @@ function TestProbe({
         });
         return out;
       },
+      pieces() {
+        const out: Array<Record<string, unknown>> = [];
+        scene.traverse((o) => {
+          const ud = o.userData as Record<string, unknown>;
+          if (typeof ud.boschtanPiece === 'string') out.push({ ...ud });
+        });
+        return out;
+      },
       focus(id: string, distance?: number) {
         const p = point(id);
         const d = distance ?? Math.max(4.5, fit.radius * 0.55);
@@ -255,7 +266,7 @@ function OnCreated({ onLost }: { onLost: (reason: 'context-lost' | 'error') => v
 }
 
 export default function Board3D(props: Board3DProps) {
-  const { layout, board, pieces, highlights, onVertex, onEdge, onHex, onMiss, onFallback } = props;
+  const { layout, board, pieces, highlights, onVertex, onEdge, onHex, onMiss, onFallback, strongholds } = props;
   const { t } = useI18n();
   const hl = highlights ?? EMPTY_HIGHLIGHTS;
   const fit = useMemo(() => boardFit(layout), [layout]);
@@ -302,6 +313,7 @@ export default function Board3D(props: Board3DProps) {
         <Harbors board={board} graph={graph} fit={fit} />
         <Pieces3D pieces={pieces} graph={graph} />
         {board.blocker && <Blocker3D hexId={board.blocker} />}
+        {strongholds && <Strongholds3D pieces={pieces} sh={strongholds} />}
         <Highlights3D hl={hl} graph={graph} onVertex={onVertex} onEdge={onEdge} onHex={onHex} />
         {/* Clicking open sea cancels a pending pick, like clicking the SVG sea in 2D. */}
         <mesh

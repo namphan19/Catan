@@ -73,7 +73,8 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
 
 ## Component structure (packages/client/src)
 ui/ (tokens.css, Button, Panel, Dialog, Toast, Tooltip), board/ (Board, HexTile, Token, Harbor, Piece,
-Highlights), board3d/ (Board3D, terrain, decor, pieces3d), table/ (GameTable, TopBar, PlayerCards, ActionBar,
-CostCard, HandPanel), dialogs/ (DiscardDialog, StealDialog, TradeDialog, CardDialog), shell/ (HomeScreen,
-HomeMap, home.css, OnlineHome, Lobby, HotseatShell, PassDeviceCover), i18n/. GameTable takes
-{ view, legal, onAction, events } only, so the online client reuses it.
+Highlights), board3d/ (Board3D, terrain, decor, pieces3d, strongholds3d), table/ (GameTable, TopBar, PlayerCards,
+ActionBar, CostCard, HandPanel), strongholds/ (Panel, BoardExtras, ChoiceDialogs, chooser), dialogs/
+(DiscardDialog, StealDialog, TradeDialog, CardDialog), shell/ (HomeScreen, HomeMap, home.css, OnlineHome, Lobby,
+HotseatShell, PassDeviceCover), i18n/. GameTable takes { view, legal, onAction, events } only, so the online
+client reuses it.

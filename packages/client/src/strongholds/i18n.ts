@@ -99,7 +99,6 @@ export const shVi: Record<string, string> = {
   sh_toppled: 'Thành phố bị cướp phá, phải xây lại trước',
   sh_caravan: 'Thương đoàn',
   sh_pickCards: 'Chọn đúng số thẻ:',
-  sh_no3d: 'Ván có bản mở rộng tạm thời chỉ hiển thị 2D',
 
   shact_rampart: 'Tường thành',
   shact_recruit: 'Tuyển vệ binh',
@@ -303,7 +302,6 @@ export const shEn: Record<string, string> = {
   sh_toppled: 'Pillaged city, rebuild it first',
   sh_caravan: 'Caravan',
   sh_pickCards: 'Choose exactly this many cards:',
-  sh_no3d: 'Games with the expansion are 2D only for now',
 
   shact_rampart: 'Rampart',
   shact_recruit: 'Recruit',

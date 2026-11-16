@@ -11,6 +11,8 @@ export interface Boschtan3DApi {
   focus(id: string, distance?: number): boolean;
   /** Diagnostics for the terrain instancing test. */
   debug(): Array<Record<string, unknown>>;
+  /** Expansion piece groups in the scene, as their `userData.boschtanPiece` records. */
+  pieces(): Array<Record<string, unknown>>;
 }
 
 declare global {

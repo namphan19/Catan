@@ -1,0 +1,272 @@
+{
+  "init": {
+    "seed": "e2e-strongholds",
+    "playerCount": 4,
+    "layout": "standard",
+    "rulesetIds": [
+      "base",
+      "strongholds"
+    ],
+    "vpToWin": 13,
+    "extraBuild": false,
+    "largeTableMode": "extraBuild",
+    "firstPlayer": "p2"
+  },
+  "actions": [
+    {
+      "t": "placeSettlement",
+      "player": "p2",
+      "v": "v:1,0,S"
+    },
+    {
+      "t": "placeRoad",
+      "player": "p2",
+      "e": "e:1,1,W"
+    },
+    {
+      "t": "placeSettlement",
+      "player": "p3",
+      "v": "v:2,0,N"
+    },
+    {
+      "t": "placeRoad",
+      "player": "p3",
+      "e": "e:3,-1,W"
+    },
+    {
+      "t": "placeSettlement",
+      "player": "p4",
+      "v": "v:-2,1,N"
+    },
+    {
+      "t": "placeRoad",
+      "player": "p4",
+      "e": "e:-2,1,NE"
+    },
+    {
+      "t": "placeSettlement",
+      "player": "p1",
+      "v": "v:1,-2,S"
+    },
+    {
+      "t": "placeRoad",
+      "player": "p1",
+      "e": "e:0,-1,NE"
+    },
+    {
+      "t": "placeSettlement",
+      "player": "p1",
+      "v": "v:1,-3,S"
+    },
+    {
+      "t": "placeRoad",
+      "player": "p1",
+      "e": "e:1,-2,NW"
+    },
+    {
+      "t": "placeSettlement",
+      "player": "p4",
+      "v": "v:-2,3,N"
+    },
+    {
+      "t": "placeRoad",
+      "player": "p4",
+      "e": "e:-2,3,NE"
+    },
+    {
+      "t": "placeSettlement",
+      "player": "p3",
+      "v": "v:-1,-1,N"
+    },
+    {
+      "t": "placeRoad",
+      "player": "p3",
+      "e": "e:0,-2,W"
+    },
+    {
+      "t": "placeSettlement",
+      "player": "p2",
+      "v": "v:1,2,N"
+    },
+    {
+      "t": "placeRoad",
+      "player": "p2",
+      "e": "e:2,1,W"
+    },
+    {
+      "t": "roll",
+      "player": "p2"
+    },
+    {
+      "t": "endTurn",
+      "player": "p2"
+    },
+    {
+      "t": "roll",
+      "player": "p3"
+    },
+    {
+      "t": "sh:improve",
+      "player": "p3",
+      "track": "commerce"
+    },
+    {
+      "t": "endTurn",
+      "player": "p3"
+    },
+    {
+      "t": "roll",
+      "player": "p4"
+    },
+    {
+      "t": "sh:improve",
+      "player": "p4",
+      "track": "commerce"
+    },
+    {
+      "t": "endTurn",
+      "player": "p4"
+    },
+    {
+      "t": "roll",
+      "player": "p1"
+    },
+    {
+      "t": "bankTrade",
+      "player": "p1",
+      "give": {
+        "grain": 4
+      },
+      "get": {
+        "fiber": 1
+      }
+    },
+    {
+      "t": "endTurn",
+      "player": "p1"
+    },
+    {
+      "t": "roll",
+      "player": "p2"
+    },
+    {
+      "t": "endTurn",
+      "player": "p2"
+    },
+    {
+      "t": "roll",
+      "player": "p3"
+    },
+    {
+      "t": "endTurn",
+      "player": "p3"
+    },
+    {
+      "t": "roll",
+      "player": "p4"
+    },
+    {
+      "t": "endTurn",
+      "player": "p4"
+    },
+    {
+      "t": "roll",
+      "player": "p1"
+    },
+    {
+      "t": "bankTrade",
+      "player": "p1",
+      "give": {
+        "grain": 4
+      },
+      "get": {
+        "timber": 1
+      }
+    },
+    {
+      "t": "bankTrade",
+      "player": "p1",
+      "give": {
+        "grain": 4
+      },
+      "get": {
+        "silver": 1
+      }
+    },
+    {
+      "t": "sh:improve",
+      "player": "p1",
+      "track": "council"
+    },
+    {
+      "t": "endTurn",
+      "player": "p1"
+    },
+    {
+      "t": "roll",
+      "player": "p2"
+    },
+    {
+      "t": "endTurn",
+      "player": "p2"
+    },
+    {
+      "t": "roll",
+      "player": "p3"
+    },
+    {
+      "t": "bankTrade",
+      "player": "p3",
+      "give": {
+        "linen": 3
+      },
+      "get": {
+        "grain": 1
+      }
+    },
+    {
+      "t": "bankTrade",
+      "player": "p3",
+      "give": {
+        "fiber": 3
+      },
+      "get": {
+        "stone": 1
+      }
+    },
+    {
+      "t": "sh:recruit",
+      "player": "p3",
+      "v": "v:0,-3,S"
+    },
+    {
+      "t": "endTurn",
+      "player": "p3"
+    },
+    {
+      "t": "roll",
+      "player": "p4"
+    },
+    {
+      "t": "endTurn",
+      "player": "p4"
+    },
+    {
+      "t": "roll",
+      "player": "p1"
+    },
+    {
+      "t": "endTurn",
+      "player": "p1"
+    },
+    {
+      "t": "roll",
+      "player": "p2"
+    },
+    {
+      "t": "sh:rampart",
+      "player": "p2",
+      "v": "v:1,2,N"
+    }
+  ]
+}

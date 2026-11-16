@@ -261,15 +261,16 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
     <div className="table">
       <TopBar
         view={view}
-        boardMode={sh ? '2d' : boardMode}
-        onBoardMode={sh ? () => pushToast({ text: t('sh_no3d'), kind: 'info' }) : changeBoardMode}
+        boardMode={boardMode}
+        onBoardMode={changeBoardMode}
         onHelp={() => setHelpOpen(true)} />
       <StatusBanner view={view} legal={legal} pending={pending} onCancel={() => setPending(null)} />
       <div className="table-main">
         <div className="board-area">
           <BoardSwitch
-            mode={sh ? '2d' : boardMode}
+            mode={boardMode}
             overlay={sh ? <BoardExtras pieces={view.pieces} sh={sh} /> : undefined}
+            strongholds={sh}
             onFallback={boardFallback}
             layout={view.init.layout}
             board={view.board}

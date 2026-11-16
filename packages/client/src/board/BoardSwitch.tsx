@@ -2,6 +2,7 @@
 // users). If WebGL is unavailable, the context is lost, or the 3D chunk fails to load,
 // this falls back to the SVG board and reports it so GameTable can show a toast.
 import { Component, Suspense, lazy, useCallback, useEffect, useState, type ReactNode } from 'react';
+import type { StrongholdsView } from '@hexgame/engine';
 import type { BoardProps } from './Board';
 import { Board } from './Board';
 import { useI18n } from '../i18n';
@@ -62,9 +63,11 @@ export interface BoardSwitchProps extends BoardProps {
   mode: BoardMode;
   /** Called once when 3D cannot render (no WebGL, context lost, chunk error). */
   onFallback: () => void;
+  /** Expansion pieces; only the lazy 3D board renders these. */
+  strongholds?: StrongholdsView | null;
 }
 
-export function BoardSwitch({ mode, onFallback, ...boardProps }: BoardSwitchProps) {
+export function BoardSwitch({ mode, onFallback, strongholds, ...boardProps }: BoardSwitchProps) {
   const { t } = useI18n();
   const [fallbackFor, setFallbackFor] = useState<BoardMode | null>(null);
 
@@ -98,7 +101,7 @@ export function BoardSwitch({ mode, onFallback, ...boardProps }: BoardSwitchProp
       }
     >
       <ThreeBoundary onError={handleError}>
-        <Board3D {...boardProps} onFallback={handleError} />
+        <Board3D {...boardProps} strongholds={strongholds} onFallback={handleError} />
       </ThreeBoundary>
     </Suspense>
   );

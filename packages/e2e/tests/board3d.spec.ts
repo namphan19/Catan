@@ -24,6 +24,7 @@ declare global {
       targets(): { vertices: string[]; edges: string[]; hexes: string[] };
       focus(id: string, distance?: number): boolean;
       debug(): Array<Record<string, unknown>>;
+      pieces(): Array<Record<string, unknown>>;
     };
   }
 }
@@ -167,6 +168,92 @@ test.describe('3D board', () => {
     await page.waitForTimeout(600);
     await clearHover(page);
     await page.locator('.board-area').screenshot({ path: shot3dPath('close-up.png') });
+    expect(errors()).toEqual([]);
+  });
+
+  test('Strongholds expansion: 3D wardens and the caravan render, and 3D stays on', async ({ page }) => {
+    test.setTimeout(150_000);
+    const errors = captureErrors(page);
+    const fixture = path.resolve(__dirname, '..', 'fixtures', 'strongholds-game.json');
+    const log = fs.readFileSync(fixture, 'utf8');
+
+    await page.goto(GAME_URL);
+    await page.locator('.export-box').first().fill(log);
+    await page.getByRole('button', { name: VI.loadReplay }).click();
+    await confirmCover(page);
+    // An expansion game must no longer force the 2D board.
+    await toggle3D(page);
+    await expect(page.getByRole('button', { name: VI.board3d })).toHaveAttribute('aria-pressed', 'true');
+    await expectCanvasRendered(page);
+
+    const pieces = await page.evaluate(() => window.__boschtan3d!.pieces());
+    const wardens = pieces.filter((p) => p.boschtanPiece === 'warden');
+    expect(wardens.length, 'wardens on the 3D board').toBeGreaterThanOrEqual(3);
+    expect(pieces.filter((p) => p.boschtanPiece === 'caravan').length, 'caravan').toBe(1);
+
+    await clearHover(page);
+    await page.screenshot({ path: shot3dPath('strongholds.png'), fullPage: true });
+    const first = wardens[0] as { v: string };
+    const focused = await page.evaluate((v) => window.__boschtan3d!.focus(v, 4.2), first.v);
+    expect(focused).toBe(true);
+    await page.waitForTimeout(600);
+    await page.locator('.board-area').screenshot({ path: shot3dPath('strongholds-close.png') });
+    const caravan = pieces.find((p) => p.boschtanPiece === 'caravan') as { hex: string };
+    const caravanFocused = await page.evaluate((h) => window.__boschtan3d!.focus(h, 3.6), caravan.hex);
+    expect(caravanFocused).toBe(true);
+    await page.waitForTimeout(600);
+    await page.locator('.board-area').screenshot({ path: shot3dPath('strongholds-caravan.png') });
+    expect(errors()).toEqual([]);
+  });
+
+  test('Strongholds expansion: an active warden stands with its gold ring', async ({ page }) => {
+    test.setTimeout(120_000);
+    const errors = captureErrors(page);
+    const fixture = path.resolve(__dirname, '..', 'fixtures', 'strongholds-active.json');
+    const log = fs.readFileSync(fixture, 'utf8');
+
+    await page.goto(GAME_URL);
+    await page.locator('.export-box').first().fill(log);
+    await page.getByRole('button', { name: VI.loadReplay }).click();
+    await confirmCover(page);
+    await toggle3D(page);
+    await expectCanvasRendered(page);
+
+    const pieces = await page.evaluate(() => window.__boschtan3d!.pieces());
+    const active = pieces.find((p) => p.boschtanPiece === 'warden' && p.active === true) as
+      | { v: string }
+      | undefined;
+    expect(active, 'an active warden exists').toBeTruthy();
+    const focused = await page.evaluate((v) => window.__boschtan3d!.focus(v, 3.6), active!.v);
+    expect(focused).toBe(true);
+    await page.waitForTimeout(600);
+    await clearHover(page);
+    await page.locator('.board-area').screenshot({ path: shot3dPath('strongholds-active.png') });
+    expect(errors()).toEqual([]);
+  });
+
+  test('Strongholds expansion: a rampart renders in 3D', async ({ page }) => {
+    test.setTimeout(120_000);
+    const errors = captureErrors(page);
+    const fixture = path.resolve(__dirname, '..', 'fixtures', 'strongholds-pieces.json');
+    const log = fs.readFileSync(fixture, 'utf8');
+
+    await page.goto(GAME_URL);
+    await page.locator('.export-box').first().fill(log);
+    await page.getByRole('button', { name: VI.loadReplay }).click();
+    await confirmCover(page);
+    await toggle3D(page);
+    await expectCanvasRendered(page);
+
+    const pieces = await page.evaluate(() => window.__boschtan3d!.pieces());
+    expect(pieces.filter((p) => p.boschtanPiece === 'rampart').length, 'ramparts').toBe(1);
+    expect(pieces.filter((p) => p.boschtanPiece === 'warden').length, 'wardens').toBe(1);
+    const rampart = pieces.find((p) => p.boschtanPiece === 'rampart') as { v: string };
+    const focused = await page.evaluate((v) => window.__boschtan3d!.focus(v, 3.8), rampart.v);
+    expect(focused).toBe(true);
+    await page.waitForTimeout(600);
+    await clearHover(page);
+    await page.locator('.board-area').screenshot({ path: shot3dPath('strongholds-rampart.png') });
     expect(errors()).toEqual([]);
   });
 });

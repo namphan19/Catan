@@ -12,7 +12,7 @@ Later: an original "advanced" expansion ruleset that plugs into the same engine 
 |---|---|---|
 | M1 | pnpm monorepo; pure engine with base rules incl. 5-6 player extra build phase; tests; fuzzer; hot-seat dev client; docs | done (see section 7) |
 | M2 | authoritative WebSocket server (rooms, reconnect, redacted views only) - self-hosted by the PO for colleagues | todo (next after rules) |
-| M3 | expansion ruleset `strongholds` as a separate module (hooks only): engine, server option, 2D client UI | built 2026-11-16 (see docs/RULES_STRONGHOLDS.md); open: PO check of icon-only costs (S1/S2), 3D pieces, playtest |
+| M3 | expansion ruleset `strongholds` as a separate module (hooks only): engine, server option, 2D + 3D client UI | built 2026-11-16 (see docs/RULES_STRONGHOLDS.md); 3D pieces added 2026-11-16; open: playtest |
 | UI | real web UI + original medieval art (docs/UI.md) | in progress |
 
 PO 2026-11-13: web only, no bots, medieval style (own art), online play for colleagues.
