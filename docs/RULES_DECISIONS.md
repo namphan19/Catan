@@ -27,6 +27,7 @@ Change a decision by editing the config/hook and the test that pins it.
 | D19 | Harvest with an empty bank | Not playable when the bank has 0 cards (the card is not wasted). | review-fixes | PO |
 | D20 | Trade responses | Responders may accept, decline or counter, and change their answer until the offer is confirmed (base p.7). Replaces the earlier one-answer rule. | review-fixes | lead (official, replaces PO D20) |
 | D21 | Extension limits (known) | New board shapes need a LayoutId entry; new playable cards are registered via config (playableCards) and new force-type cards via awards.largestForce.cards. | - | lead |
+| D22 | Strongholds expansion | Separate ruleset `strongholds`; its interpretations are the S-numbers in docs/RULES_STRONGHOLDS.md (S1/S2: icon-only costs and die faces need a PO check). | strongholds.test.ts | lead |
 
 ## Open questions for the PO
 1. Theme and names (resources, terrains, cards) - placeholders are used everywhere. Game title: **Boschtan** (PO, 2026-11-13).

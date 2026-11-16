@@ -38,3 +38,20 @@ A game runs `state.init.rulesetIds` in order (base first). A `Ruleset` (`src/rul
 Example in the tests: `testdice` overrides `rollDice` without touching base files.
 A later expansion ruleset must also provide redaction for anything it puts into `state.ext` before the
 view exposes it (the view drops `ext` entirely today).
+
+## Extension points used by expansion rulesets (M3)
+- `state.pieces.occupants[vertex] = { owner, kind, level, active, tags }`: non-building pieces on vertices.
+  Base geometry honours them (no building there, opponents' roads stop, opponents' routes are cut).
+- Extra hooks: `discardLimit(ctx, prev, player)`, `tradeRate(ctx, prev, player, resource)`.
+- `resolveRoll(ctx)` (base turn module): the production / 7 step, so a ruleset that wraps `roll` can run
+  other steps first.
+- Phase `{ k: 'ext', id, data, actors }`: an extension window; only `actors` may act, no base action is
+  legal, and no win is declared until the normal phase resumes.
+- `Ruleset.view(ctx, viewer)` -> `PlayerView.ext[<id>]` (redacted extension state);
+  `Ruleset.redactAction(action, viewer)` redacts logged actions; events `{ e: 'ext', id, data, secret,
+  visibleTo }` deliver `secret` only to `visibleTo`.
+- Ruleset `strongholds` (`createGame({ rulesets: ['base', 'strongholds'] })`): rules in
+  docs/RULES_STRONGHOLDS.md. New actions: `sh:improve{track,v?}` `sh:rampart{v}` `sh:recruit{v}`
+  `sh:promote{v}` `sh:activate{v}` `sh:moveWarden{from,to}` `sh:displace{from,to}` `sh:chase{v}`
+  `sh:play{card,...}` `sh:bazaarOffer{target,resource}` `sh:discardCard{card}`
+  `sh:resolve{kind,...}` (answers the head of `view.ext.strongholds.pending`).
