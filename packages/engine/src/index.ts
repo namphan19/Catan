@@ -10,3 +10,6 @@ export type * from './ruleset/types';
 export { composeRules } from './ruleset/compose';
 export { baseRuleset } from './rules/base';
 export { baseConfig } from './rules/base/config';
+export { strongholdsRuleset, type StrongholdsView } from './rules/strongholds';
+export { SH, SH_ID, TRACKS, CARD_TRACK, isCommodity, type Track, type EventFace } from './rules/strongholds/config';
+export type { Pending, PendingKind, ShState } from './rules/strongholds/state';

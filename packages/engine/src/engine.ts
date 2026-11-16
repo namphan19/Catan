@@ -4,13 +4,14 @@ import type { Action, GameEvent, GameInit, GameState, LayoutId, PlayerId, Valida
 import type { ApplyCtx, Ctx, Rules, Ruleset } from './ruleset/types';
 import { composeRules } from './ruleset/compose';
 import { baseRuleset } from './rules/base';
+import { strongholdsRuleset } from './rules/strongholds';
 import { getGraph } from './board/graph';
 import { generateBoard } from './board/generate';
 import { randInt, seedRng, shuffle } from './rng';
 import { emptyBag } from './bag';
 import { vp } from './rules/base/helpers';
 
-const REGISTRY: Record<string, Ruleset> = { base: baseRuleset };
+const REGISTRY: Record<string, Ruleset> = { base: baseRuleset, [strongholdsRuleset.id]: strongholdsRuleset };
 const rulesCache: Record<string, Rules> = {};
 
 /** Register an extension ruleset (e.g. a later "advanced" module). Call once at startup. */

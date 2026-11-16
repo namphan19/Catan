@@ -1,13 +1,15 @@
 // Fuzzer: plays full random games through getLegalActions and asserts invariants after every action.
-// Usage: pnpm fuzz [games=50] [startSeed=0]
+// Usage: pnpm fuzz [games=50] [startSeed=0] [strongholds]
 import {
-  applyAction, baseConfig, createGame, getLegalActions, randInt, seedRng, validateAction,
-  type Action, type GameState,
+  SH, SH_ID, TRACKS, applyAction, baseConfig, createGame, getLegalActions, randInt, seedRng, validateAction,
+  type Action, type GameState, type ShState,
 } from '../src';
 
 const WEIGHTS: Record<string, number> = {
   buildCity: 60, placeSettlement: 60, placeRoad: 8, buyCard: 12, playCard: 10, bankTrade: 4,
   offerTrade: 0.3, respondTrade: 3, confirmTrade: 5, cancelTrade: 1, endTurn: 3,
+  'sh:improve': 40, 'sh:recruit': 12, 'sh:activate': 10, 'sh:promote': 8, 'sh:rampart': 6, 'sh:play': 3,
+  'sh:moveWarden': 0.3, 'sh:displace': 3, 'sh:chase': 2, 'sh:bazaarOffer': 2, 'sh:discardCard': 1,
 };
 
 export interface FuzzResult {
@@ -18,10 +20,55 @@ export interface FuzzResult {
   turns: number;
 }
 
+const ADVANCE_CARDS = TRACKS.reduce(
+  (n, t) => n + Object.values(SH.decks[t]).reduce((a, b) => a + b, 0),
+  0,
+);
+
+/** Invariants of the strongholds expansion. */
+function checkStrongholds(s: GameState, fail: (m: string) => never): void {
+  const x = s.ext[SH_ID] as ShState;
+  const occ = s.pieces.occupants ?? {};
+  if ((s.phase.k === 'ext') !== x.pending.length > 0) fail('ext phase and pending queue disagree');
+  if (s.phase.k === 'ext' && s.phase.actors?.[0] !== x.pending[0].player) fail('wrong actor for the pending choice');
+  let cards = TRACKS.reduce((n, t) => n + x.decks[t].length, 0);
+  for (const p of s.players) {
+    cards += p.cards.length + x.vpCards[p.id].length;
+    const own = Object.entries(s.pieces.buildings).filter(([, b]) => b.owner === p.id);
+    const toppled = own.filter(([v]) => x.toppled.includes(v)).length;
+    const cities = own.filter(([, b]) => b.kind === 'city').length;
+    const settlements = own.length - cities;
+    if (cities + toppled + p.supply.city !== baseConfig.supply.city) fail(`${p.id} city pieces`);
+    if (settlements - toppled + p.supply.settlement !== baseConfig.supply.settlement) fail(`${p.id} settlement pieces`);
+    for (let level = 1; level <= 3; level++) {
+      const board = Object.values(occ).filter((o) => o.owner === p.id && o.level === level).length;
+      const lifted = x.pending.filter((q) => q.kind === 'relocate' && q.player === p.id && q.level === level).length;
+      if (board + lifted + p.supply[`warden${level}`] !== SH.supply[`warden${level}`]) fail(`${p.id} rank ${level} wardens`);
+    }
+    const ramparts = x.ramparts.filter((v) => s.pieces.buildings[v]?.owner === p.id).length;
+    if (ramparts + p.supply.rampart !== SH.supply.rampart) fail(`${p.id} ramparts`);
+    for (const t of TRACKS) if (x.levels[p.id][t] < 0 || x.levels[p.id][t] > SH.maxLevel) fail(`${p.id} ${t} level`);
+  }
+  if (cards !== ADVANCE_CARDS) fail(`advance cards not conserved: ${cards} != ${ADVANCE_CARDS}`);
+  for (const v of x.ramparts) if (s.pieces.buildings[v]?.kind !== 'city') fail(`rampart without a city at ${v}`);
+  for (const v of x.toppled) if (s.pieces.buildings[v]?.kind !== 'settlement') fail(`toppled piece at ${v} is not a settlement`);
+  for (const v of Object.keys(occ)) if (s.pieces.buildings[v]) fail(`warden and building share ${v}`);
+  for (const t of TRACKS) {
+    const cap = x.capitals[t];
+    if (!cap) continue;
+    const b = s.pieces.buildings[cap.v];
+    if (!b || b.kind !== 'city' || b.owner !== cap.owner) fail(`${t} capital is not on its owner's city`);
+    if (x.levels[cap.owner][t] < SH.capitalLevel) fail(`${t} capital holder is below level ${SH.capitalLevel}`);
+  }
+  if (x.raid.pos < 0 || x.raid.pos >= SH.raidTrack) fail('raid track position');
+  if (x.blockerActive !== (s.board.blocker !== '')) fail('blocker activity and position disagree');
+}
+
 export function checkInvariants(s: GameState, initial: { resources: number; cards: number }): void {
-  const fail = (m: string) => {
+  const fail = (m: string): never => {
     throw new Error(`invariant: ${m} (seed ${s.init.seed}, action #${s.log.length})`);
   };
+  const strongholds = s.init.rulesetIds.includes(SH_ID);
   let res = 0;
   for (const [r, n] of Object.entries(s.bank.hand)) {
     if (n < 0) fail(`bank ${r} negative`);
@@ -34,23 +81,27 @@ export function checkInvariants(s: GameState, initial: { resources: number; card
       res += n;
     }
     for (const [k, n] of Object.entries(p.supply)) if (n < 0) fail(`${p.id} supply ${k} negative`);
+    const roads = Object.values(s.pieces.roads).filter((o) => o === p.id).length;
+    if (roads + p.supply.road !== baseConfig.supply.road) fail(`${p.id} road count`);
+    if (strongholds) continue; // cards and building pieces are checked by checkStrongholds
     cards += p.cards.length + p.newCards.length + Object.values(p.played).reduce((a, b) => a + b, 0);
     // placed + supply = initial pieces
     const own = Object.values(s.pieces.buildings).filter((b) => b.owner === p.id);
     const cities = own.filter((b) => b.kind === 'city').length;
     const settlements = own.length - cities;
-    const roads = Object.values(s.pieces.roads).filter((o) => o === p.id).length;
-    if (roads + p.supply.road !== baseConfig.supply.road) fail(`${p.id} road count`);
     if (cities + p.supply.city !== baseConfig.supply.city) fail(`${p.id} city count`);
     if (settlements + p.supply.settlement !== baseConfig.supply.settlement) fail(`${p.id} settlement count`);
   }
   if (res !== initial.resources) fail(`resources not conserved: ${res} != ${initial.resources}`);
-  if (cards !== initial.cards) fail(`cards not conserved: ${cards} != ${initial.cards}`);
+  if (strongholds) checkStrongholds(s, fail);
+  else if (cards !== initial.cards) fail(`cards not conserved: ${cards} != ${initial.cards}`);
   if (JSON.stringify(JSON.parse(JSON.stringify(s))) !== JSON.stringify(s)) fail('state is not plain JSON');
 }
 
-export function runRandomGame(seed: string, players: number, maxActions = 30000): FuzzResult {
-  let s = createGame({ seed, playerCount: players });
+export function runRandomGame(
+  seed: string, players: number, maxActions = 30000, rulesets: string[] = ['base'],
+): FuzzResult {
+  let s = createGame({ seed, playerCount: players, rulesets });
   const policy = seedRng(`policy:${seed}`);
   const sumBag = (b: Record<string, number>) => Object.values(b).reduce((a, n) => a + n, 0);
   const initial = { resources: sumBag(s.bank.hand), cards: s.bank.deck.length };
@@ -75,14 +126,15 @@ export function runRandomGame(seed: string, players: number, maxActions = 30000)
 function main(): void {
   const games = Number(process.argv[2] ?? 50);
   const start = Number(process.argv[3] ?? 0);
+  const rulesets = process.argv[4] === SH_ID ? ['base', SH_ID] : ['base'];
   let actions = 0;
   for (let i = start; i < start + games; i++) {
     const players = 3 + (i % 4);
-    const r = runRandomGame(`fuzz-${i}`, players);
+    const r = runRandomGame(`fuzz-${i}`, players, 60000, rulesets);
     actions += r.actions;
     console.log(`${r.seed} players=${players} winner=${r.winner} turns=${r.turns} actions=${r.actions}`);
   }
-  console.log(`OK ${games} games, ${actions} actions, all invariants held`);
+  console.log(`OK ${games} games (${rulesets.join('+')}), ${actions} actions, all invariants held`);
 }
 
 if (process.argv[1]?.replace(/\\/g, '/').endsWith('fuzz/randomGame.ts')) main();
