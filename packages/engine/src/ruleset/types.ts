@@ -72,6 +72,10 @@ export interface Hooks {
   phaseAfterRoll(ctx: ApplyCtx, prev: Phase, sum: number): Phase;
   /** Phase entered when the current player ends the turn (base: extraBuild or next preRoll). */
   phaseAfterTurn(ctx: ApplyCtx, prev: Phase): Phase;
+  /** Hand size above which a player discards when the blocker number is rolled. */
+  discardLimit(ctx: Ctx, prev: number, player: PlayerId): number;
+  /** Bank trade rate for giving `resource` (prev: base rate incl. harbors). */
+  tradeRate(ctx: Ctx, prev: number, player: PlayerId, resource: ResourceId): number;
 }
 
 export type HookName = keyof Hooks;
@@ -97,6 +101,11 @@ export interface Ruleset {
   hooks?: { [K in HookName]?: Hooks[K] };
   actions?: Record<string, (prev: ActionDef | undefined) => ActionDef>;
   init?(ctx: ApplyCtx): void;
+  /** Redacted, JSON-serializable view of this ruleset's `state.ext` data for one viewer
+   *  (null = spectator). Ends up in `PlayerView.ext[<ruleset id>]`. */
+  view?(ctx: Ctx, viewer: PlayerId | null): unknown;
+  /** Redact one logged action for a viewer (hide private choices). Must be stateless. */
+  redactAction?(action: Action, viewer: PlayerId | null): Action;
 }
 
 export interface Rules {
@@ -105,4 +114,6 @@ export interface Rules {
   actions: Record<string, ActionDef>;
   call<K extends HookName>(name: K, ctx: Ctx, seed: HookPrev<K>, ...args: HookArgs<K>): HookPrev<K>;
   init(ctx: ApplyCtx): void;
+  views(ctx: Ctx, viewer: PlayerId | null): Record<string, unknown>;
+  redactAction(action: Action, viewer: PlayerId | null): Action;
 }

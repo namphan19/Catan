@@ -51,9 +51,11 @@ export function winningActor(state: GameState): PlayerId | null {
     case 'steal':
     case 'freeRoads':
       return ph.actor ?? state.turn.current;
-    // Setup and the legacy extra-build windows never produce a win (D11).
+    // Setup and the legacy extra-build windows never produce a win (D11). Extension windows
+    // (pending choices) neither: the win is detected as soon as the normal phase resumes.
     case 'setup':
     case 'extraBuild':
+    case 'ext':
     case 'over':
       return null;
     default:
@@ -155,7 +157,24 @@ export function tradeRate(ctx: Ctx, id: PlayerId, r: string): number {
     if (!owns) continue;
     if (h.kind === 'any' || h.kind === r) rate = Math.min(rate, h.ratio);
   }
-  return rate;
+  return rules.call('tradeRate', ctx, rate, id, r);
+}
+
+/** Pay production claims (claims[resource][player] = amount) from the bank. Shortage rule (D3): if
+ *  the bank cannot pay everyone owed a resource, nobody gets it, unless only one player is owed
+ *  it, in which case that player gets what is left. */
+export function settleClaims(
+  bank: Bag, claims: Record<string, Record<PlayerId, number>>,
+): Record<PlayerId, Bag> {
+  const gains: Record<PlayerId, Bag> = {};
+  for (const [r, byPlayer] of Object.entries(claims)) {
+    const owed = Object.values(byPlayer).reduce((s, n) => s + n, 0);
+    const inBank = bank[r] ?? 0;
+    const ids = Object.keys(byPlayer);
+    if (owed <= inBank) for (const id of ids) (gains[id] ??= {})[r] = byPlayer[id];
+    else if (ids.length === 1 && inBank > 0) (gains[ids[0]] ??= {})[r] = inBank;
+  }
+  return gains;
 }
 
 export function setPhase(ctx: ApplyCtx, phase: Phase): void {

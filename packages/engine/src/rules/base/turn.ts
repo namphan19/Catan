@@ -1,7 +1,7 @@
 // roll / discard / moveBlocker / steal / endTurn (incl. the paired phase for 5-6 players and the
 // legacy extra build phase).
-import type { Action, Phase, PlayerId } from '../../types';
-import type { ActionDef, Ctx } from '../../ruleset/types';
+import type { Action, Bag, Phase, PlayerId } from '../../types';
+import type { ActionDef, ApplyCtx, Ctx } from '../../ruleset/types';
 import { bagAdd, bagHas, bagSub, bagToList, bagTotal, bagValid } from '../../bag';
 import { randInt } from '../../rng';
 import {
@@ -21,6 +21,37 @@ export function stealCandidates(ctx: Ctx, hex: string, thief: PlayerId): PlayerI
   return state.players.filter((p) => owners.has(p.id) && handSize(p) > 0).map((p) => p.id);
 }
 
+/**
+ * Resolve the production dice already stored in `state.turn.roll`: discards / blocker on the blocker
+ * number, production otherwise, then the next phase. Exported so that extension rulesets that wrap
+ * `roll` (e.g. to resolve an event die first) can run this step later.
+ */
+export function resolveRoll(ctx: ApplyCtx): { sum: number; gains: Record<PlayerId, Bag> } {
+  const { state, rules } = ctx;
+  const sum = (state.turn.roll ?? []).reduce((s, d) => s + d, 0);
+  let gains: Record<PlayerId, Bag> = {};
+  let next: Phase;
+  if (sum === rules.config.blockerNumber) {
+    const owed: Record<PlayerId, number> = {};
+    for (const p of state.players) {
+      const n = handSize(p);
+      const limit = rules.call('discardLimit', ctx, rules.config.discardLimit, p.id);
+      if (n > limit) owed[p.id] = Math.floor(n / 2);
+    }
+    next = Object.keys(owed).length ? { k: 'discard', owed } : { k: 'moveBlocker', resume: 'main' };
+  } else {
+    gains = rules.call('production', ctx, {}, sum);
+    for (const [id, bag] of Object.entries(gains)) {
+      bagSub(state.bank.hand, bag);
+      bagAdd(player(state, id).hand, bag);
+    }
+    ctx.emit({ e: 'produced', gains });
+    next = { k: 'main' };
+  }
+  setPhase(ctx, rules.call('phaseAfterRoll', ctx, next, sum));
+  return { sum, gains };
+}
+
 export const roll: ActionDef = {
   validate(ctx, a) {
     return expect(ctx.state, a, ['preRoll']);
@@ -28,27 +59,9 @@ export const roll: ActionDef = {
   apply(ctx, a) {
     const { state, rules } = ctx;
     const dice = rules.call('rollDice', ctx, []);
-    const sum = dice.reduce((s, d) => s + d, 0);
     state.turn.roll = dice;
-    ctx.emit({ e: 'rolled', player: a.player, dice, sum });
-    let next: Phase;
-    if (sum === rules.config.blockerNumber) {
-      const owed: Record<PlayerId, number> = {};
-      for (const p of state.players) {
-        const n = handSize(p);
-        if (n > rules.config.discardLimit) owed[p.id] = Math.floor(n / 2);
-      }
-      next = Object.keys(owed).length ? { k: 'discard', owed } : { k: 'moveBlocker', resume: 'main' };
-    } else {
-      const gains = rules.call('production', ctx, {}, sum);
-      for (const [id, bag] of Object.entries(gains)) {
-        bagSub(state.bank.hand, bag);
-        bagAdd(player(state, id).hand, bag);
-      }
-      ctx.emit({ e: 'produced', gains });
-      next = { k: 'main' };
-    }
-    setPhase(ctx, rules.call('phaseAfterRoll', ctx, next, sum));
+    ctx.emit({ e: 'rolled', player: a.player, dice, sum: dice.reduce((s, d) => s + d, 0) });
+    resolveRoll(ctx);
   },
   legal(ctx, id) {
     const a: Action = { t: 'roll', player: id };

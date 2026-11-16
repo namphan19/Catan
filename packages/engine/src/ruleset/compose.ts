@@ -32,6 +32,16 @@ export function composeRules(list: Ruleset[]): Rules {
     init(ctx: ApplyCtx) {
       for (const r of list) r.init?.(ctx);
     },
+    views(ctx: Ctx, viewer) {
+      const out: Record<string, unknown> = {};
+      for (const r of list) if (r.view) out[r.id] = r.view(ctx, viewer);
+      return out;
+    },
+    redactAction(action, viewer) {
+      let a = action;
+      for (const r of list) if (r.redactAction) a = r.redactAction(a, viewer);
+      return a;
+    },
   };
   return rules;
 }

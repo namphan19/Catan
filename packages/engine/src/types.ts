@@ -41,9 +41,21 @@ export interface Building {
   kind: string; // 'settlement' | 'city' in the base ruleset
 }
 
+/** A non-building piece standing on a vertex (added by extension rulesets, e.g. wardens).
+ *  It blocks building on its vertex, stops opponents' roads and cuts opponents' routes. */
+export interface Occupant {
+  owner: PlayerId;
+  kind: string;
+  level: number;
+  active: boolean;
+  tags?: string[];
+}
+
 export interface Pieces {
   buildings: Record<VertexId, Building>;
   roads: Record<EdgeId, PlayerId>;
+  /** Only present in games whose rulesets use occupants. */
+  occupants?: Record<VertexId, Occupant>;
 }
 
 export interface PlayerState {
@@ -192,7 +204,8 @@ export type GameEvent =
   | { e: 'phase'; phase: Phase['k'] }
   | { e: 'turnStarted'; player: PlayerId; n: number }
   | { e: 'won'; player: PlayerId; vp: number }
-  | { e: 'ext'; id: string; data: unknown };
+  /** Extension event. `secret` is delivered only to the players in `visibleTo`. */
+  | { e: 'ext'; id: string; data: unknown; secret?: unknown; visibleTo?: PlayerId[] };
 
 export interface RuleError {
   code: string;

@@ -1,5 +1,5 @@
 // The base ruleset: config, hook implementations and action table.
-import type { Bag, PlayerId } from '../../types';
+import type { PlayerId } from '../../types';
 import type { Ruleset } from '../../ruleset/types';
 import { randInt } from '../../rng';
 import { baseConfig } from './config';
@@ -7,7 +7,7 @@ import { buildCity, placeRoad, placeSettlement } from './build';
 import { bankTrade, cancelTrade, confirmTrade, offerTrade, respondTrade } from './trade';
 import { discard, endTurn, moveBlocker, roll, steal } from './turn';
 import { buyCard, playCard } from './cards';
-import { pairedPlayer, player, seatOrder, vp, winningActor } from './helpers';
+import { pairedPlayer, player, seatOrder, settleClaims, vp, winningActor } from './helpers';
 
 export const baseRuleset: Ruleset = {
   id: 'base',
@@ -30,17 +30,7 @@ export const baseRuleset: Ruleset = {
           (claims[r] ??= {})[b.owner] = (claims[r][b.owner] ?? 0) + n;
         }
       }
-      // Bank shortage: if the bank cannot pay everyone, nobody gets that resource, unless only
-      // one player is owed it, in which case that player gets what is left.
-      const gains: Record<PlayerId, Bag> = {};
-      for (const [r, byPlayer] of Object.entries(claims)) {
-        const owed = Object.values(byPlayer).reduce((s, n) => s + n, 0);
-        const inBank = state.bank.hand[r] ?? 0;
-        const ids = Object.keys(byPlayer);
-        if (owed <= inBank) for (const id of ids) (gains[id] ??= {})[r] = byPlayer[id];
-        else if (ids.length === 1 && inBank > 0) (gains[ids[0]] ??= {})[r] = inBank;
-      }
-      return gains;
+      return settleClaims(state.bank.hand, claims);
     },
 
     buildCost: (_ctx, prev) => prev,

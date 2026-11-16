@@ -1,7 +1,7 @@
 // Redacted views. The server must only ever send these, never a raw GameState.
 import type { Bag, CardId, GameEvent, GameInit, GameState, PlayerId } from './types';
 import { bagTotal } from './bag';
-import { victoryPoints } from './engine';
+import { makeCtx, victoryPoints } from './engine';
 
 export interface PublicPlayer {
   id: PlayerId;
@@ -30,6 +30,8 @@ export interface PlayerView {
   awards: GameState['awards'];
   log: GameState['log'];
   winner?: PlayerId;
+  /** Redacted extension data per ruleset id (only present when a ruleset provides a view). */
+  ext?: Record<string, unknown>;
 }
 
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
@@ -48,7 +50,14 @@ const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
  */
 export function getPlayerView(state: GameState, viewer: PlayerId | null): PlayerView {
   const { seed: _seed, ...init } = state.init;
+  const ctx = makeCtx(state);
+  const ext = ctx.rules.views(ctx, viewer);
+  // Logged actions may hold private choices of extension rulesets; reveal all once the game is over.
+  const log = state.winner
+    ? state.log
+    : state.log.map((l) => ({ seq: l.seq, action: ctx.rules.redactAction(l.action, viewer) }));
   return clone({
+    ...(Object.keys(ext).length ? { ext } : {}),
     viewer,
     init,
     board: state.board,
@@ -75,7 +84,7 @@ export function getPlayerView(state: GameState, viewer: PlayerId | null): Player
     turn: state.turn,
     trade: state.trade,
     awards: state.awards,
-    log: state.log,
+    log,
     winner: state.winner,
   });
 }
@@ -86,6 +95,10 @@ export function getEventsView(events: GameEvent[], viewer: PlayerId | null): Gam
   return clone(events).map((ev) => {
     if (ev.e === 'stole' && viewer !== ev.from && viewer !== ev.to) return { ...ev, resource: undefined };
     if (ev.e === 'cardBought' && viewer !== ev.player) return { ...ev, card: undefined };
+    if (ev.e === 'ext' && ev.secret !== undefined && !(viewer && ev.visibleTo?.includes(viewer))) {
+      const { secret: _secret, ...pub } = ev;
+      return pub;
+    }
     return ev;
   });
 }

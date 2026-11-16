@@ -92,9 +92,10 @@ function buildGraph(layout: LayoutId): Graph {
   return g;
 }
 
-/** Distance rule: the vertex and all adjacent vertices are empty. */
+/** Distance rule: the vertex and all adjacent vertices are empty. An occupant (extension piece)
+ *  blocks its own vertex but does not impose the distance rule on its neighbours. */
 export function satisfiesDistanceRule(g: Graph, pieces: Pieces, v: VertexId): boolean {
-  if (pieces.buildings[v]) return false;
+  if (pieces.buildings[v] || pieces.occupants?.[v]) return false;
   return g.vertexNeighbors[v].every((n) => !pieces.buildings[n]);
 }
 
@@ -115,6 +116,8 @@ export function roadConnects(g: Graph, pieces: Pieces, player: PlayerId, e: Edge
     const b = pieces.buildings[v];
     if (b && b.owner === player) return true;
     if (b && b.owner !== player) return false; // cannot extend through an opponent building
+    const o = pieces.occupants?.[v];
+    if (o && o.owner !== player) return false; // ... nor past an opponent occupant
     return g.vertexEdges[v].some((x) => x !== e && pieces.roads[x] === player);
   });
 }
@@ -137,7 +140,9 @@ export function longestRoute(g: Graph, pieces: Pieces, player: PlayerId): number
   const used = new Set<EdgeId>();
   const blocked = (v: VertexId) => {
     const b = pieces.buildings[v];
-    return !!b && b.owner !== player;
+    if (b && b.owner !== player) return true;
+    const o = pieces.occupants?.[v];
+    return !!o && o.owner !== player;
   };
   let best = 0;
   const dfs = (v: VertexId, len: number) => {
