@@ -31,6 +31,8 @@ export class Connection {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private reqSeq = 0;
   private stopped = false;
+  /** True when an automatic re-join has been sent (or a manual create/join took over). */
+  private rejoinSent = false;
 
   constructor(private readonly h: ConnectionHandlers) {}
 
@@ -61,6 +63,8 @@ export class Connection {
 
   /** Send one message with a fresh reqId. Returns the reqId (for matching error replies). */
   send(msg: OutMsg): string {
+    // A manual create/join owns this connection now: never auto-rejoin an older room on welcome.
+    if (msg.type === 'createRoom' || msg.type === 'joinRoom') this.rejoinSent = true;
     const reqId = `r${++this.reqSeq}`;
     this.rawSend({ ...msg, reqId });
     return reqId;
@@ -89,17 +93,11 @@ export class Connection {
       return;
     }
     this.ws = ws;
+    this.rejoinSent = false;
     ws.onopen = () => {
       this.retry = 0;
       this.h.onStatus(true);
       this.hello();
-      // After a drop (or a page reload) the seat is reclaimed by re-joining with the same
-      // token; the server answers with the room and, if started, the current state.
-      const room = this.h.getRoom();
-      if (room) {
-        this.rawSend({ type: 'joinRoom', code: room });
-        this.rawSend({ type: 'requestState' });
-      }
     };
     ws.onmessage = (e) => {
       if (typeof e.data !== 'string') return;
@@ -109,7 +107,18 @@ export class Connection {
       } catch {
         return;
       }
-      if (msg.type === 'welcome') this.h.setToken(msg.sessionToken);
+      if (msg.type === 'welcome') {
+        this.h.setToken(msg.sessionToken);
+        // Re-join only after the hello is accepted. An empty/invalid name must not produce
+        // a NEEDS_HELLO storm, and a manual create/join must win over the stored room.
+        if (!this.rejoinSent) {
+          this.rejoinSent = true;
+          const room = this.h.getRoom();
+          if (room && this.h.getName().trim()) {
+            this.rawSend({ type: 'joinRoom', code: room });
+          }
+        }
+      }
       this.h.onMessage(msg);
     };
     // onclose fires after every failed attempt too; it drives the retry loop. Application

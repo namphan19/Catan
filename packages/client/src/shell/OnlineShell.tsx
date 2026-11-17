@@ -15,7 +15,16 @@ import { Lobby } from './Lobby';
 import { GameTable } from '../table/GameTable';
 
 const NAME_KEY = 'boschtan.name';
-const ROOM_KEY = 'boschtan.room';
+export const ROOM_KEY = 'boschtan.room';
+
+/** Forget the last room before an explicit "create room" (auto-rejoin is for reloads only). */
+export function forgetStoredRoom(): void {
+  try {
+    localStorage.removeItem(ROOM_KEY);
+  } catch {
+    /* storage disabled */
+  }
+}
 
 export interface OnlineShellProps {
   onHome: () => void;
@@ -255,7 +264,7 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
               <button type="button" className="btn btn-ghost" onClick={onLangToggle}>
                 🌐 {t('langToggle')}
               </button>
-              <button type="button" className="btn btn-ghost" onClick={onHome}>
+              <button type="button" className="btn btn-ghost" onClick={leaveRoom}>
                 {t('net_home')}
               </button>
             </div>
@@ -266,7 +275,7 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
                 onAction={sendAction}
                 events={events}
                 errors={errors}
-                onHome={onHome}
+                onHome={leaveRoom}
               />
             ) : (
               <p className="hint net-loading">{t('net_loading')}</p>

@@ -36,4 +36,5 @@ Ví dụ PowerShell: `$env:PORT=9000; pnpm start`
 - Không mở server ra internet; chỉ dùng trong mạng công ty. Không có đăng nhập, ai có link và mã phòng là vào được.
 - Sao lưu: copy thư mục `data/rooms`. Server khởi động lại sẽ tự nạp lại các ván đang dở.
 - Phòng không ai kết nối trong 30 phút sẽ bị xóa.
+- Phòng **đang chạy nằm trong bộ nhớ server**: xóa file JSON khi server còn chạy sẽ không xóa phòng đó, và lúc tắt server bình thường (Ctrl+C) nó có thể được ghi lại. Muốn xóa hẳn một ván: tắt server trước, xóa file trong `data/rooms`, rồi chạy lại. Trong giao diện, nút "Về trang chủ" của ván online đã rời phòng và quên mã phòng; nút "Tạo phòng" luôn mở phòng mới, không tự nạp lại phòng cũ.
 - Cập nhật phiên bản: tắt server, cập nhật code, `pnpm install`, `pnpm build`, `pnpm start`.

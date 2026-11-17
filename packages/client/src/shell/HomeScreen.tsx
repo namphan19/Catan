@@ -10,7 +10,7 @@ import { HomeMap } from './HomeMap';
 export interface HomeScreenProps {
   onNew: (seed: string, names: string[], expansion: boolean) => void;
   onLoad: (text: string) => void;
-  onOnline: () => void;
+  onOnline: (fresh?: boolean) => void;
   onLangToggle: () => void;
   error?: string | null;
 }
@@ -158,10 +158,10 @@ export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: Hom
                 <p>{t('home_onlineHint')}</p>
               </div>
               <div className="ticket-actions">
-                <Button variant="ghost" className="ticket-btn" onClick={onOnline}>
+                <Button variant="ghost" className="ticket-btn" onClick={() => onOnline(true)}>
                   {t('home_onlineCreate')}
                 </Button>
-                <Button variant="ghost" className="ticket-btn" onClick={onOnline}>
+                <Button variant="ghost" className="ticket-btn" onClick={() => onOnline()}>
                   {t('home_onlineJoin')}
                 </Button>
               </div>

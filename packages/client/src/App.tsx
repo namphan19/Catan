@@ -16,7 +16,7 @@ import {
 import { I18nProvider, useI18n } from './i18n';
 import { HotseatShell } from './shell/HotseatShell';
 import { HomeScreen } from './shell/HomeScreen';
-import { OnlineShell } from './shell/OnlineShell';
+import { OnlineShell, forgetStoredRoom } from './shell/OnlineShell';
 
 type Mode = 'menu' | 'hotseat' | 'online';
 
@@ -150,7 +150,10 @@ function GameApp() {
   }, []);
 
   const goMenu = useCallback(() => setMode('menu'), []);
-  const goOnline = useCallback(() => setMode('online'), []);
+  const goOnline = useCallback((fresh = false) => {
+    if (fresh) forgetStoredRoom();
+    setMode('online');
+  }, []);
   const toggleLang = useCallback(() => setLang(lang === 'vi' ? 'en' : 'vi'), [lang, setLang]);
 
   if (mode === 'online') {
