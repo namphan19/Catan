@@ -258,6 +258,7 @@ export const vi: Record<string, string> = {
   online_nameTitle: 'Tên của bạn',
   online_name: 'Tên hiển thị',
   online_name_ph: 'Ví dụ: Mai',
+  online_name_required: 'Hãy nhập tên hiển thị trước (1–24 ký tự).',
   online_players: 'Số người chơi',
   online_mode: 'Chế độ 5-6 người',
   online_mode_paired: 'Ghép cặp bàn (paired)',

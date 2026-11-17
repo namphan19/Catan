@@ -142,22 +142,41 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
 
   const createRoom = useCallback(
     (playerCount: number, options?: RoomOptions) => {
+      if (!nameRef.current.trim()) {
+        setNotice(t('online_name_required'));
+        return;
+      }
+      if (!online) {
+        setNotice(t('net_offline'));
+        return;
+      }
       setNotice(null);
       clearGame();
       setRoom(null);
+      // Repeat hello first: the first handshake may have been rejected for an empty name.
+      connRef.current?.hello();
       connRef.current?.send({ type: 'createRoom', playerCount, ...(options ? { options } : {}) });
     },
-    [clearGame],
+    [clearGame, online, t],
   );
 
   const joinRoom = useCallback(
     (code: string) => {
+      if (!nameRef.current.trim()) {
+        setNotice(t('online_name_required'));
+        return;
+      }
+      if (!online) {
+        setNotice(t('net_offline'));
+        return;
+      }
       setNotice(null);
       clearGame();
       setRoom(null);
+      connRef.current?.hello();
       connRef.current?.send({ type: 'joinRoom', code });
     },
-    [clearGame],
+    [clearGame, online, t],
   );
 
   const leaveRoom = useCallback(() => {
@@ -211,6 +230,7 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
           onName={changeName}
           onCreate={createRoom}
           onJoin={joinRoom}
+          online={online}
           onBack={onHome}
           onLangToggle={onLangToggle}
           notice={notice}

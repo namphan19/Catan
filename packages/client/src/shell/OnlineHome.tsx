@@ -12,12 +12,13 @@ export interface OnlineHomeProps {
   onName: (n: string) => void;
   onCreate: (playerCount: number, options?: RoomOptions) => void;
   onJoin: (code: string) => void;
+  online: boolean;
   onBack: () => void;
   onLangToggle: () => void;
   notice?: string | null;
 }
 
-export function OnlineHome({ name, onName, onCreate, onJoin, onBack, onLangToggle, notice }: OnlineHomeProps) {
+export function OnlineHome({ name, onName, onCreate, onJoin, online, onBack, onLangToggle, notice }: OnlineHomeProps) {
   const { t } = useI18n();
   const [count, setCount] = useState(3);
   const [mode, setMode] = useState<'paired' | 'extraBuild'>('paired');
@@ -28,8 +29,11 @@ export function OnlineHome({ name, onName, onCreate, onJoin, onBack, onLangToggl
     return isValidCode(fromLink.toUpperCase()) ? fromLink.toUpperCase() : '';
   });
   const [codeBad, setCodeBad] = useState(false);
+  const nameOk = name.trim().length > 0;
+  const canSubmit = nameOk && online;
 
   const submitCreate = () => {
+    if (!canSubmit) return;
     const parsedVp = Number.parseInt(vp, 10);
     const options: RoomOptions = {};
     if (count >= 5) options.largeTableMode = expansion ? 'paired' : mode;
@@ -39,6 +43,7 @@ export function OnlineHome({ name, onName, onCreate, onJoin, onBack, onLangToggl
   };
 
   const submitJoin = () => {
+    if (!canSubmit) return;
     const c = normalizeCode(code.trim());
     if (!isValidCode(c)) {
       setCodeBad(true);
@@ -76,6 +81,11 @@ export function OnlineHome({ name, onName, onCreate, onJoin, onBack, onLangToggl
               onChange={(e) => onName(e.target.value)}
             />
           </label>
+          {!nameOk && (
+            <p className="error-text" role="alert">
+              {t('online_name_required')}
+            </p>
+          )}
           <label>
             {t('online_players')}
             <select value={count} onChange={(e) => setCount(Number(e.target.value))}>
@@ -113,7 +123,7 @@ export function OnlineHome({ name, onName, onCreate, onJoin, onBack, onLangToggl
               onChange={(e) => setVp(e.target.value)}
             />
           </label>
-          <Button variant="primary" type="submit">
+          <Button variant="primary" type="submit" disabled={!canSubmit}>
             {t('online_create')}
           </Button>
         </form>
@@ -142,7 +152,7 @@ export function OnlineHome({ name, onName, onCreate, onJoin, onBack, onLangToggl
               }}
             />
           </label>
-          <Button variant="primary" type="submit">
+          <Button variant="primary" type="submit" disabled={!canSubmit}>
             {t('online_join')}
           </Button>
           {codeBad && (

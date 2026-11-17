@@ -66,6 +66,13 @@ export class Connection {
     return reqId;
   }
 
+  /** Send (or repeat) the hello handshake. Repeat it before create/join so the server always
+   *  has the latest display name; the server treats a repeated hello as a rename. */
+  hello(): void {
+    const token = this.h.getToken();
+    this.rawSend({ type: 'hello', name: this.h.getName(), ...(token ? { sessionToken: token } : {}) });
+  }
+
   // ------------------------------------------------------------------ internals
 
   private url(): string {
@@ -85,8 +92,7 @@ export class Connection {
     ws.onopen = () => {
       this.retry = 0;
       this.h.onStatus(true);
-      const token = this.h.getToken();
-      this.rawSend({ type: 'hello', name: this.h.getName(), ...(token ? { sessionToken: token } : {}) });
+      this.hello();
       // After a drop (or a page reload) the seat is reclaimed by re-joining with the same
       // token; the server answers with the room and, if started, the current state.
       const room = this.h.getRoom();

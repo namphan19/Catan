@@ -242,6 +242,7 @@ export const en: Record<string, string> = {
   online_nameTitle: 'Your name',
   online_name: 'Display name',
   online_name_ph: 'e.g. Mai',
+  online_name_required: 'Enter a display name first (1–24 characters).',
   online_players: 'Player count',
   online_mode: '5-6 player mode',
   online_mode_paired: 'Paired table (paired)',
