@@ -137,6 +137,25 @@ export function validateAction(state: GameState, action: Action): Validation {
   return e ? { ok: false, ...e } : { ok: true };
 }
 
+/** Log line for an applied action, with its public outcome (dice, production) from the events. */
+function logEntry(seq: number, action: Action, events: GameEvent[]): GameState['log'][number] {
+  const entry: GameState['log'][number] = { seq, action: clone(action) };
+  for (const ev of events) {
+    if (ev.e === 'rolled') entry.roll = { dice: [...ev.dice], sum: ev.sum };
+    if (ev.e === 'produced') {
+      for (const [id, bag] of Object.entries(ev.gains)) {
+        const into = ((entry.gains ??= {})[id] ??= {});
+        for (const [r, n] of Object.entries(bag)) if (n) into[r] = (into[r] ?? 0) + n;
+      }
+    }
+  }
+  if (entry.gains) {
+    for (const id of Object.keys(entry.gains)) if (!Object.keys(entry.gains[id]).length) delete entry.gains[id];
+    if (!Object.keys(entry.gains).length) delete entry.gains;
+  }
+  return entry;
+}
+
 /** Apply a legal action. Throws IllegalActionError if validateAction rejects it. */
 export function applyAction(state: GameState, action: Action): { state: GameState; events: GameEvent[] } {
   const v = validateAction(state, action);
@@ -145,7 +164,7 @@ export function applyAction(state: GameState, action: Action): { state: GameStat
   const events: GameEvent[] = [];
   const ctx: ApplyCtx = { ...makeCtx(draft), emit: (e) => events.push(e) };
   ctx.rules.actions[action.t].apply(ctx, clone(action));
-  draft.log.push({ seq: draft.log.length, action: clone(action) });
+  draft.log.push(logEntry(draft.log.length, action, events));
   if (!draft.winner) {
     const w = ctx.rules.call('checkWinner', ctx, undefined);
     if (w) {
@@ -158,11 +177,13 @@ export function applyAction(state: GameState, action: Action): { state: GameStat
   return { state: draft, events };
 }
 
-/** Every concrete legal action for the player right now (bounded samples for huge spaces). */
-export function getLegalActions(state: GameState, playerId: PlayerId): Action[] {
+/** Every concrete legal action for the player right now (bounded samples for huge spaces).
+ *  `only` limits the scan to those action types (bots skip e.g. offerTrade to save time). */
+export function getLegalActions(state: GameState, playerId: PlayerId, only?: readonly string[]): Action[] {
   if (state.winner) return [];
   const ctx = makeCtx(state);
-  return Object.values(ctx.rules.actions).flatMap((d) => d.legal(ctx, playerId));
+  const defs = only ? only.map((t) => ctx.rules.actions[t]).filter(Boolean) : Object.values(ctx.rules.actions);
+  return defs.flatMap((d) => d.legal(ctx, playerId));
 }
 
 /** Rebuild a game from its init (incl. seed) and action list. */

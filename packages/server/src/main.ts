@@ -314,6 +314,7 @@ export function startServer(opts: ServerOptions = {}): Promise<ServerHandle> {
         accepting = false;
         clearInterval(pingTimer);
         clearInterval(sweepTimer);
+        hub.close();
         httpServer.close();
       };
       const closeSockets = async (): Promise<void> => {

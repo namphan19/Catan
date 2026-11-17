@@ -53,6 +53,20 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
   const { t } = useI18n();
   const graph = useMemo(() => getBoardGraph(layout), [layout]);
   const ext = useMemo(() => boardExtent(graph), [graph]);
+  // Screen-reader / tooltip names for spots: the neighbouring tiles ("Rừng 8, Ruộng lúa 3"),
+  // never internal ids like "v:-1,2,N" (ids stay in data-id for tests and debugging).
+  const hexName = useMemo(() => {
+    const byId = new Map(board.hexes.map((h) => [h.id, h] as const));
+    return (id: string) => {
+      const h = byId.get(id as never);
+      if (!h) return t('terrain_sea');
+      return `${t(`terrain_${h.terrain}`)}${h.token ? ` ${h.token}` : ''}`;
+    };
+  }, [board.hexes, t]);
+  const spotLabel = (ids: readonly string[] | undefined, kind: string) => {
+    const names = (ids ?? []).map(hexName);
+    return names.length ? `${t(kind)}: ${names.join(', ')}` : t(kind);
+  };
   const svgRef = useRef<SVGSVGElement>(null);
   const [tf, setTf] = useState<Tf>({ s: 1, tx: 0, ty: 0 });
   const drag = useRef<{ x: number; y: number; tx: number; ty: number; active: boolean } | null>(null);
@@ -83,6 +97,8 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
   // delivers a real `click` to the highlighted hit target underneath (BUG-QA-02).
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (e.button !== 0) return;
+    // Clear a selection left from before (e.g. a double click) so the drag starts clean.
+    window.getSelection()?.removeAllRanges();
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect) return;
     drag.current = { x: e.clientX, y: e.clientY, tx: tf.tx, ty: tf.ty, active: false };
@@ -161,13 +177,14 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
               r={SIZE * 0.3}
               className="hit hit-vertex"
               role="button"
-              aria-label={`${t('board_vertex')} ${v}`}
+              aria-label={spotLabel(graph.vertexHexes[v as VertexId], 'board_vertex')}
+              data-id={v}
               onClick={(e) => {
                 e.stopPropagation();
                 onVertex?.(v as VertexId);
               }}
             >
-              <title>{`${t('board_vertex')} ${v}`}</title>
+              <title>{spotLabel(graph.vertexHexes[v as VertexId], 'board_vertex')}</title>
             </circle>
           ))}
           {[...hl.edges].map((e) => (
@@ -176,7 +193,7 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
               edge={e as EdgeId}
               layout={layout}
               onEdge={onEdge}
-              label={`${t('board_edge')} ${e}`}
+              label={spotLabel(graph.edgeHexes[e as EdgeId], 'board_edge')}
             />
           ))}
           {[...hl.hexes].map((h) => (
@@ -185,13 +202,14 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
               points={hexPointsOf(h)}
               className="hit hit-hex"
               role="button"
-              aria-label={`${t('board_hex')} ${h}`}
+              aria-label={`${t('board_hex')} ${hexName(h)}`}
+              data-id={h}
               onClick={(e) => {
                 e.stopPropagation();
                 onHex?.(h as HexId);
               }}
             >
-              <title>{`${t('board_hex')} ${h}`}</title>
+              <title>{`${t('board_hex')} ${hexName(h)}`}</title>
             </polygon>
           ))}
         </g>
@@ -256,6 +274,7 @@ function EdgeHit({
       className="hit hit-edge"
       role="button"
       aria-label={label}
+      data-id={edge}
       onClick={(e) => {
         e.stopPropagation();
         onEdge?.(edge);

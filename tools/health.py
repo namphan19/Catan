@@ -61,12 +61,12 @@ def agent_procs(root: Path = None) -> list:
             cmd = ["powershell", "-NoProfile", "-Command",
                    "@(Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'run-role(-retry)?(-copilot|-claude)?\\.sh' } "
                    "| Select-Object ProcessId, CommandLine) | ConvertTo-Json -Compress"]
-            raw = subprocess.run(cmd, capture_output=True, text=True, timeout=20).stdout.strip() or "[]"
+            raw = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20).stdout.strip() or "[]"
             rows = json.loads(raw)
             rows = rows if isinstance(rows, list) else [rows]
             items = [(r["ProcessId"], r.get("CommandLine") or "") for r in rows]
         else:
-            out = subprocess.run(["ps", "-eo", "pid=,args="], capture_output=True, text=True, timeout=20).stdout
+            out = subprocess.run(["ps", "-eo", "pid=,args="], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=20).stdout
             items = [(int(ln.split(None, 1)[0]), ln.split(None, 1)[1]) for ln in out.splitlines() if ln.strip()]
     except Exception:
         return []

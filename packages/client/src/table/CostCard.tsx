@@ -60,6 +60,7 @@ export function CostCard({ view }: { view: PlayerView }) {
             {ROWS.map(({ item, key, piece }) => {
               const bag = baseConfig.costs[item] as Record<string, number> | undefined;
               if (!bag) return null;
+              if (item === 'card' && view.ext?.strongholds) return null; // no base card deck there
               const can = !!hand && Object.entries(bag).every(([r, n]) => (hand[r] ?? 0) >= n);
               const vp = baseConfig.buildingVP[item];
               const text = RESOURCE_ORDER.filter((r) => (bag[r] ?? 0) > 0)

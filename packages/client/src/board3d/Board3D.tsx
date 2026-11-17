@@ -68,6 +68,21 @@ function CameraRig({
     }
   }, [camera, fit, resetKey, size.width, size.height]);
 
+  // Panning may not push the board out of sight: keep the orbit target within the board's radius.
+  const keepBoardInView = () => {
+    const c = controls.current as unknown as { target: THREE.Vector3; object: THREE.Camera } | null;
+    if (!c) return;
+    const dx = c.target.x - fit.cx;
+    const dz = c.target.z - fit.cz;
+    const d = Math.hypot(dx, dz);
+    const max = fit.radius * 0.9;
+    const dy = c.target.y;
+    if (d <= max && Math.abs(dy) < 0.01) return;
+    const k = d > max ? (d - max) / d : 0;
+    const shift = new THREE.Vector3(dx * k, dy, dz * k);
+    c.target.sub(shift);
+    c.object.position.sub(shift);
+  };
   const minDistance = fit.radius * 0.55;
   const maxDistance = fit.radius * 4;
 
@@ -78,7 +93,12 @@ function CameraRig({
       enableDamping
       dampingFactor={0.08}
       enablePan
+      // Map-style (PO 2026-11-17): left drag moves the board, right drag (or Ctrl/Shift + left drag,
+      // three's built-in modifier) rotates; one finger pans, two fingers zoom and rotate.
+      mouseButtons={{ LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE }}
+      touches={{ ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE }}
       screenSpacePanning={false}
+      onChange={keepBoardInView}
       minDistance={minDistance}
       maxDistance={maxDistance}
       minPolarAngle={Math.PI / 9}
@@ -314,13 +334,16 @@ export default function Board3D(props: Board3DProps) {
         <Pieces3D pieces={pieces} graph={graph} />
         {board.blocker && <Blocker3D hexId={board.blocker} />}
         {strongholds && <Strongholds3D pieces={pieces} sh={strongholds} />}
-        <Highlights3D hl={hl} graph={graph} onVertex={onVertex} onEdge={onEdge} onHex={onHex} />
-        {/* Clicking open sea cancels a pending pick, like clicking the SVG sea in 2D. */}
+        <Highlights3D hl={hl} buildings={pieces.buildings} graph={graph} onVertex={onVertex} onEdge={onEdge} onHex={onHex} />
+        {/* Clicking open sea cancels a pending pick, like clicking the SVG sea in 2D. A near miss on
+            the island itself does not (playtest 2026-11-17: it kept dropping the build mode). */}
         <mesh
           rotation-x={-Math.PI / 2}
           position-y={-0.24}
           onClick={(e) => {
-            if (e.delta <= 5) onMiss?.();
+            if (e.delta > 5) return;
+            if (Math.hypot(e.point.x - fit.cx, e.point.z - fit.cz) < fit.radius * 1.02) return;
+            onMiss?.();
           }}
         >
           <planeGeometry args={[fit.radius * 12, fit.radius * 12]} />

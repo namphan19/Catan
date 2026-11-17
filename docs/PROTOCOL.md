@@ -28,7 +28,8 @@ redacted data (getPlayerView / getEventsView).
 | leaveRoom | - | lobby (before start); after start the seat is kept for reconnect |
 | setReady | ready: boolean | lobby |
 | startGame | - | host only, all seats filled and ready |
-| kick | seat | host only, lobby only (before start): frees that seat and closes its connection with code KICKED |
+| kick | seat | host only, lobby only (before start): frees that seat and closes its connection with code KICKED (also removes a bot) |
+| addBot | level: 'easy' \| 'normal' \| 'hard' \| 'expert' | host only, lobby only: fills the next free seat with a server-side bot (always ready; named "Bot", "Bot 2", ...) |
 | action | action: Action (engine format; `player` must equal the sender's seat) | in game |
 | requestState | - | after reconnect / when the client is unsure |
 
@@ -36,13 +37,14 @@ redacted data (getPlayerView / getEventsView).
 | type | fields |
 |---|---|
 | welcome | sessionToken, name |
-| room | code, hostSeat, playerCount, options, seats: [{ seat: "p1".., name, connected, ready }], you: seat or null, started |
+| room | code, hostSeat, playerCount, options, seats: [{ seat: "p1".., name, connected, ready, bot?: level }], you: seat or null, started |
 | state | view: PlayerView (getPlayerView for the receiver), legal: Action[] (getLegalActions for the receiver), seq (log length) |
 | events | events: GameEvent[] (getEventsView for the receiver), seq |
 | error | reqId?, code, message |
 
 After every applied action the server sends each connected seat `events` then `state` (both redacted for
-that seat). Spectators are out of scope.
+that seat). Bot seats act on the server through the same engine path (validated, persisted, broadcast); a bot
+decides from its own redacted view only, and bots pause while no human is connected. Spectators are out of scope.
 
 ## Server rules
 - Validate every `action` with the engine; reject `player` != sender seat with code IMPERSONATION.

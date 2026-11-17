@@ -31,6 +31,9 @@ const NONE: Params[] = [{}];
 const ok = (): null => null;
 const others = (ctx: Ctx, id: PlayerId): PlayerId[] => turnOrderFrom(ctx.state, id).slice(1);
 const baseResources = (ctx: Ctx): string[] => ctx.rules.config.resources.filter((r) => !isCommodity(r));
+/** Bazaar answers need a commodity: an offer to a player without one could only fail (S8). */
+const holdsCommodity = (ctx: Ctx, id: PlayerId): boolean =>
+  SH.commodities.some((c) => (player(ctx.state, id).hand[c] ?? 0) > 0);
 const handTotal = (ctx: Ctx, id: PlayerId): number => bagTotal(player(ctx.state, id).hand);
 
 const otherPlayer = (ctx: Ctx, a: ExtAction): RuleError | null =>
@@ -194,7 +197,16 @@ export const CARDS: Record<string, CardDef> = {
   // ---- commerce --------------------------------------------------------------------------------
   /** This turn you may offer each other player 1 resource for a commodity of their choice. */
   bazaar: {
-    check: ok,
+    // S8: only playable when at least one offer could succeed (you hold a resource and some other
+    // player holds a commodity); otherwise the card would be spent for nothing.
+    check(ctx, a) {
+      const hand = player(ctx.state, a.player).hand;
+      if (!baseResources(ctx).some((r) => (hand[r] ?? 0) > 0))
+        return err('NO_TARGET', 'You have no resource to offer.');
+      if (!others(ctx, a.player).some((id) => holdsCommodity(ctx, id)))
+        return err('NO_TARGET', 'No other player holds a commodity.');
+      return null;
+    },
     run(ctx, a) {
       sh(ctx.state).bazaar = { player: a.player, offered: [] };
     },
@@ -448,6 +460,8 @@ export const bazaarOffer: ActionDef = {
     const t = otherPlayer(ctx, a);
     if (t) return t;
     if (b.offered.includes(a.target as PlayerId)) return err('ALREADY_OFFERED', 'One offer per player.');
+    if (!holdsCommodity(ctx, a.target as PlayerId))
+      return err('NO_COMMODITY', 'That player holds no commodity to answer with.');
     if (typeof a.resource !== 'string' || !baseResources(ctx).includes(a.resource))
       return err('BAD_ARGS', 'Offer a resource.');
     if ((player(state, a.player).hand[a.resource] ?? 0) <= 0) return err('NOT_ENOUGH', 'You do not have that card.');
@@ -470,7 +484,7 @@ export const bazaarOffer: ActionDef = {
     const hand = player(ctx.state, id).hand;
     const out: Action[] = [];
     for (const target of others(ctx, id))
-      if (!b.offered.includes(target))
+      if (!b.offered.includes(target) && holdsCommodity(ctx, target))
         for (const resource of baseResources(ctx))
           if ((hand[resource] ?? 0) > 0) out.push({ t: 'sh:bazaarOffer', player: id, target, resource });
     return out;

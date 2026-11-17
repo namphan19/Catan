@@ -55,7 +55,7 @@ export function getPlayerView(state: GameState, viewer: PlayerId | null): Player
   // Logged actions may hold private choices of extension rulesets; reveal all once the game is over.
   const log = state.winner
     ? state.log
-    : state.log.map((l) => ({ seq: l.seq, action: ctx.rules.redactAction(l.action, viewer) }));
+    : state.log.map((l) => ({ ...l, action: ctx.rules.redactAction(l.action, viewer) })); // roll/gains are public
   return clone({
     ...(Object.keys(ext).length ? { ext } : {}),
     viewer,

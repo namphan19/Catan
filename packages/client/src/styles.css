@@ -372,6 +372,24 @@ button {
   font-size: 0.9rem;
 }
 
+.shell-thinking {
+  font-size: 0.9rem;
+  font-style: italic;
+  animation: thinking-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes thinking-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-thinking {
+    animation: none;
+  }
+}
+
 /* ---------- Pass-device cover ---------- */
 .cover {
   position: fixed;
@@ -416,6 +434,9 @@ button {
   flex: 1;
   min-width: 0;
   overflow: hidden;
+  /* Dragging pans the board: never select the token numbers / harbor ratios on the way. */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .board-svg {
@@ -552,12 +573,35 @@ button {
   stroke-linejoin: round;
 }
 
-/* Parchment chip behind the ratio so it reads over open sea (Harbor.tsx places the chip
-   below the icon, never covering the icon or a tile). */
-.harbor-ratio-bg {
-  fill: var(--parchment);
+/* Harbor out in the sea (Harbor.tsx): wooden piers from the coast corners to a dock, and a
+   parchment badge [icon · ratio] beyond the dock, rimmed in the harbor's resource colour. */
+.harbor-pier {
+  fill: #a6743e;
+  stroke: var(--ink);
+  stroke-width: 1.4;
+}
+
+.harbor-plank {
+  stroke: #6b4e2e;
+  stroke-width: 1;
+}
+
+.harbor-dock {
+  fill: #8a5a2b;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+}
+
+.harbor-post {
+  fill: #5b4126;
   stroke: var(--ink);
   stroke-width: 1;
+}
+
+.harbor-badge {
+  fill: var(--parchment);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
 }
 
 .hl-vertex {
@@ -569,9 +613,18 @@ button {
 }
 
 .hl-edge {
+  /* thick gold band with a dark halo (drawn by .hl-edge-halo below it): readable on every terrain */
   stroke: var(--gold);
-  stroke-width: 9;
-  stroke-opacity: 0.55;
+  stroke-width: 12;
+  stroke-opacity: 0.9;
+  stroke-linecap: round;
+  animation: hl 1.2s ease-in-out infinite alternate;
+}
+
+.hl-edge-halo {
+  stroke: var(--ink);
+  stroke-width: 16;
+  stroke-opacity: 0.45;
   stroke-linecap: round;
   animation: hl 1.2s ease-in-out infinite alternate;
 }
@@ -618,6 +671,26 @@ button {
   display: grid;
   place-items: center;
   padding: 16px;
+}
+
+/* Docked (answering another player's offer): no backdrop, top-right of the board area, below the
+   dice box and left of the side column, so the board stays visible and clickable. */
+.dialog-overlay.docked {
+  background: transparent;
+  pointer-events: none;
+  place-items: start end;
+  padding: 206px 336px 16px 16px;
+}
+.dialog-overlay.docked .dialog {
+  pointer-events: auto;
+  max-width: 420px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+@media (max-width: 1180px) {
+  .dialog-overlay.docked { padding-right: 280px; }
+}
+@media (max-width: 900px) {
+  .dialog-overlay.docked { place-items: end center; padding: 16px; }
 }
 
 .dialog {
@@ -730,12 +803,122 @@ button {
   border-left-width: 6px;
 }
 
+.target-btn .target-count {
+  margin-left: auto;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
 .trade-terms strong {
   font-variant-numeric: tabular-nums;
 }
 
 .trade-composer {
   margin-top: 10px;
+}
+
+/* Give / get side by side when there is room (keeps the dialog short), stacked on narrow screens. */
+.trade-sides {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px;
+}
+
+.trade-from {
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* "You get ⇄ You give" summary of an offer. */
+.trade-terms-box {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: var(--parchment-dark);
+  margin: 6px 0 10px;
+}
+
+.trade-terms-label {
+  display: block;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin-bottom: 2px;
+}
+
+.trade-terms-arrow {
+  font-size: 1.4rem;
+  color: var(--ink-soft);
+}
+
+.bag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.bag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.trade-answer {
+  margin: 6px 0;
+  font-weight: 700;
+}
+
+.trade-answer .hint {
+  font-weight: 400;
+}
+
+/* Countdown of a bot's offer: text plus a draining bar; turns red for the last 10 s. */
+.trade-countdown {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  margin: 4px 0 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.trade-countdown-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--parchment-dark);
+  overflow: hidden;
+}
+
+.trade-countdown-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+  transition: width 0.25s linear;
+}
+
+.trade-countdown.urgent {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.trade-countdown.urgent .trade-countdown-bar > span {
+  background: var(--danger);
+}
+
+.option-sub {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
 }
 
 /* ---------- Winner overlay ---------- */
@@ -865,6 +1048,28 @@ button {
 .dot-off {
   background: transparent;
   border: 2px solid #a33;
+}
+
+.lobby-bot-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 4px 0 12px;
+}
+
+/* Word labels in the seat list (host, bot level): a pill, not the round count badge. */
+.lobby-seat .badge {
+  display: inline-block;
+  height: auto;
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.lobby-seat .badge-bot {
+  background: var(--ink, #3b2f2a);
 }
 
 .lobby-actions {

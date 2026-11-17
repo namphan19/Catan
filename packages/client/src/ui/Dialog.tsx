@@ -6,10 +6,15 @@ interface DialogProps {
   /** When locked the dialog cannot be dismissed (mandatory phases such as discard/steal). */
   locked?: boolean;
   onClose?: () => void;
+  /**
+   * Docked: a small non-modal panel at the side of the board (no backdrop, the board stays visible
+   * and usable) - for answers to someone else's trade offer.
+   */
+  docked?: boolean;
 }
 
 /** Modal dialog: role=dialog, aria-modal, Esc closes unless locked, initial focus inside. */
-export function Dialog({ title, children, locked, onClose }: DialogProps) {
+export function Dialog({ title, children, locked, onClose, docked }: DialogProps) {
   const boxRef = useRef<HTMLDivElement>(null);
 
   // The listener must stay registered across re-renders: callers pass a fresh `onClose`
@@ -35,12 +40,12 @@ export function Dialog({ title, children, locked, onClose }: DialogProps) {
 
   return (
     <div
-      className="dialog-overlay"
+      className={docked ? 'dialog-overlay docked' : 'dialog-overlay'}
       onPointerDown={(e) => {
-        if (!locked && e.target === e.currentTarget) onClose?.();
+        if (!docked && !locked && e.target === e.currentTarget) onClose?.();
       }}
     >
-      <div className="dialog" role="dialog" aria-modal="true" aria-label={title} ref={boxRef}>
+      <div className="dialog" role="dialog" aria-modal={docked ? 'false' : 'true'} aria-label={title} ref={boxRef}>
         <div className="dialog-head">
           <h2>{title}</h2>
           {!locked && (

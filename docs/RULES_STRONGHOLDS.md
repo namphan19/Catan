@@ -125,7 +125,7 @@ When the fleet lands: **raiders** = number of cities on the board (capitals incl
 | | pavers (2) | 2 roads for free |
 | | armory (2) | promote 1 or 2 wardens for free |
 | | press (1) | 1 VP |
-| commerce | bazaar (2) | this turn offer each other player 1 resource; they must answer with a commodity of their choice (no commodity: the offer fails) |
+| commerce | bazaar (2) | this turn offer each other player 1 resource; they must answer with a commodity of their choice. Offers go only to players who hold a commodity; the card is playable only if you hold a resource and someone else holds a commodity (S8) |
 | | tithe (2) | look at the hand of a player with more VP and take 2 cards |
 | | caravan (6) | take the caravan, put it on a hex next to one of your buildings: 2:1 for that hex's resource, 1 VP |
 | | fleet (2) | this turn trade one named resource or commodity 2:1 |
@@ -160,7 +160,7 @@ immediately on reaching 13 VP.
 | S5 | Activated wardens | Wardens activated by rally or placed active by turncoat may not act in the same turn either. | lead |
 | S6 | Shields | No cap on the number of shield tokens. | lead |
 | S7 | Caravan on a waste hex | Allowed (rulebook: any land hex) but gives no trade rate. | lead |
-| S8 | Cards without a target | Cards that need a target (plot, turncoat, envoy, toll before the blocker is in play ...) cannot be played without one; they can only be discarded when over the hand limit. | lead |
+| S8 | Cards without a target | Cards that need a target (plot, turncoat, envoy, toll before the blocker is in play, bazaar when nobody else holds a commodity ...) cannot be played without one; they can only be discarded when over the hand limit. A bazaar offer to a player without a commodity is rejected (`NO_COMMODITY`), it would only fail (playtest 2026-11-17). | lead |
 | S9 | Blocker entry hex | The waste hex the base setup would have used (first one on the large board). | lead |
 | S10 | Wins during pending choices | A win is detected when the interrupted phase resumes, not in the middle of a pending choice. | lead |
 | S11 | Legacy extra build phase | Not supported with this expansion; 5-6 players always use paired players. | lead |

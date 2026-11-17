@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Action, GameEvent, PlayerView } from '@hexgame/engine';
 import { Connection } from '../net/connection';
-import type { RoomInfo, RoomOptions, ServerMsg } from '../net/protocol';
+import type { BotLevel, RoomInfo, RoomOptions, ServerMsg } from '../net/protocol';
 import { CODE_RE } from '../net/protocol';
 import { useErrorText } from '../net/errors';
 import { useI18n } from '../i18n';
@@ -208,6 +208,10 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
     connRef.current?.send({ type: 'kick', seat });
   }, []);
 
+  const addBot = useCallback((level: BotLevel) => {
+    connRef.current?.send({ type: 'addBot', level });
+  }, []);
+
   const sendAction = useCallback((a: Action) => {
     // The server only accepts actions naming our own seat; legal actions from the server
     // already carry it, but be defensive for engine shapes without a player field.
@@ -221,10 +225,12 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
   const names = useMemo<Record<string, string>>(() => {
     const map: Record<string, string> = {};
     room?.seats.forEach((s) => {
-      map[s.seat] = s.name;
+      map[s.seat] = s.bot ? `🤖 ${s.name}` : s.name;
     });
     return map;
   }, [room]);
+
+  const botSeats = useMemo(() => (room?.seats ?? []).filter((s) => s.bot).map((s) => s.seat), [room]);
 
   return (
     <>
@@ -252,6 +258,7 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
           onStart={startGame}
           onLeave={leaveRoom}
           onKick={kickSeat}
+          onAddBot={addBot}
           notice={notice}
           onLangToggle={onLangToggle}
         />
@@ -276,6 +283,7 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
                 events={events}
                 errors={errors}
                 onHome={leaveRoom}
+                botSeats={botSeats}
               />
             ) : (
               <p className="hint net-loading">{t('net_loading')}</p>

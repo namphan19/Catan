@@ -73,15 +73,24 @@ export function statusOf(view: PlayerView, legal: Action[], pending: PendingPick
   if (has('respondTrade')) return mine(t('status_respond', { name: view.trade ? name(view.trade.from) : '' }));
   if (has('steal')) return mine(t('status_steal'));
   if (has('moveBlocker')) return mine(t('status_blocker'));
-  if (ph.k === 'setup' && has('placeSettlement')) return mine(t('status_setupSettlement'));
-  if (ph.k === 'setup' && has('placeRoad')) return mine(t('status_setupRoad'));
+  // Strongholds: the second setup piece is a city (rules section 2), so say so.
+  const setupCity =
+    ph.k === 'setup' && !!view.ext?.strongholds && !!me &&
+    Object.values(view.pieces.buildings).filter((b) => b.owner === me).length >= (has('placeRoad') ? 2 : 1);
+  if (ph.k === 'setup' && has('placeSettlement')) return mine(t(setupCity ? 'status_setupCity' : 'status_setupSettlement'));
+  if (ph.k === 'setup' && has('placeRoad')) return mine(t(setupCity ? 'status_setupRoadCity' : 'status_setupRoad'));
   if (ph.k === 'freeRoads' && has('placeRoad')) return mine(t('status_freeRoads', { n: ph.left }));
   if (has('roll')) return mine(t('status_roll'));
   if (pending === 'placeSettlement') return mine(t('status_pickSettlement'), true);
   if (pending === 'placeRoad') return mine(t('status_pickRoad'), true);
   if (pending === 'buildCity') return mine(t('status_pickCity'), true);
   if (has('confirmTrade')) return mine(t('status_confirm'));
-  if (has('cancelTrade')) return mine(t('status_offerOpen'));
+  if (has('cancelTrade')) {
+    const tr = view.trade;
+    const others = view.players.filter((p) => p.id !== me);
+    const allDeclined = !!tr && others.every((p) => tr.responses[p.id]?.response === 'decline');
+    return mine(allDeclined ? t('dlg_allDeclined') : t('status_offerOpen'));
+  }
   if (has('endTurn')) return mine(ph.k === 'main' ? t('status_main') : t('status_buildOrEnd'));
   if (legal.length > 0) return mine(t('status_act'));
 
@@ -100,15 +109,19 @@ export function StatusBanner({
   legal,
   pending,
   onCancel,
+  prompt,
 }: {
   view: PlayerView;
   legal: Action[];
   pending: PendingPick;
   onCancel: () => void;
+  /** A running expansion choice ("Recruit: pick an intersection") replaces the generic sentence. */
+  prompt?: string | null;
 }) {
   const { t } = useI18n();
   const name = useName();
-  const st = statusOf(view, legal, pending, t, name);
+  const base = statusOf(view, legal, pending, t, name);
+  const st = prompt ? { ...base, mine: true, who: view.viewer, text: prompt } : base;
   return (
     <div className="status-banner" data-mine={st.mine ? 'true' : 'false'} role="status" aria-live="polite">
       {st.who && <Emblem id={playerEmblem(st.who)} size={22} color={playerColor(st.who)} />}

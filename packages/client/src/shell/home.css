@@ -524,7 +524,7 @@ body:has(.home) {
 
 .ledger-name-row {
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr);
+  grid-template-columns: 30px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   padding: 3px 0;
@@ -563,6 +563,20 @@ body:has(.home) {
 
 .ledger-name-row input:focus {
   border-bottom-color: var(--gold);
+}
+
+/* Human / bot level per seat (local games). */
+.ledger-name-row .seat-kind select {
+  font-size: 0.85rem;
+  padding: 3px 18px 3px 6px;
+  max-width: 9.5em;
+}
+
+.ledger-bot-name {
+  padding: 5px 2px;
+  font-family: var(--font-body);
+  font-style: italic;
+  color: rgba(59, 47, 47, 0.75);
 }
 
 .ledger-error {
@@ -918,4 +932,50 @@ body:has(.home) {
   .btn.ledger-start {
     transition: none;
   }
+}
+
+/* Expansion toggle: a real checkbox row (the generic `.ledger-field input/label` rules made the
+   box full-width above the text and the text small caps). */
+.ledger-field .exp-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--ink);
+}
+
+.ledger-field .exp-check input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  accent-color: var(--ink);
+  cursor: pointer;
+}
+
+/* Seat kind (human / bot level): parchment pill instead of the browser's default select. */
+.ledger-name-row .seat-kind select {
+  appearance: none;
+  border: 1.5px solid rgba(59, 47, 47, 0.42);
+  border-radius: 999px;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%) right 11px center / 5px 5px no-repeat,
+    linear-gradient(-45deg, transparent 50%, var(--ink-soft) 50%) right 6px center / 5px 5px no-repeat,
+    var(--parchment);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 3px 24px 3px 10px;
+  cursor: pointer;
+}
+
+.ledger-name-row .seat-kind select:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
 }

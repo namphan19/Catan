@@ -18,6 +18,9 @@ export function HighlightsLayer({ hl, graph }: { hl: Highlights; graph: Graph })
         <polygon key={`h${h}`} points={hexPoints(parseHexQ(h), parseHexR(h))} className="hl-hex" />
       ))}
       {[...hl.edges].map((e) => (
+        <line key={`eh${e}`} {...edgeLine(graph, e as EdgeId)} className="hl-edge-halo" />
+      ))}
+      {[...hl.edges].map((e) => (
         <line key={`e${e}`} {...edgeLine(graph, e as EdgeId)} className="hl-edge" />
       ))}
       {[...hl.vertices].map((v) => {
@@ -36,6 +39,13 @@ function parseHexR(id: string): number {
 }
 
 function edgeLine(graph: Graph, e: EdgeId): { x1: number; y1: number; x2: number; y2: number } {
+  // Inset from both corners so the band reads as "this edge" and never covers a corner spot.
   const g = edgeGeom(graph, e);
-  return { x1: g.a.x, y1: g.a.y, x2: g.b.x, y2: g.b.y };
+  const k = 0.14;
+  return {
+    x1: g.a.x + (g.b.x - g.a.x) * k,
+    y1: g.a.y + (g.b.y - g.a.y) * k,
+    x2: g.b.x - (g.b.x - g.a.x) * k,
+    y2: g.b.y - (g.b.y - g.a.y) * k,
+  };
 }

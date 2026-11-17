@@ -92,7 +92,7 @@ def pid_alive(pid) -> bool:
     try:
         if WIN:
             out = subprocess.run(["tasklist", "/FI", f"PID eq {pid}", "/NH"], capture_output=True,
-                                 text=True, timeout=15).stdout
+                                 text=True, encoding="utf-8", errors="replace", timeout=15).stdout
             return re.search(rf"\b{pid}\b", out) is not None
         os.kill(pid, 0)
         return True
@@ -164,7 +164,7 @@ def _dispatch(root: Path, spec: dict, dispatch_cmd: list, results: dict) -> None
         env["TASK_ID"] = spec["task_id"]
     try:
         r = subprocess.run([*dispatch_cmd, spec["role"], spec["task_file"], "--resume", "--hint", hint],
-                           cwd=root, env=env, capture_output=True, text=True, timeout=300)
+                           cwd=root, env=env, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
         results[spec["id"]] = r.returncode
         if r.returncode != 0:
             print(f"dispatch of {spec['role']} failed rc={r.returncode}: {(r.stdout + r.stderr)[-200:]}", file=sys.stderr, flush=True)

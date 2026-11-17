@@ -3,7 +3,7 @@
 // never decides legality. Player colours come from ui/colors.ts (same palette as 2D).
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import * as THREE from 'three';
-import { useFrame, type ThreeEvent } from '@react-three/fiber';
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Outlines, RoundedBox } from '@react-three/drei';
 import type { EdgeId, Graph, Pieces, PlayerId, VertexId } from '@hexgame/engine';
 import { EMBLEM_GLYPHS, playerEmblem, playerHex } from '../ui/colors';
@@ -49,17 +49,31 @@ function usePointerCursor(): void {
   );
 }
 
-/** Hover target group: scales up smoothly without per-frame allocation. */
+/**
+ * A clickable legal target. Playtest 2026-11-17 fixes:
+ * - the hover scale is applied around the target itself (it used to scale around the board centre,
+ *   so a hovered spot jumped away from the pointer and flickered, worst at the board's rim);
+ * - pressing on a target freezes the camera until the button is released, so a tiny hand movement
+ *   no longer pans the board instead of placing the piece;
+ * - a click that moved up to 10 px still counts (it was 5 px).
+ */
 function HoverTarget({
   children,
+  position,
+  rotationY = 0,
+  onPick,
   max = 1.32,
 }: {
   children: ReactNode;
+  position: [number, number, number];
+  rotationY?: number;
+  onPick: () => void;
   max?: number;
 }) {
   const ref = useRef<THREE.Group>(null);
   const [hover, setHover] = useState(false);
   const cur = useRef(1);
+  const controls = useThree((s) => s.controls) as unknown as { enabled: boolean } | null;
   usePointerCursor();
   useFrame((_, dt) => {
     const g = ref.current;
@@ -71,7 +85,8 @@ function HoverTarget({
   });
   return (
     <group
-      ref={ref}
+      position={position}
+      rotation-y={rotationY}
       onPointerOver={(e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation();
         setHover(true);
@@ -81,8 +96,25 @@ function HoverTarget({
         setHover(false);
         document.body.style.cursor = '';
       }}
+      onPointerDown={(e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
+        if (!controls) return;
+        controls.enabled = false;
+        const release = () => {
+          controls.enabled = true;
+          window.removeEventListener('pointerup', release);
+          window.removeEventListener('pointercancel', release);
+        };
+        window.addEventListener('pointerup', release);
+        window.addEventListener('pointercancel', release);
+      }}
+      onClick={(e: ThreeEvent<MouseEvent>) => {
+        e.stopPropagation();
+        if (e.delta > 10) return; // the end of a real drag, not a click
+        onPick();
+      }}
     >
-      {children}
+      <group ref={ref}>{children}</group>
     </group>
   );
 }
@@ -478,6 +510,8 @@ export function Pieces3D({ pieces, graph }: { pieces: Pieces; graph: Graph }) {
 
 interface HighlightProps {
   hl: Highlights;
+  /** Buildings on the board: a vertex target on a settlement (city upgrade) is drawn above it. */
+  buildings?: Pieces['buildings'];
   graph: Graph;
   onVertex?: (v: VertexId) => void;
   onEdge?: (e: EdgeId) => void;
@@ -492,28 +526,25 @@ const GOLD_MAT = {
   metalness: 0.15,
 } as const;
 
-function VertexTarget({ v, onVertex }: { v: VertexId; onVertex?: (v: VertexId) => void }) {
+function VertexTarget({ v, raised, onVertex }: { v: VertexId; raised: boolean; onVertex?: (v: VertexId) => void }) {
   const p = vertexWorld(v);
+  // Upgrading a settlement: the ring floats above the house so the house does not hide it.
+  const y = HEX_TOP + (raised ? 0.42 : 0.05);
   return (
-    <HoverTarget>
-      <group
-        position={[p.x, HEX_TOP + 0.05, p.z]}
-        onClick={(e: ThreeEvent<MouseEvent>) => {
-          e.stopPropagation();
-          onVertex?.(v);
-        }}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
-        <mesh rotation-x={-Math.PI / 2}>
-          <torusGeometry args={[0.17, 0.028, 8, 24]} />
-          <meshStandardMaterial {...GOLD_MAT} />
-        </mesh>
-        {/* invisible, generous hit disc so taps work on touch and at a distance */}
-        <mesh position-y={0.001} rotation-x={-Math.PI / 2}>
-          <circleGeometry args={[0.25, 20]} />
-          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-        </mesh>
-      </group>
+    <HoverTarget position={[p.x, y, p.z]} onPick={() => onVertex?.(v)}>
+      <mesh rotation-x={-Math.PI / 2}>
+        <torusGeometry args={[0.17, 0.03, 8, 24]} />
+        <meshStandardMaterial {...GOLD_MAT} />
+      </mesh>
+      <mesh rotation-x={-Math.PI / 2} position-y={-0.002}>
+        <circleGeometry args={[0.15, 20]} />
+        <meshBasicMaterial color={GOLD} transparent opacity={0.35} depthWrite={false} />
+      </mesh>
+      {/* invisible, generous hit volume so taps work on touch, at a distance and at low angles */}
+      <mesh>
+        <cylinderGeometry args={[0.32, 0.32, 0.3, 16]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
     </HoverTarget>
   );
 }
@@ -521,25 +552,16 @@ function VertexTarget({ v, onVertex }: { v: VertexId; onVertex?: (v: VertexId) =
 function EdgeTarget({ e, graph, onEdge }: { e: EdgeId; graph: Graph; onEdge?: (e: EdgeId) => void }) {
   const w = edgeWorld(graph, e);
   return (
-    <HoverTarget>
-      <group
-        position={[w.mid.x, HEX_TOP + 0.065, w.mid.z]}
-        rotation-y={w.rotY}
-        onClick={(ev: ThreeEvent<MouseEvent>) => {
-          ev.stopPropagation();
-          onEdge?.(e);
-        }}
-        onPointerDown={(ev) => ev.stopPropagation()}
-      >
-        <mesh castShadow>
-          <boxGeometry args={[w.len * 0.92, 0.035, 0.11]} />
-          <meshStandardMaterial {...GOLD_MAT} />
-        </mesh>
-        <mesh>
-          <boxGeometry args={[w.len * 0.98, 0.09, 0.26]} />
-          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-        </mesh>
-      </group>
+    <HoverTarget position={[w.mid.x, HEX_TOP + 0.065, w.mid.z]} rotationY={w.rotY} max={1.18} onPick={() => onEdge?.(e)}>
+      <mesh castShadow>
+        <boxGeometry args={[w.len * 0.72, 0.045, 0.13]} />
+        <meshStandardMaterial {...GOLD_MAT} />
+      </mesh>
+      {/* hit volume: most of the edge (the ends stay free so neighbouring edges do not overlap) */}
+      <mesh>
+        <boxGeometry args={[w.len * 0.86, 0.3, 0.42]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
     </HoverTarget>
   );
 }
@@ -557,15 +579,7 @@ function HexTarget({ id, onHex }: { id: string; onHex?: (h: string) => void }) {
   const lineGeom = useMemo(() => new THREE.BufferGeometry().setFromPoints(points), [points]);
   useEffect(() => () => lineGeom.dispose(), [lineGeom]);
   return (
-    <HoverTarget>
-      <group
-        position={[p.x, HEX_TOP + 0.045, p.z]}
-        onClick={(e: ThreeEvent<MouseEvent>) => {
-          e.stopPropagation();
-          onHex?.(id);
-        }}
-        onPointerDown={(e) => e.stopPropagation()}
-      >
+    <HoverTarget position={[p.x, HEX_TOP + 0.045, p.z]} max={1.04} onPick={() => onHex?.(id)}>
         <lineLoop geometry={lineGeom}>
           <lineBasicMaterial color={GOLD} transparent opacity={0.95} />
         </lineLoop>
@@ -577,13 +591,12 @@ function HexTarget({ id, onHex }: { id: string; onHex?: (h: string) => void }) {
           <circleGeometry args={[0.95, 20]} />
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
-      </group>
     </HoverTarget>
   );
 }
 
 /** Glowing gold rings / bars / rims for exactly the legal targets passed in. */
-export function Highlights3D({ hl, graph, onVertex, onEdge, onHex }: HighlightProps) {
+export function Highlights3D({ hl, buildings, graph, onVertex, onEdge, onHex }: HighlightProps) {
   return (
     <group>
       {[...hl.hexes].map((h) => (
@@ -593,7 +606,7 @@ export function Highlights3D({ hl, graph, onVertex, onEdge, onHex }: HighlightPr
         <EdgeTarget key={`e${e}`} e={e as EdgeId} graph={graph} onEdge={onEdge} />
       ))}
       {[...hl.vertices].map((v) => (
-        <VertexTarget key={`v${v}`} v={v as VertexId} onVertex={onVertex} />
+        <VertexTarget key={`v${v}`} v={v as VertexId} raised={!!buildings?.[v as VertexId]} onVertex={onVertex} />
       ))}
     </group>
   );

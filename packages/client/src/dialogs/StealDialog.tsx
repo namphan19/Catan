@@ -1,5 +1,5 @@
 // Steal target choice: the candidate list comes straight from the legal `steal` actions.
-import type { Action } from '@hexgame/engine';
+import type { Action, PlayerView } from '@hexgame/engine';
 import { useI18n } from '../i18n';
 import { useName } from '../shell/names';
 import { playerColor, playerEmblem } from '../ui/colors';
@@ -8,12 +8,13 @@ import { Dialog } from '../ui/Dialog';
 import { Button } from '../ui/Button';
 
 interface StealDialogProps {
+  view: PlayerView;
   legal: Action[];
   onAction: (a: Action) => void;
   onClose: () => void;
 }
 
-export function StealDialog({ legal, onAction, onClose }: StealDialogProps) {
+export function StealDialog({ view, legal, onAction, onClose }: StealDialogProps) {
   const { t } = useI18n();
   const name = useName();
   const targets = [...new Set(legal.filter((a) => a.t === 'steal').map((a) => (a as { target: string }).target))];
@@ -36,7 +37,10 @@ export function StealDialog({ legal, onAction, onClose }: StealDialogProps) {
                   style={{ borderColor: playerColor(target) }}
                 >
                   <Emblem id={playerEmblem(target)} size={18} color={playerColor(target)} />
-                  {name(target)}
+                  <span className="target-name">{name(target)}</span>
+                  <span className="target-count">
+                    {t('dlg_stealCards', { n: view.players.find((p) => p.id === target)?.handCount ?? 0 })}
+                  </span>
                 </Button>
               </li>
             );

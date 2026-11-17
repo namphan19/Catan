@@ -16,6 +16,7 @@ import {
   type BoardFit,
 } from './world';
 import { assetUrl } from '../board/assets';
+import { harborBadgeCentre, harborGeom, SIZE } from '../board/geom';
 import { makeLabelTexture, makeTokenTexture, seaUrl, terrainUrl, useCanvasTexture, useSvgTexture } from './textures';
 
 const REDUCED_MOTION = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -190,7 +191,9 @@ function Token3D({ hex }: { hex: Hex }) {
   const p = hexWorld(hex.id);
   // A real chip with thickness, not a painted decal: parchment rim + printed top.
   return (
-    <mesh position={[p.x, HEX_TOP + 0.032, p.z]} castShadow receiveShadow>
+    // CylinderGeometry maps the cap texture's "up" to local +x; turn the chip a quarter so the
+    // number reads upright from the default camera (which looks towards -z).
+    <mesh position={[p.x, HEX_TOP + 0.032, p.z]} rotation-y={Math.PI / 2} castShadow receiveShadow>
       <cylinderGeometry args={[0.325, 0.335, 0.052, 36]} />
       <meshStandardMaterial attach="material-0" color="#E4D3AE" roughness={1} metalness={0} />
       <meshStandardMaterial attach="material-1" map={texture} roughness={0.92} metalness={0} />
@@ -264,119 +267,131 @@ export function SeaFoam({ graph, fit }: { graph: Graph; fit: BoardFit }) {
   );
 }
 
-function Harbor3D({ harbor, graph, fit }: { harbor: HarborData; graph: Graph; fit: BoardFit }) {
-  const e = edgeWorld(graph, harbor.edge);
-  const dx = e.mid.x - fit.cx;
-  const dz = e.mid.z - fit.cz;
-  const dl = Math.hypot(dx, dz) || 1;
-  const ux = dx / dl;
-  const uz = dz / dl;
-  const x = e.mid.x + ux * 0.38;
-  const z = e.mid.z + uz * 0.38;
-  const rotY = -Math.atan2(uz, ux);
+type XZ = { x: number; z: number };
+const px2w = (p: { x: number; y: number }): XZ => ({ x: p.x / SIZE, z: p.y / SIZE });
+
+/** A plank walkway from `a` to `b` (world XZ), resting on two beams with piles in the water. */
+function Pier3D({ a, b }: { a: XZ; b: XZ }) {
+  const len = Math.hypot(b.x - a.x, b.z - a.z);
+  const rotY = -Math.atan2(b.z - a.z, b.x - a.x);
+  const n = Math.max(3, Math.round(len / 0.1));
+  const deckY = HEX_TOP - 0.04;
+  return (
+    <group position={[(a.x + b.x) / 2, 0, (a.z + b.z) / 2]} rotation-y={rotY}>
+      {[-0.07, 0.07].map((bz) => (
+        <mesh key={`beam${bz}`} position={[0, deckY - 0.04, bz]} castShadow receiveShadow>
+          <boxGeometry args={[len, 0.05, 0.035]} />
+          <meshStandardMaterial color="#6B4E2E" roughness={1} />
+        </mesh>
+      ))}
+      {Array.from({ length: n }, (_, i) => (
+        <mesh key={`plank${i}`} position={[-len / 2 + (i + 0.5) * (len / n), deckY, 0]} castShadow receiveShadow>
+          <boxGeometry args={[(len / n) * 0.86, 0.03, 0.2]} />
+          <meshStandardMaterial color={i % 2 === 0 ? '#A6743E' : '#966733'} roughness={1} />
+        </mesh>
+      ))}
+      {[-len / 2 + 0.08, len / 2 - 0.06].flatMap((px) =>
+        [-0.08, 0.08].map((pz) => (
+          <mesh key={`pile${px}${pz}`} position={[px, (SEA_Y + deckY) / 2 - 0.02, pz]} castShadow>
+            <cylinderGeometry args={[0.022, 0.026, deckY - SEA_Y + 0.06, 6]} />
+            <meshStandardMaterial color="#5B4126" roughness={1} />
+          </mesh>
+        )),
+      )}
+    </group>
+  );
+}
+
+/**
+ * Harbor out in the sea (same layout as the SVG board, geom.ts harborGeom): two piers from the
+ * coast edge's corners to a dock, a boat moored at the dock, and a floating marker beyond it
+ * (camera-facing icon above the ratio). The coast itself stays free for roads and settlements.
+ */
+function Harbor3D({ harbor, graph }: { harbor: HarborData; graph: Graph }) {
+  const h = harborGeom(graph, harbor.edge);
+  const dock = px2w(h.dock);
+  const n = { x: h.n.x, z: h.n.y };
+  const t = { x: h.t.x, z: h.t.y };
+  const badge = px2w(harborBadgeCentre(h, 34, 34, 6));
+  const rotY = -Math.atan2(t.z, t.x);
   const label = `${harbor.ratio}:1`;
   const ratioTex = useCanvasTexture(() => makeLabelTexture(label), [label]);
   const iconTex = useSvgTexture(assetUrl('harbor', harbor.kind), true);
   const kindColor =
     harbor.kind === 'any' ? '#3e7ca6' : RESOURCE_HEX[harbor.kind] ?? RESOURCE_COLORS[harbor.kind] ?? '#3e7ca6';
-  const deckY = HEX_TOP + 0.02;
+  const deckY = HEX_TOP - 0.02;
+  const dockW = 0.62;
+  const dockD = 0.26;
+  // boat beside the dock, on the outer side
+  const boat = { x: dock.x + n.x * 0.3 + t.x * 0.28, z: dock.z + n.z * 0.3 + t.z * 0.28 };
 
   return (
-    <group position={[x, 0, z]} rotation-y={rotY}>
-      {/* pier: individual planks across two long beams */}
-      {[-0.17, 0.17].map((bz) => (
-        <mesh key={`beam${bz}`} position={[-0.02, HEX_TOP - 0.028, bz]} castShadow receiveShadow>
-          <boxGeometry args={[1.02, 0.07, 0.075]} />
-          <meshStandardMaterial color="#6B4E2E" roughness={1} />
-        </mesh>
-      ))}
-      {Array.from({ length: 8 }, (_, i) => {
-        const px = -0.38 + i * 0.125;
-        return (
-          <mesh key={`plank${i}`} position={[px, deckY, 0]} castShadow receiveShadow>
-            <boxGeometry args={[0.112, 0.05, 0.46]} />
-            <meshStandardMaterial color={i % 2 === 0 ? '#A6743E' : '#966733'} roughness={1} />
-          </mesh>
-        );
-      })}
-      {/* edge trim in the harbor's resource colour */}
-      <mesh position={[0.54, deckY + 0.03, 0]} castShadow>
-        <boxGeometry args={[0.045, 0.035, 0.47]} />
-        <meshStandardMaterial color={kindColor} roughness={0.9} />
-      </mesh>
-      {/* piles down into the water */}
-      {[-0.34, 0.48].flatMap((px) =>
-        [-0.19, 0.19].map((pz) => (
-          <mesh key={`pile${px}${pz}`} position={[px, SEA_Y + 0.18, pz]} castShadow>
-            <cylinderGeometry args={[0.036, 0.044, 0.32, 8]} />
-            <meshStandardMaterial color="#5B4126" roughness={1} />
-          </mesh>
-        )),
-      )}
-      {/* cargo: a barrel, a crate and a sack */}
-      <group position={[-0.16, deckY + 0.025, 0.13]}>
-        <mesh castShadow>
-          <cylinderGeometry args={[0.068, 0.062, 0.13, 12]} />
+    <group>
+      <Pier3D a={px2w(h.pierFromA)} b={px2w(h.pierToA)} />
+      <Pier3D a={px2w(h.pierFromB)} b={px2w(h.pierToB)} />
+      {/* dock platform; the outer trim shows the harbor's resource colour */}
+      <group position={[dock.x, 0, dock.z]} rotation-y={rotY}>
+        <mesh position={[0, deckY, 0]} castShadow receiveShadow>
+          <boxGeometry args={[dockW, 0.045, dockD]} />
           <meshStandardMaterial color="#8A5A2B" roughness={1} />
         </mesh>
-        <mesh position-y={0.02}>
-          <cylinderGeometry args={[0.071, 0.071, 0.02, 12]} />
-          <meshStandardMaterial color="#4A3B2A" roughness={1} />
-        </mesh>
-        <mesh position-y={-0.03}>
-          <cylinderGeometry args={[0.066, 0.066, 0.018, 12]} />
-          <meshStandardMaterial color="#4A3B2A" roughness={1} />
-        </mesh>
-      </group>
-      <mesh position={[-0.31, deckY + 0.045, -0.12]} castShadow receiveShadow>
-        <boxGeometry args={[0.16, 0.1, 0.14]} />
-        <meshStandardMaterial color="#B98B52" roughness={1} />
-      </mesh>
-      <mesh position={[-0.31, deckY + 0.096, -0.12]}>
-        <boxGeometry args={[0.165, 0.012, 0.145]} />
-        <meshStandardMaterial color={kindColor} roughness={0.9} />
-      </mesh>
-      {/* sign: two posts, a crossbar and camera-facing icon + ratio boards */}
-      {[-0.15, 0.15].map((pz) => (
-        <mesh key={`post${pz}`} position={[0.3, deckY + 0.2, pz]} castShadow>
-          <cylinderGeometry args={[0.018, 0.022, 0.4, 8]} />
-          <meshStandardMaterial color="#6B4E2E" roughness={1} />
-        </mesh>
-      ))}
-      <mesh position={[0.3, deckY + 0.4, 0]} castShadow>
-        <boxGeometry args={[0.045, 0.032, 0.38]} />
-        <meshStandardMaterial color="#6B4E2E" roughness={1} />
-      </mesh>
-      {iconTex && (
-        <sprite position={[0.3, deckY + 0.53, 0]} scale={[0.19, 0.19, 1]}>
-          <spriteMaterial map={iconTex} transparent depthWrite={false} />
-        </sprite>
-      )}
-      <sprite position={[0.3, deckY + 0.31, 0]} scale={[0.36, 0.135, 1]}>
-        <spriteMaterial map={ratioTex} transparent depthWrite={false} />
-      </sprite>
-      {/* moored boat with a paper sail and a cargo crate in the harbor colour */}
-      <group position={[0.62, SEA_Y, 0.47]}>
-        <mesh position-y={0.06} scale={[1.7, 0.42, 0.62]} castShadow receiveShadow>
-          <sphereGeometry args={[0.17, 12, 8]} />
-          <meshStandardMaterial color="#8A5A2B" roughness={1} />
-        </mesh>
-        <mesh position-y={0.09} scale={[1.5, 0.18, 0.5]}>
-          <sphereGeometry args={[0.17, 10, 6]} />
-          <meshStandardMaterial color="#5B4126" roughness={1} />
-        </mesh>
-        <mesh position={[0.02, 0.25, 0]} castShadow>
-          <cylinderGeometry args={[0.008, 0.01, 0.36, 6]} />
-          <meshStandardMaterial color="#6B4E2E" roughness={1} />
-        </mesh>
-        <mesh position={[0.09, 0.3, 0]} scale={[1, 1, 0.06]} castShadow>
-          <coneGeometry args={[0.105, 0.24, 3]} />
-          <meshStandardMaterial color="#F3E9D2" roughness={0.95} side={THREE.DoubleSide} flatShading />
-        </mesh>
-        <mesh position={[-0.09, 0.14, 0]} castShadow>
-          <boxGeometry args={[0.1, 0.06, 0.09]} />
+        {/* local +Z of this group points along -n or +n depending on the edge winding: trim both long sides */}
+        {[-dockD / 2, dockD / 2].map((z) => (
+          <mesh key={`trim${z}`} position={[0, deckY + 0.03, z]} castShadow>
+            <boxGeometry args={[dockW, 0.02, 0.03]} />
+            <meshStandardMaterial color={kindColor} roughness={0.9} />
+          </mesh>
+        ))}
+        {[-dockW / 2 + 0.04, dockW / 2 - 0.04].flatMap((x) =>
+          [-dockD / 2 + 0.03, dockD / 2 - 0.03].map((z) => (
+            <mesh key={`p${x}${z}`} position={[x, (SEA_Y + deckY) / 2, z]} castShadow>
+              <cylinderGeometry args={[0.028, 0.032, deckY - SEA_Y + 0.12, 8]} />
+              <meshStandardMaterial color="#5B4126" roughness={1} />
+            </mesh>
+          )),
+        )}
+        {/* cargo: a crate in the harbor colour and a barrel */}
+        <mesh position={[-0.16, deckY + 0.06, 0]} castShadow>
+          <boxGeometry args={[0.11, 0.08, 0.1]} />
           <meshStandardMaterial color={kindColor} roughness={0.9} />
         </mesh>
+        <mesh position={[0.14, deckY + 0.06, 0]} castShadow>
+          <cylinderGeometry args={[0.05, 0.045, 0.1, 10]} />
+          <meshStandardMaterial color="#8A5A2B" roughness={1} />
+        </mesh>
+      </group>
+      {/* moored boat with a paper sail */}
+      <group position={[boat.x, SEA_Y, boat.z]} rotation-y={rotY}>
+        <mesh position-y={0.06} scale={[1.5, 0.4, 0.6]} castShadow receiveShadow>
+          <sphereGeometry args={[0.15, 12, 8]} />
+          <meshStandardMaterial color="#8A5A2B" roughness={1} />
+        </mesh>
+        <mesh position={[0, 0.22, 0]} castShadow>
+          <cylinderGeometry args={[0.008, 0.01, 0.32, 6]} />
+          <meshStandardMaterial color="#6B4E2E" roughness={1} />
+        </mesh>
+        <mesh position={[0.06, 0.26, 0]} scale={[1, 1, 0.06]} castShadow>
+          <coneGeometry args={[0.09, 0.2, 3]} />
+          <meshStandardMaterial color="#F3E9D2" roughness={0.95} side={THREE.DoubleSide} flatShading />
+        </mesh>
+      </group>
+      {/* floating marker beyond the dock: buoy + camera-facing icon over the ratio */}
+      <group position={[badge.x, 0, badge.z]}>
+        <mesh position-y={SEA_Y + 0.03}>
+          <cylinderGeometry args={[0.1, 0.12, 0.08, 16]} />
+          <meshStandardMaterial color={kindColor} roughness={0.8} />
+        </mesh>
+        {/* sized to read at the default camera distance (about as large as a number token) */}
+        {iconTex && (
+          <sprite position={[0, SEA_Y + 1.12, 0]} scale={[0.5, 0.5, 1]} renderOrder={4}>
+            <spriteMaterial map={iconTex} transparent depthWrite={false} />
+          </sprite>
+        )}
+        {/* the camera looks down at an angle, so the stack is foreshortened: keep a wide gap and
+            draw the ratio last so the icon can never cover it */}
+        <sprite position={[0, SEA_Y + 0.4, 0]} scale={[0.82, 0.31, 1]} renderOrder={5}>
+          <spriteMaterial map={ratioTex} transparent depthWrite={false} depthTest={false} />
+        </sprite>
       </group>
     </group>
   );
@@ -386,7 +401,7 @@ export function Harbors({ board, graph, fit }: { board: EngineBoard; graph: Grap
   return (
     <group>
       {board.harbors.map((h, i) => (
-        <Harbor3D key={`${h.edge}-${i}`} harbor={h} graph={graph} fit={fit} />
+        <Harbor3D key={`${h.edge}-${i}`} harbor={h} graph={graph} />
       ))}
     </group>
   );

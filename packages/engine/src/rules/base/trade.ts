@@ -1,6 +1,7 @@
 // bankTrade (4:1, harbors 3:1 / 2:1) and player trades (offer -> responses -> confirm with one).
 // base p.7: the other players may accept, decline or make a counteroffer, and may change their
-// answer until the offer is confirmed or cancelled (replaces decision D20).
+// answer until the offer is confirmed or cancelled (replaces decision D20). Repeating the same answer
+// is rejected (SAME_RESPONSE): it changes nothing and only floods the log.
 import type { Action, Bag, TradeResponse } from '../../types';
 import type { ActionDef, Ctx } from '../../ruleset/types';
 import { bagAdd, bagClean, bagHas, bagSub, bagTotal, bagValid } from '../../bag';
@@ -9,6 +10,13 @@ import { err, expect, hasPlayer, player, tradeRate } from './helpers';
 type A<T extends string> = Extract<Action, { t: T }>;
 
 type RespondAction = A<'respondTrade'>;
+
+function bagEqual(a: Bag | undefined, b: Bag | undefined): boolean {
+  const x = bagClean(a ?? {});
+  const y = bagClean(b ?? {});
+  const keys = new Set([...Object.keys(x), ...Object.keys(y)]);
+  return [...keys].every((k) => (x[k] ?? 0) === (y[k] ?? 0));
+}
 
 function nonEmptyBags(ctx: Ctx, give: unknown, get: unknown) {
   const rs = ctx.rules.config.resources;
@@ -102,6 +110,12 @@ export const offerTrade: ActionDef = {
   },
 };
 
+/**
+ * Answers per responder per offer (D20): a responder may change their mind, but not forever -
+ * an endless accept/decline toggle stalls clients and floods the log.
+ */
+export const MAX_TRADE_ANSWERS = 5;
+
 export const respondTrade: ActionDef = {
   validate(ctx, action) {
     const a = action as A<'respondTrade'>;
@@ -123,6 +137,18 @@ export const respondTrade: ActionDef = {
       if (!bagHas(player(state, a.player).hand, bagClean(r.give!)))
         return err('NOT_ENOUGH', 'You do not have those cards.');
     }
+    // Changing the answer is allowed, repeating it is not: an identical answer changes nothing and
+    // would only flood the log (a double click, or a UI that keeps the button live).
+    const prev = state.trade.responses[a.player];
+    if (
+      prev &&
+      prev.response === r.response &&
+      (r.response !== 'counter' ||
+        (bagEqual(prev.give, r.give) && bagEqual(prev.get, r.get)))
+    )
+      return err('SAME_RESPONSE', 'You already gave this answer.');
+    if ((state.trade.answers?.[a.player] ?? 0) >= MAX_TRADE_ANSWERS)
+      return err('ANSWER_LIMIT', `You cannot change your answer more than ${MAX_TRADE_ANSWERS - 1} times.`);
     return null;
   },
   apply(ctx, action) {
@@ -134,6 +160,7 @@ export const respondTrade: ActionDef = {
       r.response === 'counter'
         ? { response: 'counter', give: bagClean(r.give!), get: bagClean(r.get!) }
         : { response: r.response };
+    t.answers = { ...(t.answers ?? {}), [a.player]: (t.answers?.[a.player] ?? 0) + 1 };
     ctx.emit({ e: 'tradeResponse', player: a.player, response: r.response, accept: r.response === 'accept' });
   },
   legal(ctx, id) {

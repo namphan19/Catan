@@ -93,7 +93,8 @@ export function boardFit(layout: LayoutId): BoardFit {
     centreR = Math.max(centreR, Math.hypot(p.x - cx, p.z - cz));
   }
   // Hex circumradius (1) + harbor piers/labels + sea breathing room.
-  const radius = Math.max(centreR + 1.9, Math.hypot(maxX - minX, maxZ - minZ) / 2 + 1.2);
+  // (harbors now sit out in the sea: dock + floating marker reach ~2.4 beyond a hex centre)
+  const radius = Math.max(centreR + 2.4, Math.hypot(maxX - minX, maxZ - minZ) / 2 + 1.6);
   return { cx, cz, radius, minX, maxX, minZ, maxZ };
 }
 

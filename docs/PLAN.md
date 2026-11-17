@@ -14,8 +14,10 @@ Later: an original "advanced" expansion ruleset that plugs into the same engine 
 | M2 | authoritative WebSocket server (rooms, reconnect, redacted views only) - self-hosted by the PO for colleagues | todo (next after rules) |
 | M3 | expansion ruleset `strongholds` as a separate module (hooks only): engine, server option, 2D + 3D client UI | built 2026-11-16 (see docs/RULES_STRONGHOLDS.md); 3D pieces added 2026-11-16; open: playtest |
 | UI | real web UI + original medieval art (docs/UI.md) | in progress |
+| M4 | bots, goal: challenge strong human players. Steps: 1 heuristic bot + server bot seats + self-play arena; 2 fast bot engine (mutable state, checked against the real engine); 3 ISMCTS search on a worker with a time budget; 4 smart trading + weight tuning by self-play; 5 strongholds-aware bot | steps 1-3 built 2026-11-17 |
 
 PO 2026-11-13: web only, no bots, medieval style (own art), online play for colleagues.
+PO 2026-11-17: bots are now in scope (M4); the PO wants a bot that really challenges players.
 
 Out of scope for M1: expansion rules, networking/rooms, bots, polished UI, deployment.
 
@@ -50,5 +52,43 @@ RULES.md covered by a test; reviewer findings resolved or logged.
 
 ## 7. Status and as-built notes
 Status (2026-11-13): M1 built. 58 engine tests green, fuzzer OK, client builds. Reviewer pass running.
+M4 step 1 (2026-11-17): `packages/engine/src/bot/` heuristic bot. `decide(view, legal)` sees only the bot's
+own PlayerView (no hidden info); `botAct(state, id)` wraps it with a legality check. Levels easy/normal/hard
+differ by noise and trade appetite only (same brain). Self-play: `pnpm --filter @hexgame/engine arena
+[games] [lineup] [strongholds]`. Measured (40-60 games, 4 players): hard vs 3 random wins 100%; hard vs 3 easy
+52% (fair 25%); hard vs 3 normal 28% (fair 25%); expansion games finish with 0 illegal moves; ~0.4 ms per
+decision. Server: host adds bots in the lobby (`addBot`), bots move after `botDelayMs` (700 ms), wait up to
+`botTradeWaitMs` (30 s, shown to humans as a countdown; only 3 s when no human could accept) for all answers to their offers, pause while no human is connected, are persisted.
+The expansion is only played with generic scores for "sh:*" actions (step 5).
+M4 step 2 (2026-11-17): sim mode `packages/engine/src/sim/` - `toSim`/`cloneSim` (hand-written deep copy, no
+log), `simApply` (same rule code as applyAction, in place, no copy, no log), `simLegal` (skips player trades),
+`simActors`. test/sim.test.ts runs real and sim engines in lockstep (base 3-6 players, strongholds 4-5, all
+actions incl. trades) and requires identical states and legal lists after every move. Engine speedups that keep
+results identical: placeRoad.validate uses roadConnects (was O(edges^2)), legal() returns early when the cost
+or phase check must fail, road/settlement spot scans only look near the player's network, getLegalActions
+takes an optional `only` list of action types. Measured (`pnpm --filter @hexgame/engine bench 30`, 4 players,
+random policy): pure API ~470 ms per game (legal for all players 119 -> ~35 us per move, apply ~450 us of
+which ~95% is the JSON copy); sim mode ~16 ms per game (~50k moves/s; legal for the actor ~11 us, apply
+~8 us, clone ~27 us). Remaining cost is spread out (route length, VP, expect checks); step 3 adds worker
+threads and truncated rollouts instead of more micro-tuning.
+M4 step 3 (2026-11-17): level 'expert' = `packages/engine/src/bot/search.ts`, determinized Monte Carlo search
+over the heuristic's top 8 moves (+ end turn) with common random numbers: each iteration samples ONE world
+from the bot's own view (opponent hands dealt from the exact per-resource total they hold, unplayed cards
+shuffled over their card counts and the deck, a fresh dice seed), simulates every candidate on it with the
+same dice and a fast rollout policy for 2 rounds, scores win/loss or a softmax of VP + production; the
+heuristic's first choice is kept unless another beats it by > 0.01. A plain UCB1 version (each candidate on its
+own random world) was tried first and was no better than 'hard' (5/20). The engine never reads a clock
+(purity test): callers pass `clock`; without one the search is a fixed 200 iterations and deterministic.
+Trades, discards and expansion windows stay with the 'hard' heuristic. Server: `planBot` + `Hub.think` run the
+search in 15 ms slices (setImmediate), drop the result if the game moved on, `botThinkMs` default 1500 ms.
+Measured (expert vs 3 hard, 4 players, fair share 25%, runs of 64-128 games, 8-12 arena processes sharing 16
+cores): 200 ms 26.6% (128 games), 500 ms 35.9%, 1000 ms 43.8%, 2000 ms 50.0%; horizon 4 rounds or margin
+0 / 0.02 were not better. Strength grows with thinking time, so next: worker threads (parallel search),
+better rollout policy / evaluation, then trading (step 4).
+2026-11-17, PO: bot development paused after step 3; bots shipped in the app. Local games: the home screen sets each
+seat to Human or a bot level (at least one human); bots run in the browser via `planBot` (expert in 12 ms slices,
+1.5 s per searched decision, "... is thinking" in the strip), the view always stays on a human seat, the pass-device
+cover only appears between humans. The trade dialog opened for an offer now closes itself when that offer is gone.
+e2e: tests/local-bots.spec.ts. The hosted server on :8080 was restarted on this build (no rooms were open).
 As built: names are neutral placeholders (timber/clay/fiber/grain/stone, guard/freeRoads/harvest/claim/relic,
 blocker, longestRoute/largestForce) until the PO picks a theme.

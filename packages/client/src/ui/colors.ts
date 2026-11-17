@@ -52,7 +52,7 @@ export const PLAYER_HEX: Record<string, string> = {
   p1: '#e69f00',
   p2: '#56b4e9',
   p3: '#009e73',
-  p4: '#f0e442',
+  p4: '#cc79a7',
   p5: '#0072b2',
   p6: '#d55e00',
 };

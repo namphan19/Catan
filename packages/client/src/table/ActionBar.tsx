@@ -54,7 +54,12 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
     if (!validate) return t('act_unavailable');
     const probe = probeAction(tt, me);
     const v = validate(probe);
-    return v.ok ? t('act_unavailable') : validationText(v.code, t);
+    if (v.ok) return t('act_unavailable');
+    // The probe uses a placeholder spot, so a location error only means "affordable, but no
+    // valid spot anywhere": say that, with what to do about it.
+    if (LOCATION_CODES.has(v.code) && (tt === 'placeSettlement' || tt === 'placeRoad' || tt === 'buildCity'))
+      return t(`act_noSpot_${tt}`);
+    return validationText(v.code, t);
   };
 
   /** Tooltip: translated disable reason, or (when compact) the full label that the short
@@ -109,9 +114,12 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
           <PieceIcon kind="city" color={color} size={20} /> {label('act_buildCity', 'act_city_s')}
         </Button>
 
-        <Button disabled={!has('buyCard')} tip={tipOf('buyCard', 'act_buyCard')} onClick={() => send({ t: 'buyCard', player: me })}>
-          <UiIcon name="card" size={18} /> {label('act_buyCard', 'act_buyCard_s')}
-        </Button>
+        {/* Strongholds has no base card deck (rules section 1): no "buy card" button there. */}
+        {!view.ext?.strongholds && (
+          <Button disabled={!has('buyCard')} tip={tipOf('buyCard', 'act_buyCard')} onClick={() => send({ t: 'buyCard', player: me })}>
+            <UiIcon name="card" size={18} /> {label('act_buyCard', 'act_buyCard_s')}
+          </Button>
+        )}
 
         {has('moveBlocker') && (
           <Button
@@ -166,11 +174,22 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
 
       <div className="act-group act-primary">
         {has('endTurn') ? (
-          <Button variant="primary" onClick={() => send({ t: 'endTurn', player: me })}>
+          <Button
+            variant="primary"
+            // Nothing left to build or play: remind the player to pass the turn.
+            className={legal.some((a) => BUILD_LIKE.has(a.t)) ? undefined : 'pulse'}
+            onClick={() => send({ t: 'endTurn', player: me })}
+          >
             <UiIcon name="end" size={20} /> {label('act_endTurn', 'act_endTurn_s')}
           </Button>
         ) : (
-          <Button variant="primary" disabled={!has('roll')} tip={tipOf('roll', 'act_roll')} onClick={() => send({ t: 'roll', player: me })}>
+          <Button
+            variant="primary"
+            className={has('roll') ? 'pulse' : undefined}
+            disabled={!has('roll')}
+            tip={tipOf('roll', 'act_roll')}
+            onClick={() => send({ t: 'roll', player: me })}
+          >
             <UiIcon name="roll" size={20} /> {label('act_roll', 'act_roll_s')}
           </Button>
         )}
@@ -178,6 +197,16 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
     </div>
   );
 }
+
+/** Actions that still make the turn worth staying in (trades and moves of wardens do not count). */
+const BUILD_LIKE = new Set([
+  'placeRoad', 'placeSettlement', 'buildCity', 'buyCard', 'playCard',
+  'sh:improve', 'sh:rampart', 'sh:recruit', 'sh:promote', 'sh:activate', 'sh:play',
+]);
+
+const LOCATION_CODES = new Set([
+  'BAD_VERTEX', 'BAD_EDGE', 'DISTANCE_RULE', 'NOT_CONNECTED', 'OCCUPIED', 'NOT_YOUR_SETTLEMENT',
+]);
 
 function probeAction(tt: string, me: PlayerId): Action {
   switch (tt) {

@@ -118,7 +118,7 @@ def execute(a: dict, dry: bool) -> str:
     if a.get("task_id"):
         env["TASK_ID"] = a["task_id"]
     r = subprocess.run([jobrunner.BASH, "scripts/dispatch.sh", role, a["task_file"], "--resume", "--hint", a["hint"]],
-                       cwd=ROOT, env=env, capture_output=True, text=True, timeout=300)
+                       cwd=ROOT, env=env, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300)
     # rc 1 = "not running after the start gap": the agent may simply have finished a short task already
     return f"dispatch rc={r.returncode} {' '.join((r.stdout + r.stderr).split())[-120:]}"
 

@@ -103,11 +103,12 @@ export function satisfiesDistanceRule(g: Graph, pieces: Pieces, v: VertexId): bo
 export function legalSettlementSpots(
   g: Graph, pieces: Pieces, player: PlayerId, opts: { setup: boolean },
 ): VertexId[] {
-  return g.vertices.filter(
-    (v) =>
-      satisfiesDistanceRule(g, pieces, v) &&
-      (opts.setup || g.vertexEdges[v].some((e) => pieces.roads[e] === player)),
-  );
+  if (opts.setup) return g.vertices.filter((v) => satisfiesDistanceRule(g, pieces, v));
+  // Only vertices at the end of one of the player's roads can qualify (kept in board order).
+  const near = new Set<VertexId>();
+  for (const e in pieces.roads) if (pieces.roads[e] === player) for (const v of g.edgeEnds[e]) near.add(v);
+  if (!near.size) return [];
+  return g.vertices.filter((v) => near.has(v) && satisfiesDistanceRule(g, pieces, v));
 }
 
 /** A road on edge e would connect to the player's network. */
@@ -127,7 +128,15 @@ export function legalRoadSpots(
   g: Graph, pieces: Pieces, player: PlayerId, opts: { fromVertex?: VertexId } = {},
 ): EdgeId[] {
   if (opts.fromVertex) return g.vertexEdges[opts.fromVertex].filter((e) => !pieces.roads[e]);
-  return g.edges.filter((e) => !pieces.roads[e] && roadConnects(g, pieces, player, e));
+  // Only edges touching a vertex of the player's network can connect (kept in board order).
+  const near = new Set<EdgeId>();
+  const touch = (v: VertexId) => {
+    for (const x of g.vertexEdges[v]) near.add(x);
+  };
+  for (const e in pieces.roads) if (pieces.roads[e] === player) g.edgeEnds[e].forEach(touch);
+  for (const v in pieces.buildings) if (pieces.buildings[v].owner === player) touch(v);
+  if (!near.size) return [];
+  return g.edges.filter((e) => near.has(e) && !pieces.roads[e] && roadConnects(g, pieces, player, e));
 }
 
 /**

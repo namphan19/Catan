@@ -25,7 +25,7 @@ Change a decision by editing the config/hook and the test that pins it.
 | D17 | Supply exhaustion | No settlements left -> cannot place one; building a city returns the settlement to the supply. | rules: building | lead (checked vs rulebooks) |
 | D18 | Discard visibility | Discards are public (cards go face up to the bank): the discard action incl. its bag stays in the public log/view. Stolen cards and bought cards stay private. | review-fixes | PO |
 | D19 | Harvest with an empty bank | Not playable when the bank has 0 cards (the card is not wasted). | review-fixes | PO |
-| D20 | Trade responses | Responders may accept, decline or counter, and change their answer until the offer is confirmed (base p.7). Replaces the earlier one-answer rule. | review-fixes | lead (official, replaces PO D20) |
+| D20 | Trade responses | Responders may accept, decline or counter, and change their answer until the offer is confirmed (base p.7). Replaces the earlier one-answer rule. Repeating the identical answer is rejected (`SAME_RESPONSE`, 2026-11-17: it only flooded the log). At most 5 answers per responder per offer (`ANSWER_LIMIT`, 2026-11-17 playtest: an endless accept/decline toggle stalled clients). | review-fixes | lead (official, replaces PO D20) |
 | D21 | Extension limits (known) | New board shapes need a LayoutId entry; new playable cards are registered via config (playableCards) and new force-type cards via awards.largestForce.cards. | - | lead |
 | D22 | Strongholds expansion | Separate ruleset `strongholds`; its interpretations are the S-numbers in docs/RULES_STRONGHOLDS.md (S1/S2: icon-only costs and die faces need a PO check). | strongholds.test.ts | lead |
 

@@ -4,11 +4,13 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { Action, GameInit } from '@hexgame/engine';
-import { CODE_RE, type RoomOptions } from './protocol';
+import { CODE_RE, isBotLevel, type BotLevelName, type RoomOptions } from './protocol';
 
 export interface PersistedSeat {
   name: string;
   tokenHash: string;
+  /** Present for server-side bot seats. */
+  bot?: BotLevelName;
 }
 
 export interface PersistedRoom {
@@ -95,7 +97,8 @@ function isPersistedSeat(s: PersistedSeat): boolean {
     s.name.length >= 1 &&
     s.name.length <= 24 &&
     typeof s.tokenHash === 'string' &&
-    /^[0-9a-f]{64}$/.test(s.tokenHash)
+    /^[0-9a-f]{64}$/.test(s.tokenHash) &&
+    (s.bot === undefined || isBotLevel(s.bot))
   );
 }
 

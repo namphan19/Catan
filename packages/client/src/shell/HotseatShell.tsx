@@ -21,6 +21,10 @@ export interface HotseatShellProps {
   /** Serialised game log for the export feature. */
   exportLog: () => string;
   onHome: () => void;
+  /** A local bot that is searching for its move right now. */
+  thinking?: PlayerId | null;
+  /** Seats played by local bots. */
+  botSeats?: readonly PlayerId[];
 }
 
 export function HotseatShell(props: HotseatShellProps) {
@@ -31,10 +35,14 @@ export function HotseatShell(props: HotseatShellProps) {
   );
 }
 
-function ShellInner({ names, view, legal, onAction, events, validate, errors, exportLog, onHome }: HotseatShellProps) {
+function ShellInner({ names, view, legal, onAction, events, validate, errors, exportLog, onHome, thinking, botSeats }: HotseatShellProps) {
   const { t } = useI18n();
   const name = useName();
-  const [covered, setCovered] = useState(true);
+  // The pass-device cover only makes sense with 2+ humans at the table; alone against bots there
+  // is nobody to hide the hand from.
+  const humans = view.players.filter((p) => !botSeats?.includes(p.id)).length;
+  const shared = humans > 1;
+  const [covered, setCovered] = useState(shared);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportText, setExportText] = useState('');
   const prevViewer = useRef<string | null | undefined>(undefined);
@@ -42,16 +50,16 @@ function ShellInner({ names, view, legal, onAction, events, validate, errors, ex
   // Cover whenever the acting viewer changes (including the first reveal after a new game).
   useEffect(() => {
     const v = view.viewer;
-    if (prevViewer.current !== undefined && v !== prevViewer.current) setCovered(true);
+    if (shared && prevViewer.current !== undefined && v !== prevViewer.current) setCovered(true);
     prevViewer.current = v;
-  }, [view.viewer]);
+  }, [view.viewer, shared]);
 
   const actorName = view.viewer ? name(view.viewer) : undefined;
   void names; // only meaningful through the NamesProvider
 
   return (
     <>
-      {view.viewer && covered && (
+      {shared && view.viewer && covered && (
         <PassDeviceCover
           key={view.viewer}
           name={actorName ?? ''}
@@ -62,9 +70,16 @@ function ShellInner({ names, view, legal, onAction, events, validate, errors, ex
       <div className="shell">
         <div className="shell-strip">
           <span className="shell-viewing">{t('strip_viewing', { name: actorName ?? t('you') })}</span>
-          <button type="button" className="btn btn-ghost" onClick={() => setCovered(true)}>
-            {t('strip_pass')}
-          </button>
+          {thinking && (
+            <span className="shell-thinking" role="status" aria-live="polite">
+              {t('strip_botThinking', { name: name(thinking) })}
+            </span>
+          )}
+          {shared && (
+            <button type="button" className="btn btn-ghost" onClick={() => setCovered(true)}>
+              {t('strip_pass')}
+            </button>
+          )}
           <button
             type="button"
             className="btn btn-ghost"
@@ -91,6 +106,7 @@ function ShellInner({ names, view, legal, onAction, events, validate, errors, ex
             setExportOpen(true);
           }}
           onHome={onHome}
+          botSeats={botSeats}
         />
       </div>
       {exportOpen && (

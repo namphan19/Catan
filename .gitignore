@@ -16,5 +16,11 @@ docs/*.pdf
 dist/
 coverage/
 data/rooms/
+data/server.log
 test-results/
 playwright-report/
+
+# UI playtest outputs (scripts play.mts / pw-edge.config.ts are kept)
+packages/e2e/ui-play/*
+!packages/e2e/ui-play/play.mts
+!packages/e2e/ui-play/pw-edge.config.ts

@@ -78,7 +78,7 @@ test('4-player hot-seat game seed e2e-1: board, setup, roll, end turn, trade pan
   const logLines = page.locator('.log-list li');
   await expect(logLines.first()).toBeVisible();
   const logText = await logLines.first().textContent();
-  expect(logText, `log line should be Vietnamese: ${logText}`).toMatch(/gieo xúc xắc/);
+  expect(logText, `log line should be Vietnamese: ${logText}`).toMatch(/gieo xúc xắc|gieo được \d+/);
   expect(logText, 'log must not be the English fallback').not.toMatch(/Roll dice|End turn/);
   expect(logText, 'log must not contain raw board ids').not.toMatch(/[veh]:-?\d+,\d+|[NWS][EW]?\b/);
 

@@ -353,7 +353,42 @@
   }
 }
 
-/* ---------- Player cards (right column) ---------- */
+/* ---------- Player strip (one row on top, PO 2026-11-17) ---------- */
+.seat-strip {
+  background: var(--parchment-dark);
+  border-bottom: 2px solid var(--ink);
+}
+.seat-strip .seats,
+.seat-strip .seats-compact {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(200px, 1fr);
+  overflow-x: auto;
+  padding: 6px 10px;
+  border-bottom: none;
+}
+
+/* A pick the board asks for (setup, build, blocker, free roads): a small chip over the board. */
+.board-hint {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 140px);
+  padding: 5px 12px;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: #f1dc92;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ---------- Player cards ---------- */
 .seats {
   display: grid;
   grid-template-columns: 1fr;
@@ -709,7 +744,7 @@
 .res-delta {
   position: absolute;
   left: 50%;
-  top: 2px;
+  top: 30%;
   font-size: 1.15rem;
   font-weight: 800;
   pointer-events: none;
@@ -739,9 +774,10 @@
   70% {
     opacity: 1;
   }
+  /* stays over the card (it used to rise into the "Total: n" header and cover it) */
   to {
     opacity: 0;
-    transform: translate(-50%, -34px);
+    transform: translate(-50%, -8px);
   }
 }
 
@@ -969,6 +1005,14 @@
 
   .res-delta {
     animation: none;
-    transform: translate(-50%, -22px);
+    transform: translate(-50%, 0);
   }
+}
+
+/* Expansion games: the event die after the sum, set apart by a dashed rule. */
+.dice-event {
+  display: flex;
+  margin-left: 4px;
+  padding-left: 10px;
+  border-left: 2px dashed rgba(59, 47, 47, 0.35);
 }

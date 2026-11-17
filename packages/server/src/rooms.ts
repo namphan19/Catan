@@ -4,8 +4,11 @@
 // compared in constant time; raw tokens, the seed and raw game state never leave here.
 import * as crypto from 'node:crypto';
 import {
+  BOT_TRADE_WAIT_MS,
   IllegalActionError,
   applyAction,
+  planBot,
+  botTradeWaitMs,
   createGame,
   getEventsView,
   getLegalActions,
@@ -13,11 +16,14 @@ import {
   replay,
   validateAction,
   type Action,
+  type BotPlan,
   type GameEvent,
   type GameState,
   type PlayerId,
 } from '@hexgame/engine';
-import { CODE_RE, parseClientMessage, type ClientMsg, type RoomOptions, type ServerMsg } from './protocol';
+import {
+  CODE_RE, parseClientMessage, type BotLevelName, type ClientMsg, type RoomOptions, type ServerMsg,
+} from './protocol';
 import { RoomStore, type PersistedRoom } from './store';
 
 export interface Conn {
@@ -42,6 +48,8 @@ interface RoomPlayer {
   name: string;
   tokenHash: string;
   ready: boolean;
+  /** Server-side bot seat. Its token is random and never issued, so nobody can claim the seat. */
+  bot?: BotLevelName;
 }
 
 interface Room {
@@ -55,6 +63,12 @@ interface Room {
   game?: { state: GameState; actions: Action[] };
   /** Timestamp from which the room has had zero connected players, or null. */
   emptySince: number | null;
+  /** Pending bot move. */
+  botTimer?: ReturnType<typeof setTimeout>;
+  /** When the currently open trade offer was made (bots cancel their own after botTradeWaitMs). */
+  tradeSince?: number;
+  /** An expert bot is searching; set `cancelled` to drop the result. */
+  thinking?: { cancelled: boolean };
 }
 
 export interface HubOptions {
@@ -63,7 +77,22 @@ export interface HubOptions {
   roomLimit?: number;
   /** Delete rooms with no connected player after this long (default 30 min). */
   idleMs?: number;
+  /** Pause before each bot move, so humans can follow (default 700 ms). */
+  botDelayMs?: number;
+  /** A bot waits this long for every answer to its trade offer before settling it (default 10 s). */
+  botTradeWaitMs?: number;
+  /** Thinking time of 'expert' bots per searched decision (default 1500 ms). */
+  botThinkMs?: number;
 }
+
+export const DEFAULT_BOT_THINK_MS = 1500;
+/** Search slice: the event loop is free again after at most about this long. */
+const THINK_SLICE_MS = 15;
+
+export const DEFAULT_BOT_DELAY_MS = 700;
+export const DEFAULT_BOT_TRADE_WAIT_MS = BOT_TRADE_WAIT_MS;
+/** Bot seats are named "Bot", "Bot 2", ...; clients show the level from the seat's `bot` field. */
+const BOT_NAME = 'Bot';
 
 export const DEFAULT_ROOM_LIMIT = 50;
 export const DEFAULT_IDLE_MS = 30 * 60 * 1000;
@@ -106,11 +135,26 @@ export class Hub {
   private readonly store?: RoomStore;
   private readonly roomLimit: number;
   private readonly idleMs: number;
+  private readonly botDelayMs: number;
+  private readonly botTradeWaitMs: number;
+  private readonly botThinkMs: number;
 
   constructor(opts: HubOptions = {}) {
+    this.botThinkMs = opts.botThinkMs ?? DEFAULT_BOT_THINK_MS;
     this.store = opts.store;
     this.roomLimit = opts.roomLimit ?? DEFAULT_ROOM_LIMIT;
     this.idleMs = opts.idleMs ?? DEFAULT_IDLE_MS;
+    this.botDelayMs = opts.botDelayMs ?? DEFAULT_BOT_DELAY_MS;
+    this.botTradeWaitMs = opts.botTradeWaitMs ?? DEFAULT_BOT_TRADE_WAIT_MS;
+  }
+
+  /** Stop all pending bot moves (server shutdown, tests). */
+  close(): void {
+    for (const room of this.rooms.values()) {
+      if (room.botTimer) clearTimeout(room.botTimer);
+      room.botTimer = undefined;
+      if (room.thinking) room.thinking.cancelled = true;
+    }
   }
 
   newConnId(): number {
@@ -149,6 +193,7 @@ export class Hub {
       // One broken room (e.g. a locked file on Windows) must never kill the process.
       try {
         if (room.emptySince !== null && now - room.emptySince >= this.idleMs) {
+          if (room.botTimer) clearTimeout(room.botTimer);
           this.store?.delete(room.code);
           this.rooms.delete(room.code);
           console.log(`[room] ${room.code} deleted (no connected player)`);
@@ -185,6 +230,7 @@ export class Hub {
           name: s.name,
           tokenHash: s.tokenHash,
           ready: true,
+          ...(s.bot ? { bot: s.bot } : {}),
         }));
         const hostIdx = Math.max(0, players.findIndex((_, i) => seatOf(i) === p.hostSeat));
         const room: Room = {
@@ -246,6 +292,9 @@ export class Hub {
         break;
       case 'kick':
         this.onKick(rec, msg);
+        break;
+      case 'addBot':
+        this.onAddBot(rec, msg);
         break;
       case 'action':
         this.onAction(rec, msg);
@@ -334,7 +383,10 @@ export class Hub {
       this.afterRoomChange(room);
       console.log(`[room] ${room.code} ${rec.seat} reconnected`);
       rec.conn.send({ type: 'room', ...this.roomMsg(room, rec) });
-      if (room.started) this.sendState(rec, room);
+      if (room.started) {
+        this.sendState(rec, room);
+        this.scheduleBots(room); // bots pause while nobody is connected
+      }
       return;
     }
     if (room.started) {
@@ -344,6 +396,8 @@ export class Hub {
       return this.failJoin(rec, msg, 'ROOM_FULL', 'That room is full.');
     }
     room.players.push({ name: rec.name, tokenHash, ready: false });
+    // A lobby left with only bots has no host: the first human to join takes over.
+    if (!room.players.some((p) => !p.bot && hashEquals(p.tokenHash, room.hostHash))) room.hostHash = tokenHash;
     this.attachToRoom(rec, room, room.players.length - 1);
     console.log(`[room] ${room.code} ${rec.seat} joined (${safeName(rec.name)})`);
     this.afterRoomChange(room);
@@ -361,9 +415,9 @@ export class Hub {
       const idx = room.players.findIndex((p) => hashEquals(p.tokenHash, hashToken(rec.token)));
       if (idx !== -1) {
         room.players.splice(idx, 1);
-        if (room.players.length > 0 && room.players[0].tokenHash !== room.hostHash) {
-          room.hostHash = room.players[0].tokenHash; // host becomes the first remaining seat
-        }
+        // The host becomes the first remaining human seat (a bot can never host).
+        const human = room.players.find((p) => !p.bot);
+        if (human && human.tokenHash !== room.hostHash) room.hostHash = human.tokenHash;
         console.log(`[room] ${room.code} ${rec.seat} left`);
       }
     } else {
@@ -433,6 +487,35 @@ export class Hub {
       this.sendState(r, room);
     }
     this.broadcastRoom(room);
+    this.scheduleBots(room);
+  }
+
+  /** Host-only, lobby-only: add a bot to the next free seat (docs/PROTOCOL.md). */
+  private onAddBot(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'addBot' }>): void {
+    const room = rec.roomCode ? this.rooms.get(rec.roomCode) : undefined;
+    if (!room || !rec.seat) {
+      this.error(rec.conn, msg.reqId, 'NOT_IN_ROOM', 'You are not in a room.');
+      return;
+    }
+    if (room.started) {
+      this.error(rec.conn, msg.reqId, 'GAME_STARTED', 'Bots can only be added in the lobby.');
+      return;
+    }
+    if (!hashEquals(room.hostHash, hashToken(rec.token))) {
+      this.error(rec.conn, msg.reqId, 'NOT_HOST', 'Only the host can add a bot.');
+      return;
+    }
+    if (room.players.length >= room.playerCount) {
+      this.error(rec.conn, msg.reqId, 'ROOM_FULL', 'That room is full.');
+      return;
+    }
+    const taken = new Set(room.players.map((p) => p.name));
+    let name = BOT_NAME;
+    for (let n = 2; taken.has(name); n++) name = `${BOT_NAME} ${n}`;
+    room.players.push({ name, tokenHash: hashToken(randomToken()), ready: true, bot: msg.level });
+    console.log(`[room] ${room.code} ${seatOf(room.players.length - 1)} bot added (${msg.level})`);
+    this.afterRoomChange(room);
+    this.broadcastRoom(room);
   }
 
   // ------------------------------------------------------------------ game
@@ -493,11 +576,8 @@ export class Hub {
       this.error(rec.conn, msg.reqId, v.code, v.message);
       return;
     }
-    let events: GameEvent[];
     try {
-      const res = applyAction(game.state, msg.action as Action);
-      game.state = res.state;
-      events = res.events;
+      this.commit(room, msg.action as Action, rec.seat);
     } catch (e) {
       if (e instanceof IllegalActionError) {
         this.error(rec.conn, msg.reqId, e.code, e.message);
@@ -505,10 +585,19 @@ export class Hub {
       }
       throw e;
     }
-    game.actions.push(msg.action as Action);
+  }
+
+  /** Apply a validated action, persist, broadcast redacted results, then let bots move. */
+  private commit(room: Room, action: Action, by: PlayerId): void {
+    const game = room.game!;
+    const hadTrade = !!game.state.trade;
+    const res = applyAction(game.state, action);
+    game.state = res.state;
+    const events: GameEvent[] = res.events;
+    if (!hadTrade && game.state.trade) room.tradeSince = Date.now();
+    game.actions.push(action);
     this.persist(room);
-    const a = msg.action as { t?: string };
-    console.log(`[room] ${room.code} action #${game.state.log.length} ${String(a.t)} by ${rec.seat}`);
+    console.log(`[room] ${room.code} action #${game.state.log.length} ${String(action.t)} by ${by}`);
     if (game.state.winner) {
       console.log(`[room] ${room.code} game over, winner ${String(game.state.winner)}`);
     }
@@ -516,6 +605,90 @@ export class Hub {
     for (const r of this.connsInRoom(room)) {
       r.conn.send({ type: 'events', events: getEventsView(events, r.seat), seq: game.state.log.length });
       this.sendState(r, room);
+    }
+    this.scheduleBots(room);
+  }
+
+  // ------------------------------------------------------------------ bots
+
+  private scheduleBots(room: Room, delay = this.botDelayMs): void {
+    if (room.botTimer || !room.game || room.game.state.winner || !room.players.some((p) => p.bot)) return;
+    room.botTimer = setTimeout(() => {
+      room.botTimer = undefined;
+      try {
+        this.stepBots(room);
+      } catch (e) {
+        // A bot failure must never take the server down; the humans can still play on.
+        console.error(`[room] ${room.code} bot step failed: ${String(e)}`);
+      }
+    }, delay);
+    room.botTimer.unref?.();
+  }
+
+  /**
+   * Run an expert bot's search in small slices so the server keeps serving other messages. If the game
+   * moved on meanwhile (a human acted), the result is dropped and the bots are asked again.
+   */
+  private think(room: Room, id: PlayerId, plan: Extract<BotPlan, { kind: 'search' }>): void {
+    const game = room.game!;
+    const seq = game.state.log.length;
+    const token = { cancelled: false };
+    room.thinking = token;
+    const tick = (): void => {
+      if (token.cancelled) return;
+      try {
+        const stale = this.rooms.get(room.code) !== room || game.state.log.length !== seq || !!game.state.winner;
+        if (!stale && !plan.run.step(THINK_SLICE_MS)) {
+          setImmediate(tick);
+          return;
+        }
+        room.thinking = undefined;
+        if (stale) {
+          this.scheduleBots(room, 0);
+          return;
+        }
+        const a = plan.finish();
+        if (a) this.commit(room, a, id);
+      } catch (e) {
+        room.thinking = undefined;
+        console.error(`[room] ${room.code} bot search failed: ${String(e)}`);
+      }
+    };
+    setImmediate(tick);
+  }
+
+  /** Let one bot act (each bot move is committed like a human one and reschedules the next). */
+  private stepBots(room: Room): void {
+    const game = room.game;
+    if (!game || game.state.winner || this.rooms.get(room.code) !== room) return;
+    // Bots wait while no human is connected; a reconnect starts them again.
+    if (!this.connectedFlags(room).some(Boolean)) return;
+    const s = game.state;
+    const cur = s.turn.current;
+    const bots = room.players
+      .map((p, i) => ({ id: seatOf(i), level: p.bot }))
+      .filter((b): b is { id: PlayerId; level: BotLevelName } => !!b.level);
+    // Responders first, so an open offer is answered before its owner moves on.
+    bots.sort((a, b) => Number(a.id === cur) - Number(b.id === cur));
+    const waited = room.tradeSince !== undefined ? Date.now() - room.tradeSince : 0;
+    if (room.thinking) return; // a search is running; it reschedules when done
+    const tradeWait = s.trade ? botTradeWaitMs(s, (id) => bots.some((x) => x.id === id), this.botTradeWaitMs) : 0;
+    for (const b of bots) {
+      // Settle a bot's own offer when the wait is over (shorter when no human could accept it).
+      const tradeTimedOut = s.trade?.from === b.id && waited >= tradeWait;
+      const plan = planBot(s, b.id, { level: b.level, tradeTimedOut, search: { timeMs: this.botThinkMs, clock: () => performance.now() } });
+      if (plan.kind === 'search') {
+        this.think(room, b.id, plan);
+        return;
+      }
+      if (plan.action) {
+        this.commit(room, plan.action, b.id);
+        return;
+      }
+    }
+    // A bot waits for answers to its own offer: look again when the wait runs out.
+    if (s.trade && bots.some((b) => b.id === s.trade!.from)) {
+      this.scheduleBots(room, Math.max(50, tradeWait - waited));
     }
   }
 
@@ -594,8 +767,9 @@ export class Hub {
       seats: room.players.map((p, i) => ({
         seat: seatOf(i),
         name: p.name,
-        connected: connected[i],
+        connected: connected[i] || !!p.bot,
         ready: p.ready,
+        ...(p.bot ? { bot: p.bot } : {}),
       })),
       you: rec.seat,
       started: room.started,
@@ -633,7 +807,7 @@ export class Hub {
       hostSeat: seatOf(hostIdx),
       playerCount: room.playerCount,
       options: room.options,
-      seats: room.players.map((s) => ({ name: s.name, tokenHash: s.tokenHash })),
+      seats: room.players.map((s) => ({ name: s.name, tokenHash: s.tokenHash, ...(s.bot ? { bot: s.bot } : {}) })),
       init: room.game.state.init,
       actions: room.game.actions,
     });

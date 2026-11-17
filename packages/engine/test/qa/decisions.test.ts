@@ -4,7 +4,7 @@ import {
   applyAction, baseConfig, getEventsView, getLegalActions, getPlayerView, validateAction,
   type Action, type GameState,
 } from '../../src';
-import { act, blankGame, findPath, graphOf, pl, setHand } from '../helpers';
+import { act, autoSetup, blankGame, findPath, graphOf, newGame, pl, setHand } from '../helpers';
 
 const code = (s: GameState, a: Action) => {
   const v = validateAction(s, a);
@@ -74,6 +74,23 @@ describe('D20: responders may answer repeatedly until the offer is confirmed (ba
     expect(code(s, { t: 'confirmTrade', player: 'p1', with: 'p2' })).toBe('NOT_ACCEPTED');
   });
 
+  it('repeating the same answer is rejected (SAME_RESPONSE) and is not offered by legal()', () => {
+    let s = scenario();
+    s = act(s, { t: 'respondTrade', player: 'p2', accept: false });
+    expect(code(s, { t: 'respondTrade', player: 'p2', accept: false })).toBe('SAME_RESPONSE');
+    expect(code(s, { t: 'respondTrade', player: 'p2', response: 'decline' })).toBe('SAME_RESPONSE');
+    const resp = getLegalActions(s, 'p2').filter((a) => a.t === 'respondTrade');
+    expect(resp.some((a) => (a as { accept?: boolean }).accept === false)).toBe(false);
+    expect(resp.some((a) => (a as { accept?: boolean }).accept === true)).toBe(true); // changing stays open
+    // the same counter twice is a repeat; a different counter is a change
+    setHand(s, 'p2', { grain: 1, clay: 1 });
+    s = act(s, { t: 'respondTrade', player: 'p2', response: 'counter', give: { clay: 1 }, get: { timber: 1 } });
+    expect(code(s, { t: 'respondTrade', player: 'p2', response: 'counter', give: { clay: 1 }, get: { timber: 1 } }))
+      .toBe('SAME_RESPONSE');
+    expect(code(s, { t: 'respondTrade', player: 'p2', response: 'counter', give: { grain: 1 }, get: { timber: 1 } }))
+      .toBe('OK');
+  });
+
   it('a new offer resets the responses, so a player may respond again (D6)', () => {
     // D6: a new offer replaces the old one, so the response list starts empty again.
     let s = scenario();
@@ -130,5 +147,24 @@ describe('setup roads do not need to be connected elsewhere (RULES.md 4, 3)', ()
     expect(placed.phase).toEqual({ k: 'setup', idx: 0, step: 'road', at: path.vertices[0] });
     expect(code(placed, { t: 'placeRoad', player: 'p1', e: path.edges[0] })).toBe('OK');
     expect(pl(placed, 'p1').supply.settlement).toBe(4);
+  });
+});
+
+describe('log outcome: a roll keeps its dice and the production it caused (public)', () => {
+  it('roll entries carry roll and gains, visible to every viewer', () => {
+    let s = newGame(4, 'log-outcome');
+    s = autoSetup(s);
+    s = act(s, { t: 'roll', player: s.turn.current });
+    const last = s.log[s.log.length - 1];
+    expect(last.action.t).toBe('roll');
+    expect(last.roll?.dice.length).toBe(2);
+    expect(last.roll?.sum).toBe(last.roll!.dice[0] + last.roll!.dice[1]);
+    for (const viewer of ['p1', 'p2', null] as const) {
+      const vl = getPlayerView(s, viewer).log.at(-1)!;
+      expect(vl.roll).toEqual(last.roll);
+      expect(vl.gains).toEqual(last.gains);
+    }
+    // gains, when present, are never empty bags
+    for (const bag of Object.values(last.gains ?? {})) expect(Object.keys(bag).length).toBeGreaterThan(0);
   });
 });

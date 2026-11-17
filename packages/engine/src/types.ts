@@ -83,6 +83,8 @@ export interface TradeOffer {
   get: Bag;
   /** Latest response per player; responders may change it until the offer is confirmed/cancelled. */
   responses: Record<PlayerId, TradeResponse>;
+  /** How many answers each responder has given to this offer (capped, see MAX_TRADE_ANSWERS). */
+  answers?: Record<PlayerId, number>;
 }
 
 export type Resume = 'preRoll' | 'main' | 'paired';
@@ -126,6 +128,10 @@ export interface TurnState {
 export interface LoggedAction {
   seq: number;
   action: Action;
+  /** Public outcome of a dice roll (set on `roll` actions), so a log reader sees the number. */
+  roll?: { dice: number[]; sum: number };
+  /** Public production caused by the action (roll, 2nd setup settlement...), per player. */
+  gains?: Record<PlayerId, Bag>;
 }
 
 export interface GameState {

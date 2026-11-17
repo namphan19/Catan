@@ -4,9 +4,9 @@
       <path d="M100 3 L197 59 L197 171 L100 227 L3 171 L3 59 Z"/>
     </clipPath>
     <g id="brick">
-      <path d="M-9 -4 h18 v8 h-18 Z" fill="#D98E4A" stroke="#3B2F2F" stroke-width="1.5" stroke-linejoin="round"/>
-      <path d="M-9 2 h18" stroke="#A44922" stroke-width="1.2" opacity=".6"/>
-      <path d="M-6 -2 h9" stroke="#F0B878" stroke-width="1.1" opacity=".7"/>
+      <path d="M-9 -4 h18 v8 h-18 Z" fill="#BA8B61" stroke="#373030" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M-9 2 h18" stroke="#86513A" stroke-width="1.2" opacity=".6"/>
+      <path d="M-6 -2 h9" stroke="#D5B188" stroke-width="1.1" opacity=".7"/>
     </g>
     <g id="brick-stack">
       <use href="#brick" transform="translate(-9 -10)"/>
@@ -18,42 +18,42 @@
   </defs>
 
   <g clip-path="url(#hex)">
-    <rect width="200" height="230" fill="#B85C2E"/>
+    <rect width="200" height="230" fill="#986247"/>
     <!-- sun-baked ground patches -->
     <g stroke="none">
-      <path d="M0 52 Q48 34 98 54 Q150 72 200 48 L200 100 Q150 116 100 98 Q48 82 0 104 Z" fill="#C86E3B" opacity=".75"/>
-      <ellipse cx="46" cy="128" rx="34" ry="18" fill="#A44922" opacity=".55"/>
-      <ellipse cx="160" cy="126" rx="40" ry="20" fill="#A44922" opacity=".5"/>
-      <ellipse cx="104" cy="208" rx="66" ry="24" fill="#C86E3B" opacity=".55"/>
+      <path d="M0 52 Q48 34 98 54 Q150 72 200 48 L200 100 Q150 116 100 98 Q48 82 0 104 Z" fill="#A87253" opacity=".75"/>
+      <ellipse cx="46" cy="128" rx="34" ry="18" fill="#86513A" opacity=".55"/>
+      <ellipse cx="160" cy="126" rx="40" ry="20" fill="#86513A" opacity=".5"/>
+      <ellipse cx="104" cy="208" rx="66" ry="24" fill="#A87253" opacity=".55"/>
     </g>
     <!-- woodcut strata lines -->
-    <g fill="none" stroke="#7A3418" stroke-width="1.6" opacity=".3" stroke-linecap="round">
+    <g fill="none" stroke="#633B2A" stroke-width="1.6" opacity=".3" stroke-linecap="round">
       <path d="M18 82 q12 -6 24 0 M158 76 q12 -6 24 0"/>
       <path d="M10 118 q14 -6 28 0 M166 116 q14 -6 28 0"/>
       <path d="M24 210 q12 -5 24 0 M144 212 q12 -5 24 0"/>
     </g>
 
     <!-- stepped clay pit -->
-    <g stroke="#3B2F2F" stroke-linejoin="round">
-      <ellipse cx="100" cy="156" rx="62" ry="28" fill="#8F3B1C" stroke-width="2.4"/>
-      <path d="M42 148 q10 -8 22 -4 q12 4 22 -1 q10 -5 22 0 q12 5 22 0 q12 -5 24 3" fill="none" stroke="#D98E4A" stroke-width="2.4" opacity=".8"/>
-      <ellipse cx="100" cy="158" rx="48" ry="20" fill="#6E2E16" stroke-width="2.2"/>
-      <ellipse cx="100" cy="160" rx="32" ry="13" fill="#52220F" stroke-width="1.6"/>
+    <g stroke="#373030" stroke-linejoin="round">
+      <ellipse cx="100" cy="156" rx="62" ry="28" fill="#744431" stroke-width="2.4"/>
+      <path d="M42 148 q10 -8 22 -4 q12 4 22 -1 q10 -5 22 0 q12 5 22 0 q12 -5 24 3" fill="none" stroke="#BA8B61" stroke-width="2.4" opacity=".8"/>
+      <ellipse cx="100" cy="158" rx="48" ry="20" fill="#5A3426" stroke-width="2.2"/>
+      <ellipse cx="100" cy="160" rx="32" ry="13" fill="#43271C" stroke-width="1.6"/>
       <path d="M74 158 q12 6 26 6 q16 0 26 -6" fill="none" stroke-width="1.4" opacity=".4"/>
       <!-- clay ledges in the pit -->
-      <path d="M58 150 q10 8 24 8 M142 148 q-10 8 -24 8" fill="none" stroke="#A44922" stroke-width="3" stroke-linecap="round"/>
+      <path d="M58 150 q10 8 24 8 M142 148 q-10 8 -24 8" fill="none" stroke="#86513A" stroke-width="3" stroke-linecap="round"/>
     </g>
     <!-- ladder down into the pit -->
-    <g transform="translate(138 140) rotate(20)" stroke="#3B2F2F" stroke-width="1.8" stroke-linejoin="round">
-      <rect x="-7" y="-4" width="3" height="30" fill="#8A5A2B"/>
-      <rect x="8" y="-4" width="3" height="30" fill="#8A5A2B"/>
-      <path d="M-4 0 h12 M-4 7 h12 M-4 14 h12 M-4 21 h12" stroke="#A6743E" stroke-width="2.4"/>
+    <g transform="translate(138 140) rotate(20)" stroke="#373030" stroke-width="1.8" stroke-linejoin="round">
+      <rect x="-7" y="-4" width="3" height="30" fill="#73573C"/>
+      <rect x="8" y="-4" width="3" height="30" fill="#73573C"/>
+      <path d="M-4 0 h12 M-4 7 h12 M-4 14 h12 M-4 21 h12" stroke="#8D7050" stroke-width="2.4"/>
     </g>
 
     <!-- terrace with stacked bricks (left) -->
-    <g stroke="#3B2F2F" stroke-linejoin="round">
-      <path d="M8 88 L38 74 L86 88 L84 108 L40 120 L8 106 Z" fill="#C86E3B" stroke-width="2.2"/>
-      <path d="M38 74 L86 88 L84 96 L40 106 L8 96 L8 88 Z" fill="#D98E4A" stroke-width="2.2" opacity=".9"/>
+    <g stroke="#373030" stroke-linejoin="round">
+      <path d="M8 88 L38 74 L86 88 L84 108 L40 120 L8 106 Z" fill="#A87253" stroke-width="2.2"/>
+      <path d="M38 74 L86 88 L84 96 L40 106 L8 96 L8 88 Z" fill="#BA8B61" stroke-width="2.2" opacity=".9"/>
       <path d="M40 106 L84 96" stroke-width="1.4" opacity=".4"/>
     </g>
     <use href="#brick-stack" transform="translate(44 84) scale(1.15)"/>
@@ -65,31 +65,31 @@
     <use href="#brick-stack" transform="translate(140 112) scale(.8)"/>
 
     <!-- wooden cart with bricks -->
-    <g transform="translate(58 194)" stroke="#3B2F2F" stroke-linejoin="round">
-      <circle cx="-16" cy="10" r="7" fill="#6B4E2E" stroke-width="2"/>
-      <circle cx="16" cy="10" r="7" fill="#6B4E2E" stroke-width="2"/>
-      <circle cx="-16" cy="10" r="2" fill="#C9A227" stroke-width="1.4"/>
-      <circle cx="16" cy="10" r="2" fill="#C9A227" stroke-width="1.4"/>
-      <path d="M-22 4 L-18 -6 L20 -6 L24 4 Z" fill="#A6743E" stroke-width="2"/>
-      <path d="M-18 -8 h36 v5 h-36 Z" fill="#8A5A2B" stroke-width="1.8"/>
+    <g transform="translate(58 194)" stroke="#373030" stroke-linejoin="round">
+      <circle cx="-16" cy="10" r="7" fill="#5C4B38" stroke-width="2"/>
+      <circle cx="16" cy="10" r="7" fill="#5C4B38" stroke-width="2"/>
+      <circle cx="-16" cy="10" r="2" fill="#A48D45" stroke-width="1.4"/>
+      <circle cx="16" cy="10" r="2" fill="#A48D45" stroke-width="1.4"/>
+      <path d="M-22 4 L-18 -6 L20 -6 L24 4 Z" fill="#8D7050" stroke-width="2"/>
+      <path d="M-18 -8 h36 v5 h-36 Z" fill="#73573C" stroke-width="1.8"/>
       <use href="#brick" transform="translate(-8 -14) scale(.85)"/>
       <use href="#brick" transform="translate(9 -14) scale(.85)"/>
       <use href="#brick" transform="translate(0 -22) scale(.85)"/>
-      <path d="M24 4 l10 8" stroke="#6B4E2E" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M24 4 l10 8" stroke="#5C4B38" stroke-width="2.4" stroke-linecap="round"/>
     </g>
 
     <!-- pickaxe -->
-    <g transform="translate(34 166) rotate(24)" stroke="#3B2F2F" stroke-linejoin="round">
-      <path d="M-14 0 H14" stroke="#6B4E2E" stroke-width="4" stroke-linecap="round"/>
-      <path d="M10 -6 q5 6 0 12 q-4 -6 0 -12 Z" fill="#5C5F63" stroke-width="1.7"/>
+    <g transform="translate(34 166) rotate(24)" stroke="#373030" stroke-linejoin="round">
+      <path d="M-14 0 H14" stroke="#5C4B38" stroke-width="4" stroke-linecap="round"/>
+      <path d="M10 -6 q5 6 0 12 q-4 -6 0 -12 Z" fill="#5B5C5F" stroke-width="1.7"/>
     </g>
 
     <!-- cracked earth -->
-    <g fill="none" stroke="#7A3418" stroke-width="1.4" opacity=".45" stroke-linecap="round">
+    <g fill="none" stroke="#633B2A" stroke-width="1.4" opacity=".45" stroke-linecap="round">
       <path d="M104 198 l-7 8 l4 8 M104 198 l8 6 l8 -3 M104 198 l1 12"/>
       <path d="M156 176 l-6 7 l3 7"/>
     </g>
-    <path d="M100 13 L187 62 L187 168 L100 217 L13 168 L13 62 Z" fill="none" stroke="#F3E9D2" stroke-width="1.6" opacity=".12"/>
+    <path d="M100 13 L187 62 L187 168 L100 217 L13 168 L13 62 Z" fill="none" stroke="#E8E1CF" stroke-width="1.6" opacity=".12"/>
   </g>
-  <path d="M100 3 L197 59 L197 171 L100 227 L3 171 L3 59 Z" fill="none" stroke="#3B2F2F" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M100 3 L197 59 L197 171 L100 227 L3 171 L3 59 Z" fill="none" stroke="#373030" stroke-width="4" stroke-linejoin="round"/>
 </svg>

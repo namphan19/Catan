@@ -2,15 +2,16 @@
 .sh-panel {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 10px 12px;
+  /* Compact (playtest 2026-11-17): at 900 px the warden buttons were below the fold. */
+  gap: 6px;
+  padding: 8px 10px;
   background: var(--parchment-dark);
   border: 2px solid var(--ink);
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 13px;
   /* The side column has a fixed height: the panel scrolls inside it instead of pushing the log out. */
   flex: 0 1 auto;
-  max-height: 52%;
+  max-height: 70%;
   min-height: 150px;
   overflow-y: auto;
 }

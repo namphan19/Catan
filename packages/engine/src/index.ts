@@ -8,6 +8,12 @@ export * from './board/graph';
 export { layoutHexes } from './board/layouts';
 export type * from './ruleset/types';
 export { composeRules } from './ruleset/compose';
+export {
+  BOT_TRADE_GRACE_MS, BOT_TRADE_WAIT_MS, SearchRun, botTradeWaitMs, botAct, decide, determinize, evaluate, expertDecide, pips, planBot, rankActions, searchCandidates,
+  searchDecide, tradeAwaitsHuman, type BotPlan,
+  type BotLevel, type BotOptions, type SearchOptions, type SearchStats,
+} from './bot';
+export { SIM_SKIP, cloneSim, deepCopy, simActors, simApply, simLegal, toSim } from './sim';
 export { baseRuleset } from './rules/base';
 export { baseConfig } from './rules/base/config';
 export { strongholdsRuleset, type StrongholdsView } from './rules/strongholds';

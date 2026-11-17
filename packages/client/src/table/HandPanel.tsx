@@ -102,6 +102,9 @@ export function HandPanel({ view }: { view: PlayerView }) {
           })}
         </ul>
       </div>
+      {/* Strongholds: advance cards live in the expansion panel (with their play buttons), so the
+          base "development cards" strip would only show the same cards a second time. */}
+      {!view.ext?.strongholds && (
       <div className="hand-group hand-cards">
         <span className="hand-title">{t('hand_cards')}</span>
         {groups.size === 0 ? (
@@ -122,6 +125,7 @@ export function HandPanel({ view }: { view: PlayerView }) {
           </ul>
         )}
       </div>
+      )}
     </div>
   );
 }

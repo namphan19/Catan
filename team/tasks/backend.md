@@ -1,24 +1,16 @@
-# Task: fix the server security review findings
+# Task: make the server easy to self-host
 
-Only write in: packages/server/. Contract (updated by the lead): docs/PROTOCOL.md - read it again
-(kick message, token shape, seat take-over, connection caps, rename on hello).
-The full review is in team/logs/_reviewer.out (section "## Medium" onwards) - read it by line range.
-Fix every finding, each with a test:
-1. Seat reclaim while a live connection holds it: the new connection wins, old one closed (SEAT_TAKEN_OVER).
-2. Only server-issued token shape (exactly 22 base64url chars) is honoured; others -> new token.
-3. Failed joinRoom budget (10 per connection -> close); connection caps 200 total / 10 per IP in the upgrade
-   handler (HTTP 503); host-only `kick` in the lobby per PROTOCOL.md.
-4. try/catch around every room in sweep() and around every timer callback; log and continue.
-5. (covered by 3) global connection cap.
-6. Validate persisted rooms on load (code regex, seats length = playerCount 3-6, shapes); skip invalid files.
-7. IMPERSONATION reply must not echo client input.
-8. Cap JSON nesting depth (e.g. 20) in parseClientMessage -> error BAD_MESSAGE.
-9. Static: Cache-Control "public, max-age=31536000, immutable" for hashed /assets/ bundle files and
-   no-cache for index.html; X-Content-Type-Options: nosniff on every response; a CSP header on SVG responses
-   ("default-src 'none'; style-src 'unsafe-inline'").
-10. Repeated hello renames (lobby + game seat name), per PROTOCOL.md.
-Also: add tests for the static handler (traversal variants incl. %5c and ..%2f, content types, SPA fallback),
-corrupt persistence files, duplicate-token connections, weak tokens, ping/pong timeout (fake timers).
-Delete the scratch files packages/server/test/debug-one.mts and packages/server/test/measure.mts.
-Acceptance: pnpm --filter @hexgame/server typecheck and test exit 0 (paste summaries, run the suite twice).
-No server left running. Final report < 40 lines.
+Only write in: packages/server/ and the root package.json "scripts" section (add scripts only, change nothing else).
+1. Env config (document defaults in packages/server/README.md): PORT (8080), HOST (0.0.0.0), DATA_DIR,
+   CLIENT_DIST, MAX_CONNECTIONS (200), MAX_CONNECTIONS_PER_IP (10), TRUST_PROXY (default off; when "1",
+   take the client IP from the first X-Forwarded-For entry - only for running behind a reverse proxy).
+   Validate values at startup; print one clear line per bad value and exit 1.
+2. Root scripts: "build" -> builds the client (pnpm --filter @hexgame/client build); "start" -> runs the
+   server (pnpm --filter @hexgame/server start). Server start prints the URLs it listens on, including every
+   non-internal IPv4 address of the machine (os.networkInterfaces) so the host can share the LAN link.
+3. If CLIENT_DIST does not exist at start, print "Run pnpm build first" and exit 1.
+4. Graceful shutdown on SIGINT/SIGTERM: stop accepting, persist all rooms, close sockets, exit 0.
+5. Tests for env validation, TRUST_PROXY IP extraction, missing dist. Keep all existing tests green.
+Acceptance: pnpm --filter @hexgame/server typecheck + test exit 0 (paste); a manual check: pnpm build, then
+PORT=8097 DATA_DIR=<temp> pnpm start in the background, curl http://localhost:8097/ -> 200 with <title>Boschtan,
+then stop it by its own PID. Final report < 30 lines.

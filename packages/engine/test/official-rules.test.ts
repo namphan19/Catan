@@ -268,6 +268,14 @@ describe('base p.7: player trade negotiation (accept / counteroffer; replaces D2
     expect(s.trade).toBeUndefined();
   });
 
+  it('answers per offer are capped, so a responder cannot toggle forever (ANSWER_LIMIT)', () => {
+    let s = scenario();
+    for (let i = 0; i < 5; i++) s = act(s, { t: 'respondTrade', player: 'p2', accept: i % 2 === 0 });
+    expect(code(s, { t: 'respondTrade', player: 'p2', accept: false })).toBe('ANSWER_LIMIT');
+    expect(getLegalActions(s, 'p2').some((a) => a.t === 'respondTrade')).toBe(false);
+    expect(code(s, { t: 'respondTrade', player: 'p3', accept: false })).toBe('OK'); // per responder
+  });
+
   it('a counteroffer stores the responder terms and confirmTrade executes those terms', () => {
     // base p.7: the counteroffer replaces the terms the offerer may confirm.
     let s = scenario();

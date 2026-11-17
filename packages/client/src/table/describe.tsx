@@ -51,18 +51,54 @@ export function bagList(bag: Record<string, number> | undefined, t: TFn): string
   return parts.length ? parts.join(', ') : '—';
 }
 
-/** One log line for an action — a human sentence, no raw board ids. */
-export function describeAction(a: Action, t: TFn, name: NameFn): ReactNode {
+/** Public outcome stored next to a logged action (engine LoggedAction.roll / .gains). */
+export interface LogOutcome {
+  roll?: { dice: number[]; sum: number };
+  gains?: Record<PlayerId, Record<string, number>>;
+}
+
+/** "Nam: 1× Gỗ · Bot 2: 2× Len" (who received what), or null when nobody got anything. */
+export function gainsNode(gains: LogOutcome['gains'], t: TFn, name: NameFn): ReactNode {
+  const entries = Object.entries(gains ?? {}).filter(([, bag]) => bagTotal(bag) > 0);
+  if (!entries.length) return null;
+  return entries.map(([id, bag], i) => (
+    <span key={id}>
+      {i > 0 && ' · '}
+      {name(id)}: {bagNode(bag, t)}
+    </span>
+  ));
+}
+
+/** One log line for an action — a human sentence, no raw board ids. `out` adds the public
+ *  outcome (dice, production) when the log carries it. */
+export function describeAction(a: Action, t: TFn, name: NameFn, out?: LogOutcome): ReactNode {
   const who = name(a.player);
+  const gains = gainsNode(out?.gains, t, name);
   switch (a.t) {
     case 'placeSettlement':
-      return t('log_settlement', { name: who });
+      // the 2nd setup settlement produces its starting cards
+      return out?.gains?.[a.player] ? (
+        <>
+          {t('log_settlement', { name: who })} — {t('log_gotStart')} {bagNode(out.gains[a.player], t)}
+        </>
+      ) : (
+        t('log_settlement', { name: who })
+      );
     case 'placeRoad':
       return t('log_road', { name: who });
     case 'buildCity':
       return t('log_city', { name: who });
-    case 'roll':
-      return t('log_roll', { name: who });
+    case 'roll': {
+      if (!out?.roll) return t('log_roll', { name: who });
+      const head = t('log_rollResult', {
+        name: who,
+        a: out.roll.dice[0] ?? 0,
+        b: out.roll.dice[1] ?? 0,
+        sum: out.roll.sum,
+      });
+      if (gains) return <>{head} — {gains}</>;
+      return out.roll.sum === 7 ? `${head} — ${t('log_rollSeven')}` : `${head} — ${t('log_rollNothing')}`;
+    }
     case 'discard':
       return (
         <>
@@ -93,7 +129,16 @@ export function describeAction(a: Action, t: TFn, name: NameFn): ReactNode {
     }
     case 'respondTrade': {
       const acc = 'accept' in a ? a.accept : (a as { response?: string }).response;
-      const resp = acc === true || acc === 'accept' ? t('toast_respondAccept') : acc === 'counter' ? t('dlg_counter') : t('toast_respondDecline');
+      if (acc === 'counter') {
+        const c = a as { give?: Record<string, number>; get?: Record<string, number> };
+        return (
+          <>
+            {t('log_respondTrade', { name: who, resp: t('toast_respondCounter') })} ({bagNode(c.give, t)} →{' '}
+            {bagNode(c.get, t)})
+          </>
+        );
+      }
+      const resp = acc === true || acc === 'accept' ? t('toast_respondAccept') : t('toast_respondDecline');
       return t('log_respondTrade', { name: who, resp });
     }
     case 'confirmTrade':
@@ -164,7 +209,7 @@ export function describeEvent(ev: GameEvent, t: TFn, name: NameFn): ReactNode {
           resp === 'accept'
             ? 'toast_respondAccept'
             : resp === 'counter'
-              ? 'dlg_counter'
+              ? 'toast_respondCounter'
               : 'toast_respondDecline',
         ),
       });
@@ -172,9 +217,8 @@ export function describeEvent(ev: GameEvent, t: TFn, name: NameFn): ReactNode {
     case 'tradeCancelled':
       return t('toast_tradeCancelled', { name: name(ev.player) });
     case 'cardBought':
-      return ev.card
-        ? `${t('toast_cardBought', { name: name(ev.player) })} · ${t(cardKey(ev.card))}`
-        : t('toast_cardBought', { name: name(ev.player) });
+      // Never name the card: on a shared screen everyone reads the toast (the buyer sees it in hand).
+      return t('toast_cardBought', { name: name(ev.player) });
     case 'cardPlayed':
       return t('toast_cardPlayed', { name: name(ev.player), card: t(cardKey(ev.card)) });
     case 'awardChanged':

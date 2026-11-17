@@ -129,6 +129,7 @@ export const moveBlocker: ActionDef = {
     else setPhase(ctx, resumePhase(state, resume));
   },
   legal(ctx, id) {
+    if (expect(ctx.state, { t: 'moveBlocker', player: id, hex: '' }, ['moveBlocker'])) return [];
     return ctx.graph.hexes
       .map((hex) => ({ t: 'moveBlocker', player: id, hex }) as Action)
       .filter((x) => !moveBlocker.validate(ctx, x));

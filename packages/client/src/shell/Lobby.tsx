@@ -1,7 +1,7 @@
 // Waiting room: big copyable room code + invite link, seat list with connection dots and
 // ready state, a Ready toggle, and a host-only start button (server re-checks everything).
 import { useEffect, useRef, useState } from 'react';
-import type { RoomInfo } from '../net/protocol';
+import { BOT_LEVELS, type BotLevel, type RoomInfo } from '../net/protocol';
 import { useI18n } from '../i18n';
 import { Button } from '../ui/Button';
 import { Panel } from '../ui/Panel';
@@ -15,12 +15,15 @@ export interface LobbyProps {
   onLeave: () => void;
   /** Host-only, before start: frees a seat and closes that player's connection (KICKED). */
   onKick?: (seat: string) => void;
+  /** Host-only, before start: fill the next free seat with a server-side bot. */
+  onAddBot?: (level: BotLevel) => void;
   onLangToggle: () => void;
   notice?: string | null;
 }
 
-export function Lobby({ room, onReady, onStart, onLeave, onKick, onLangToggle, notice }: LobbyProps) {
+export function Lobby({ room, onReady, onStart, onLeave, onKick, onAddBot, onLangToggle, notice }: LobbyProps) {
   const { t } = useI18n();
+  const [botLevel, setBotLevel] = useState<BotLevel>('normal');
   const mine = room.seats.find((s) => s.seat === room.you);
   const isHost = room.you !== null && room.hostSeat === room.you;
   const allFilled = room.seats.length >= room.playerCount;
@@ -78,10 +81,11 @@ export function Lobby({ room, onReady, onStart, onLeave, onKick, onLangToggle, n
               <li key={seatId} className="lobby-seat">
                 <Emblem id={SEAT_EMBLEMS[i]} size={18} />
                 <span className="lobby-seat-name">
-                  {seat ? seat.name : t('lobby_empty', { n: seatIndex(seatId) })}
+                  {seat ? (seat.bot ? `🤖 ${seat.name}` : seat.name) : t('lobby_empty', { n: seatIndex(seatId) })}
                   {seatId === room.you && <span className="seat-you">({t('net_you')})</span>}
                 </span>
                 {host && <span className="badge">{t('lobby_host')}</span>}
+                {seat?.bot && <span className="badge badge-bot">{t(`bot_${seat.bot}`)}</span>}
                 {seat && (
                   <span
                     className={`dot ${seat.connected ? 'dot-on' : 'dot-off'}`}
@@ -95,15 +99,31 @@ export function Lobby({ room, onReady, onStart, onLeave, onKick, onLangToggle, n
                     variant="danger"
                     className="btn-kick"
                     onClick={() => onKick(seatId)}
-                    aria-label={t('lobby_kickTitle', { name: seat.name })}
+                    aria-label={t(seat.bot ? 'lobby_removeBotTitle' : 'lobby_kickTitle', { name: seat.name })}
                   >
-                    ✖ {t('lobby_kick')}
+                    ✖ {t(seat.bot ? 'lobby_removeBot' : 'lobby_kick')}
                   </Button>
                 )}
               </li>
             );
           })}
         </ul>
+        {isHost && onAddBot && !allFilled && (
+          <div className="lobby-bot-row">
+            <label htmlFor="lobby-bot-level">{t('lobby_botLevel')}</label>
+            <select id="lobby-bot-level" value={botLevel} onChange={(e) => setBotLevel(e.target.value as BotLevel)}>
+              {BOT_LEVELS.map((l) => (
+                <option key={l} value={l}>
+                  {t(`bot_${l}`)}
+                </option>
+              ))}
+            </select>
+            <Button variant="ghost" onClick={() => onAddBot(botLevel)}>
+              🤖 {t('lobby_addBot')}
+            </Button>
+            <span className="hint">{t('lobby_botHint')}</span>
+          </div>
+        )}
         <div className="lobby-actions">
           <Button variant={mine?.ready ? 'ghost' : 'primary'} onClick={() => onReady(!mine?.ready)}>
             {t(mine?.ready ? 'lobby_notReady' : 'lobby_ready')}

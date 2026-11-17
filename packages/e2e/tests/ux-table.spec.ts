@@ -1,4 +1,4 @@
-// Player-friendly table (UX2): status banner, big board, player cards, hand as cards, dice
+// Player-friendly table (UX2): board hint + player strip (no status banner since 2026-11-17), big board, player cards, hand as cards, dice
 // box, cost card, quick help. Hot-seat, real clicks; runs in the desktop and tablet projects.
 import { test, expect, type Page } from '@playwright/test';
 import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
@@ -39,17 +39,18 @@ async function overlaps(page: Page, a: string, b: string): Promise<boolean> {
   );
 }
 
-test('status banner, player cards, hand cards and dice box guide the player', async ({ page }) => {
+test('board hint, player strip, hand cards and dice box guide the player', async ({ page }) => {
   test.setTimeout(120_000);
   const errors = captureErrors(page);
   const project = test.info().project.name;
   await startGame(page, '4', 'e2e-ux');
 
-  // Setup: the banner says what to do and is marked as the viewer's move.
-  const banner = page.locator('.status-banner');
-  await expect(banner).toBeVisible();
-  await expect(banner).toHaveAttribute('data-mine', 'true');
-  await expect(banner).toContainText('đặt một ngôi làng');
+  // Setup: a hint over the board says what to pick (the status sentence row is gone, PO 2026-11-17).
+  const hint = page.locator('.board-hint');
+  await expect(hint).toBeVisible();
+  await expect(hint).toContainText('đặt một ngôi làng');
+  // The players sit in one row above the board.
+  await expect(page.locator('.seat-strip .seats .seat')).toHaveCount(4);
 
   // A placement the phase demands stays armed: Esc must not remove the highlights.
   await expect(page.locator('.hit-vertex').first()).toBeVisible();
@@ -74,14 +75,15 @@ test('status banner, player cards, hand cards and dice box guide the player', as
   await expect(page.locator('.topbar-vps, .opponents, .phase-label')).toHaveCount(0);
 
   await playSetupUntilRoll(page);
-  await expect(banner).toContainText('gieo xúc xắc');
+  // Time to roll: no hint over the board, the Roll button pulses instead.
+  await expect(page.locator('.board-hint')).toHaveCount(0);
+  await expect(actionButton(page, VI.rollText)).toHaveClass(/pulse/);
   // Starting resources arrived during setup: some resource card is no longer empty.
   expect(await page.locator('.hand .res-card:not(.empty)').count()).toBeGreaterThan(0);
 
   await actionButton(page, VI.rollText).click();
   await expect(page.locator('.dice-box .die')).toHaveCount(2);
   await expect(page.locator('.dice-box .dice-sum')).toContainText(/= \d+/);
-  await expect(banner).not.toHaveText('');
 
   // Overlays never sit on top of each other.
   expect(await overlaps(page, '.dice-box', '.board-zoom')).toBe(false);

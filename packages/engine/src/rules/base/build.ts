@@ -1,7 +1,7 @@
 // placeSettlement / placeRoad / buildCity, including the free placements of setup and freeRoads.
 import type { Action, Bag, PlayerId } from '../../types';
 import type { ActionDef, ApplyCtx, Ctx } from '../../ruleset/types';
-import { legalRoadSpots, legalSettlementSpots, satisfiesDistanceRule } from '../../board/graph';
+import { legalRoadSpots, legalSettlementSpots, roadConnects, satisfiesDistanceRule } from '../../board/graph';
 import { bagAdd, bagHas, bagSub } from '../../bag';
 import {
   cost, err, expect, player, resumePhase, setPhase, setupOrder, startTurn, updateLongestRoute,
@@ -69,6 +69,8 @@ export const placeSettlement: ActionDef = {
     const { state, graph } = ctx;
     if (expect(state, { t: 'placeSettlement', player: id, v: '' }, ['setup', 'main', 'extraBuild', 'paired']))
       return [];
+    // validate() ends with the cost check: if it fails, no spot can pass, so skip the board scan.
+    if (state.phase.k !== 'setup' && canAfford(ctx, id, 'settlement')) return [];
     const spots = legalSettlementSpots(graph, state.pieces, id, { setup: state.phase.k === 'setup' });
     return spots
       .map((v) => ({ t: 'placeSettlement', player: id, v }) as Action)
@@ -92,7 +94,8 @@ export const placeRoad: ActionDef = {
         ? null
         : err('NOT_CONNECTED', 'The setup road must touch the settlement just placed.');
     }
-    if (!legalRoadSpots(graph, state.pieces, a.player).includes(a.e))
+    // Same as legalRoadSpots(...).includes(a.e) for a free edge, without scanning every edge (M4 speed).
+    if (!roadConnects(graph, state.pieces, a.player, a.e))
       return err('NOT_CONNECTED', 'A road must connect to your road network.');
     if (ph.k === 'freeRoads') return null;
     return canAfford(ctx, a.player, 'road');
@@ -127,6 +130,8 @@ export const placeRoad: ActionDef = {
     if (expect(state, { t: 'placeRoad', player: id, e: '' }, ['setup', 'main', 'extraBuild', 'paired', 'freeRoads']))
       return [];
     const ph = state.phase;
+    // Paid roads: if the cost check fails, every candidate fails validate(), so skip the scan.
+    if (ph.k !== 'setup' && ph.k !== 'freeRoads' && canAfford(ctx, id, 'road')) return [];
     const spots =
       ph.k === 'setup'
         ? legalRoadSpots(graph, state.pieces, id, { fromVertex: ph.at })
@@ -160,6 +165,8 @@ export const buildCity: ActionDef = {
   },
   legal(ctx, id) {
     const { state } = ctx;
+    if (expect(state, { t: 'buildCity', player: id, v: '' }, ['main', 'extraBuild', 'paired'])) return [];
+    if (canAfford(ctx, id, 'city')) return [];
     return Object.entries(state.pieces.buildings)
       .filter(([, b]) => b.owner === id && b.kind === 'settlement')
       .map(([v]) => ({ t: 'buildCity', player: id, v }) as Action)

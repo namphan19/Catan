@@ -8,6 +8,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json",
-    "fuzz": "tsx fuzz/randomGame.ts"
+    "fuzz": "tsx fuzz/randomGame.ts",
+    "arena": "tsx fuzz/botArena.ts",
+    "bench": "tsx fuzz/bench.ts"
   }
 }

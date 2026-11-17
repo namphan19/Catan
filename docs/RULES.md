@@ -53,7 +53,7 @@ adjacent producing hex (if the bank has it). Then the first player starts turn 1
   harbor's resource with a specific harbor. A harbor counts if the player has a building on one of its
   two vertices. Several cards may be taken at once (e.g. 8 -> 2). (D5)
 - **Players:** the active player offers a bundle for a bundle; other players accept, decline or make a
-  counteroffer and may change their answer; the active player confirms with one of them (D20). Both sides must be non-empty and use different resources;
+  counteroffer and may change their answer (repeating the same answer is rejected; at most 5 answers per offer); the active player confirms with one of them (D20). Both sides must be non-empty and use different resources;
   gifts are not possible. Players do not trade with each other when it is not their turn. (D6)
 
 ## 7. Cards

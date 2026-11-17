@@ -628,9 +628,24 @@ describe('strongholds: commerce cards', () => {
     expect(hand(s, 'p1')).toMatchObject({ timber: 2, silver: 1 });
     expect(hand(s, 'p2')).toMatchObject({ timber: 1, silver: 0, linen: 1 });
     expect(code(s, offer('p2'))).toBe('ALREADY_OFFERED');
-    s = act(s, offer('p3')); // no commodity: nothing changes hands
+    // S8: an offer to a player without a commodity could only fail, so it is not allowed
+    expect(code(s, offer('p3'))).toBe('NO_COMMODITY');
+    expect(getLegalActions(s, 'p1').some((q) => q.t === 'sh:bazaarOffer' && (q as { target?: string }).target === 'p3')).toBe(false);
     expect(hand(s, 'p1').timber).toBe(2);
     expect(s.phase.k).toBe('main');
+  });
+
+  it('bazaar cannot be played when no offer could succeed (S8)', () => {
+    const s = game();
+    give(s, 'p1', 'bazaar');
+    const play: Action = { t: 'sh:play', player: 'p1', card: 'bazaar' };
+    setHand(s, 'p1', { timber: 1 });
+    for (const id of ['p2', 'p3', 'p4']) setHand(s, id, { grain: 2 });
+    expect(code(s, play)).toBe('NO_TARGET'); // nobody holds a commodity
+    setHand(s, 'p3', { books: 1 });
+    expect(code(s, play)).toBe('OK');
+    setHand(s, 'p1', { linen: 2 });
+    expect(code(s, play)).toBe('NO_TARGET'); // nothing to offer
   });
 
   it('tithe: look at the hand of a richer player and take 2 cards', () => {

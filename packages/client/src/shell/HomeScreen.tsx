@@ -6,9 +6,13 @@ import { Button } from '../ui/Button';
 import { Emblem } from '../ui/Emblem';
 import { SEAT_EMBLEMS, playerHex } from '../ui/colors';
 import { HomeMap } from './HomeMap';
+import { BOT_LEVELS, type BotLevel } from '../net/protocol';
+
+type SeatKind = 'human' | BotLevel;
 
 export interface HomeScreenProps {
-  onNew: (seed: string, names: string[], expansion: boolean) => void;
+  /** `bots[i]` is the bot level of seat i, or null for a human seat. */
+  onNew: (seed: string, names: string[], expansion: boolean, bots: (BotLevel | null)[]) => void;
   onLoad: (text: string) => void;
   onOnline: (fresh?: boolean) => void;
   onLangToggle: () => void;
@@ -106,6 +110,9 @@ export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: Hom
   const [seed, setSeed] = useState('boschtan');
   const [expansion, setExpansion] = useState(false);
   const [logText, setLogText] = useState('');
+  const [kinds, setKinds] = useState<SeatKind[]>(['human', 'human', 'human', 'human', 'human', 'human']);
+  const seats = kinds.slice(0, count);
+  const noHuman = !seats.includes('human');
 
   return (
     <main className="home home-landing">
@@ -182,10 +189,16 @@ export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: Hom
               className="ledger-form"
               onSubmit={(e) => {
                 e.preventDefault();
+                if (noHuman) return;
                 onNew(
                   seed.trim() || 'boschtan',
-                  names.slice(0, count).map((n, i) => n.trim() || t('player', { n: i + 1 })),
+                  names.slice(0, count).map((n, i) => {
+                    const k = seats[i];
+                    if (k !== 'human') return `🤖 ${t('bot_name', { n: i + 1, level: t(`bot_${k}`) })}`;
+                    return n.trim() || t('player', { n: i + 1 });
+                  }),
                   expansion,
+                  seats.map((k) => (k === 'human' ? null : k)),
                 );
               }}
             >
@@ -238,15 +251,38 @@ export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: Hom
                     <span className="seat-badge">
                       <Emblem id={SEAT_EMBLEMS[i]} size={16} color={playerHex(`p${i + 1}`)} />
                     </span>
-                    <input
-                      value={names[i] ?? ''}
-                      aria-label={t('home_playerName', { n: i + 1 })}
-                      placeholder={t('home_playerName', { n: i + 1 })}
-                      onChange={(e) => setNames((ns) => ns.map((x, j) => (j === i ? e.target.value : x)))}
-                    />
+                    {kinds[i] === 'human' ? (
+                      <input
+                        value={names[i] ?? ''}
+                        aria-label={t('home_playerName', { n: i + 1 })}
+                        placeholder={t('home_playerName', { n: i + 1 })}
+                        onChange={(e) => setNames((ns) => ns.map((x, j) => (j === i ? e.target.value : x)))}
+                      />
+                    ) : (
+                      <span className="ledger-bot-name">🤖 {t('bot_name', { n: i + 1, level: t(`bot_${kinds[i]}`) })}</span>
+                    )}
+                    <span className="select-wrap seat-kind">
+                      <select
+                        value={kinds[i]}
+                        aria-label={t('home_seatKind', { n: i + 1 })}
+                        onChange={(e) => setKinds((ks) => ks.map((x, j) => (j === i ? (e.target.value as SeatKind) : x)))}
+                      >
+                        <option value="human">{t('home_seatHuman')}</option>
+                        {BOT_LEVELS.map((l) => (
+                          <option key={l} value={l}>
+                            🤖 {t(`bot_${l}`)}
+                          </option>
+                        ))}
+                      </select>
+                    </span>
                   </label>
                 ))}
               </fieldset>
+              {noHuman && (
+                <p className="error-text ledger-error" role="alert">
+                  {t('home_needHuman')}
+                </p>
+              )}
 
               {error && (
                 <p className="error-text ledger-error" role="alert">
@@ -254,7 +290,7 @@ export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: Hom
                 </p>
               )}
 
-              <Button variant="primary" type="submit" className="ledger-start">
+              <Button variant="primary" type="submit" className="ledger-start" disabled={noHuman}>
                 <CompassIcon />
                 <span>{t('home_start')}</span>
               </Button>

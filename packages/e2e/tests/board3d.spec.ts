@@ -72,7 +72,8 @@ async function clickLegalTarget(page: Page): Promise<string | null> {
 
 test.describe('3D board', () => {
   test('toggle to 3D renders the canvas, real clicks place setup pieces, back to 2D keeps the game', async ({ page }) => {
-    test.setTimeout(180_000);
+    // Software WebGL (SwiftShader) is slow on a cold run: the setup loop alone can take ~2 minutes.
+    test.setTimeout(360_000);
     const errors = captureErrors(page);
     await startGame(page, '4', 'e2e-3d');
 
@@ -97,7 +98,7 @@ test.describe('3D board', () => {
     const cover = page.locator('.cover');
     let clickedVertices = 0;
     let clickedEdges = 0;
-    const deadline = Date.now() + 120_000;
+    const deadline = Date.now() + 270_000;
     while (!(await roll.isEnabled())) {
       if (Date.now() > deadline) throw new Error('3D setup loop timed out; roll never became possible');
       if (await cover.isVisible().catch(() => false)) {

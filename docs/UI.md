@@ -22,7 +22,7 @@ art, tile frames, card layouts or logos of any commercial game.
 | --danger | #A23B2A | errors, 6/8 tokens |
 | --forest #2F5D3A, --claypit #B5562B, --meadow #8DB255, --field #E0B84C, --quarry #8A8D91, --waste #D9C79E | terrains |
 Player colours (colour-blind safe, always paired with a pattern/emblem):
-p1 #E69F00 (orange, sun), p2 #56B4E9 (sky, wave), p3 #009E73 (green, leaf), p4 #F0E442 (yellow, star),
+p1 #E69F00 (orange, sun), p2 #56B4E9 (sky, wave), p3 #009E73 (green, leaf), p4 #CC79A7 (reddish purple, star; was yellow #F0E442, too close to p1 on the board),
 p5 #0072B2 (blue, shield), p6 #D55E00 (vermillion, flame).
 
 ## Asset contract (artist writes, frontend reads) - packages/client/public/assets/
@@ -32,6 +32,9 @@ Every SVG: viewBox given below, no external refs, no embedded raster, player-col
 - terrain/sea.svg (tileable pattern 100x100)
 - token.svg (number disc 0 0 60 60, number drawn by the UI on top)
 - harbor/{any,timber,clay,fiber,grain,stone}.svg   0 0 64 64
+  Harbors are drawn out in the sea (2D and 3D share board/geom.ts harborGeom): two wooden piers from
+  the coast edge's corners to a dock, and a badge [icon · ratio] (3D: buoy + floating icon/ratio)
+  beyond the dock. Nothing of a harbor sits on the coast edge, so roads and settlements stay readable.
 - piece/{road,settlement,city}.svg   road 0 0 60 14, settlement 0 0 40 40, city 0 0 52 44 (currentColor)
 - piece/blocker.svg   0 0 40 56
 - resource/{timber,clay,fiber,grain,stone}.svg   0 0 64 64 (card art) ; icon/{same}.svg 0 0 24 24

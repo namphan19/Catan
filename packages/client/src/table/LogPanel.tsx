@@ -13,7 +13,7 @@ export function LogPanel({ view }: { view: PlayerView }) {
   const { t } = useI18n();
   const name = useName();
   const lines = useMemo(() => {
-    const desc = view.log.map((l) => ({ player: l.action.player, text: describeAction(l.action, t, name) as ReactNode }));
+    const desc = view.log.map((l) => ({ player: l.action.player, text: describeAction(l.action, t, name, l) as ReactNode }));
     return desc.reverse();
     // view.log is replaced wholesale by each new view; describe on change only.
     // eslint-disable-next-line react-hooks/exhaustive-deps

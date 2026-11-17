@@ -10,6 +10,11 @@ export interface RoomOptions {
   expansion?: 'strongholds';
 }
 
+export const BOT_LEVELS = ['easy', 'normal', 'hard', 'expert'] as const;
+export type BotLevelName = (typeof BOT_LEVELS)[number];
+export const isBotLevel = (v: unknown): v is BotLevelName =>
+  typeof v === 'string' && (BOT_LEVELS as readonly string[]).includes(v);
+
 /** Client -> server. `reqId` is echoed back on error replies. */
 export type ClientMsg =
   | { type: 'hello'; name: string; sessionToken?: string; reqId?: string }
@@ -19,6 +24,8 @@ export type ClientMsg =
   | { type: 'setReady'; ready: boolean; reqId?: string }
   | { type: 'startGame'; reqId?: string }
   | { type: 'kick'; seat: string; reqId?: string }
+  /** Host-only, lobby-only: fill the next free seat with a server-side bot. */
+  | { type: 'addBot'; level: BotLevelName; reqId?: string }
   | { type: 'action'; action: unknown; reqId?: string }
   | { type: 'requestState'; reqId?: string };
 
@@ -31,7 +38,8 @@ export type ServerMsg =
       hostSeat: string;
       playerCount: number;
       options: RoomOptions;
-      seats: { seat: string; name: string; connected: boolean; ready: boolean }[];
+      /** `bot` is set for server-side bot seats (always connected and ready). */
+      seats: { seat: string; name: string; connected: boolean; ready: boolean; bot?: BotLevelName }[];
       you: string | null;
       started: boolean;
     }
@@ -212,6 +220,12 @@ export function parseClientMessage(text: string): ParseResult {
         if (!isStr(seat) || !/^p[1-6]$/.test(seat))
           return { ok: false, code: 'BAD_MESSAGE', message: 'kick needs a seat like "p3".' };
         return { ok: true, msg: { type: 'kick', seat, reqId } };
+      }
+      case 'addBot': {
+        const level = raw.level;
+        if (!isBotLevel(level))
+          return { ok: false, code: 'BAD_MESSAGE', message: 'addBot needs a level: easy, normal or hard.' };
+        return { ok: true, msg: { type: 'addBot', level, reqId } };
       }
       case 'action': {
         const action = raw.action;

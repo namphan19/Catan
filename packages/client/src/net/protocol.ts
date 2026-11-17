@@ -9,6 +9,9 @@ export interface RoomOptions {
   expansion?: 'strongholds';
 }
 
+export type BotLevel = 'easy' | 'normal' | 'hard' | 'expert';
+export const BOT_LEVELS: BotLevel[] = ['easy', 'normal', 'hard', 'expert'];
+
 /** Client -> server. */
 export type OutMsg =
   | { type: 'hello'; name: string; sessionToken?: string }
@@ -18,6 +21,7 @@ export type OutMsg =
   | { type: 'setReady'; ready: boolean }
   | { type: 'startGame' }
   | { type: 'kick'; seat: string }
+  | { type: 'addBot'; level: BotLevel }
   | { type: 'action'; action: unknown }
   | { type: 'requestState' };
 
@@ -30,7 +34,7 @@ export type ServerMsg =
       hostSeat: string;
       playerCount: number;
       options: RoomOptions;
-      seats: { seat: string; name: string; connected: boolean; ready: boolean }[];
+      seats: { seat: string; name: string; connected: boolean; ready: boolean; bot?: BotLevel }[];
       you: string | null;
       started: boolean;
     }
@@ -43,6 +47,8 @@ export interface RoomSeat {
   name: string;
   connected: boolean;
   ready: boolean;
+  /** Server-side bot seat and its level. */
+  bot?: BotLevel;
 }
 
 /** The `room` message payload, in a friendlier shape. */
