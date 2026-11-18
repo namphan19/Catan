@@ -85,7 +85,7 @@ async function handleDialog() {
       let best = -1;
       texts.forEach((x, i) => { const m = x.match(/(\d+)\D+(\d)/); const have = m ? Number(m[1]) : 0; if (have > best) { best = have; idx = i; } });
     }
-    const wantRe = /Đá|Lúa|Sách|Bạc/;
+    const wantRe = /Quặng|Lúa mì|Sách|Bạc/;
     const wi = texts.findIndex((x) => wantRe.test(x));
     const useIdx = bankStage === 0 ? idx : (wi >= 0 ? wi : 0);
     T(`bank dialog stage ${bankStage}: options ${texts.map((x) => x.trim().slice(0, 30)).join(' | ')} -> ${useIdx}`);

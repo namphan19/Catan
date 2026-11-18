@@ -3,93 +3,123 @@
     <clipPath id="hex">
       <path d="M100 3 L197 59 L197 171 L100 227 L3 171 L3 59 Z"/>
     </clipPath>
+    <linearGradient id="soil" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#EAD074"/>
+      <stop offset=".5" stop-color="#D7B455"/>
+      <stop offset="1" stop-color="#BE963D"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="34%" cy="16%" r="82%">
+      <stop offset="0" stop-color="#FFEFB0" stop-opacity=".7"/>
+      <stop offset=".55" stop-color="#F4D77A" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#8F682A" stop-opacity="0"/>
+    </radialGradient>
     <g id="wheat">
-      <path d="M0 16 L0 -13" stroke="#73613B" stroke-width="2" stroke-linecap="round"/>
-      <g fill="#CFB97D" stroke="#504438" stroke-width="1.25">
-        <ellipse cx="-3.6" cy="-9" rx="2.2" ry="3.6" transform="rotate(28 -3.6 -9)"/>
-        <ellipse cx="3.6" cy="-9" rx="2.2" ry="3.6" transform="rotate(-28 3.6 -9)"/>
-        <ellipse cx="-3.4" cy="-4.6" rx="2.2" ry="3.6" transform="rotate(28 -3.4 -4.6)"/>
-        <ellipse cx="3.4" cy="-4.6" rx="2.2" ry="3.6" transform="rotate(-28 3.4 -4.6)"/>
-        <ellipse cx="-2.9" cy="-0.4" rx="2.1" ry="3.4" transform="rotate(28 -2.9 -0.4)"/>
-        <ellipse cx="2.9" cy="-0.4" rx="2.1" ry="3.4" transform="rotate(-28 2.9 -0.4)"/>
+      <path d="M0 14 V-7" stroke="#86682F" stroke-width="1.5" stroke-linecap="round"/>
+      <g fill="#F2D783" stroke="#9C7B35" stroke-width=".8">
+        <ellipse cx="-2.6" cy="-5" rx="1.7" ry="2.9" transform="rotate(28 -2.6 -5)"/>
+        <ellipse cx="2.6" cy="-5" rx="1.7" ry="2.9" transform="rotate(-28 2.6 -5)"/>
+        <ellipse cx="-2.4" cy="-1.4" rx="1.7" ry="2.9" transform="rotate(28 -2.4 -1.4)"/>
+        <ellipse cx="2.4" cy="-1.4" rx="1.7" ry="2.9" transform="rotate(-28 2.4 -1.4)"/>
+        <ellipse cx="-1.9" cy="2" rx="1.6" ry="2.7" transform="rotate(28 -1.9 2)"/>
+        <ellipse cx="1.9" cy="2" rx="1.6" ry="2.7" transform="rotate(-28 1.9 2)"/>
       </g>
-      <path d="M0 -13 l-4.5 -4 M0 -13 l4.5 -4 M0 -13 v-5" stroke="#504438" stroke-width="1.3" fill="none" stroke-linecap="round"/>
-      <path d="M-9 9 q3 -7 7 -9 M9 9 q-3 -7 -7 -9" stroke="#897142" stroke-width="1.6" fill="none" stroke-linecap="round"/>
     </g>
     <g id="sheaf">
-      <use href="#wheat" transform="translate(-7 1) rotate(-12)"/>
+      <use href="#wheat" transform="translate(-6 1) rotate(-11)"/>
       <use href="#wheat" transform="translate(0 -1)"/>
-      <use href="#wheat" transform="translate(7 1) rotate(12)"/>
-      <use href="#wheat" transform="translate(3.5 3) rotate(5) scale(.9)"/>
-      <use href="#wheat" transform="translate(-3.5 3) rotate(-5) scale(.9)"/>
-      <path d="M-10 2 q10 -4 20 0 l-1 6 q-9 3 -18 0 Z" fill="#73573C" stroke="#504438" stroke-width="1.7" stroke-linejoin="round"/>
-      <path d="M-8 5 q8 -3 16 0" stroke="#A48D45" stroke-width="1" fill="none" opacity=".7"/>
+      <use href="#wheat" transform="translate(6 1) rotate(11)"/>
+      <path d="M-8 3 q8 -3 16 0 l-1 5 q-7 2 -14 0 Z" fill="#8A5E2C" stroke="#5B4126" stroke-width="1.2"/>
+      <path d="M-6 5 q6 -2 12 0" stroke="#C9A227" stroke-width=".9" fill="none" opacity=".8"/>
     </g>
   </defs>
 
   <g clip-path="url(#hex)">
-    <rect width="200" height="230" fill="#C2A865"/>
-    <!-- sunlit field bands -->
-    <g fill="none" stroke-linecap="round">
-      <path d="M-6 72 Q48 50 102 72 T206 68" stroke="#CFB77A" stroke-width="20" opacity=".6"/>
-      <path d="M-6 104 Q50 84 104 104 T206 100" stroke="#AC8F50" stroke-width="14" opacity=".45"/>
-      <path d="M-6 140 Q48 120 102 140 T206 136" stroke="#CFB77A" stroke-width="18" opacity=".5"/>
-      <path d="M-6 178 Q52 158 106 178 T206 174" stroke="#AC8F50" stroke-width="16" opacity=".4"/>
-      <path d="M-6 210 Q50 194 104 210 T206 206" stroke="#CFB77A" stroke-width="16" opacity=".5"/>
+    <rect width="200" height="230" fill="url(#soil)"/>
+    <rect width="200" height="230" fill="url(#sun)"/>
+
+    <!-- patchwork of ripe and cut fields -->
+    <g>
+      <path d="M-8 30 Q60 12 122 34 T208 28 V92 Q130 76 74 92 T-8 88 Z" fill="#D9B44F" opacity=".65"/>
+      <path d="M-8 88 Q58 70 112 90 T208 84 V142 Q126 126 70 144 T-8 140 Z" fill="#E8CB6D" opacity=".8"/>
+      <path d="M-8 140 Q58 124 116 142 T208 136 V194 Q128 178 72 196 T-8 192 Z" fill="#C9A344" opacity=".75"/>
+      <path d="M-8 192 Q62 178 120 196 T208 190 V230 H-8 Z" fill="#B58E36" opacity=".7"/>
     </g>
-    <!-- furrows -->
-    <g fill="none" stroke="#897142" stroke-width="2" opacity=".34" stroke-linecap="round">
-      <path d="M8 88 Q56 70 104 88 T192 84"/>
-      <path d="M8 96 Q56 78 104 96 T192 92"/>
-      <path d="M8 156 Q56 138 104 156 T192 152"/>
-      <path d="M8 164 Q56 146 104 164 T192 160"/>
-      <path d="M8 190 Q56 174 104 190 T192 186"/>
+    <!-- field seams and furrows -->
+    <g fill="none" stroke="#9C7930" stroke-width="1.2" opacity=".5" stroke-linecap="round">
+      <path d="M-6 46 Q52 30 106 48 T206 44"/>
+      <path d="M-6 56 Q52 40 106 58 T206 54"/>
+      <path d="M-6 104 Q58 88 112 106 T206 102"/>
+      <path d="M-6 114 Q58 98 112 116 T206 112"/>
+      <path d="M-6 156 Q58 140 116 158 T206 154"/>
+      <path d="M-6 166 Q58 150 116 168 T206 164"/>
+      <path d="M-6 206 Q58 190 120 208 T206 204"/>
     </g>
-    <!-- wheat clumps -->
-    <use href="#wheat" transform="translate(34 78) scale(.9)"/>
-    <use href="#wheat" transform="translate(46 84) scale(.75) rotate(8)"/>
-    <use href="#wheat" transform="translate(66 72) scale(1) rotate(-6)"/>
-    <use href="#wheat" transform="translate(88 84) scale(.8) rotate(10)"/>
-    <use href="#wheat" transform="translate(124 74) scale(.95) rotate(-8)"/>
-    <use href="#wheat" transform="translate(146 86) scale(.85) rotate(5)"/>
-    <use href="#wheat" transform="translate(168 76) scale(.7) rotate(-10)"/>
-    <use href="#wheat" transform="translate(38 116) scale(.85) rotate(6)"/>
-    <use href="#wheat" transform="translate(58 110) scale(.7) rotate(-6)"/>
-    <use href="#wheat" transform="translate(92 116) scale(.9) rotate(4)"/>
-    <use href="#wheat" transform="translate(118 108) scale(.75) rotate(-8)"/>
-    <use href="#wheat" transform="translate(150 118) scale(.95) rotate(6)"/>
-    <use href="#wheat" transform="translate(174 108) scale(.7) rotate(-5)"/>
-    <use href="#wheat" transform="translate(30 146) scale(.8) rotate(-6)"/>
-    <use href="#wheat" transform="translate(54 140) scale(.95) rotate(7)"/>
-    <use href="#wheat" transform="translate(84 148) scale(.7) rotate(-5)"/>
-    <use href="#wheat" transform="translate(112 142) scale(.85) rotate(8)"/>
-    <use href="#wheat" transform="translate(144 150) scale(.8) rotate(-7)"/>
-    <use href="#wheat" transform="translate(168 142) scale(.9) rotate(5)"/>
-    <use href="#wheat" transform="translate(42 178) scale(.75) rotate(5)"/>
-    <use href="#wheat" transform="translate(74 174) scale(.9) rotate(-6)"/>
-    <use href="#wheat" transform="translate(104 182) scale(.7) rotate(7)"/>
-    <use href="#wheat" transform="translate(132 176) scale(.9) rotate(-5)"/>
-    <use href="#wheat" transform="translate(160 184) scale(.8) rotate(6)"/>
-    <use href="#wheat" transform="translate(56 206) scale(.8) rotate(-4)"/>
-    <use href="#wheat" transform="translate(94 204) scale(.75) rotate(6)"/>
-    <use href="#wheat" transform="translate(128 208) scale(.85) rotate(-6)"/>
-    <use href="#wheat" transform="translate(154 210) scale(.7) rotate(4)"/>
+    <!-- pale green margin on the north-west edge -->
+    <path d="M3 59 L62 25 Q34 36 22 58 Q14 78 18 102 L3 106 Z" fill="#8FAE4F" opacity=".55"/>
+
+    <!-- wheat rows -->
+    <g>
+      <use href="#wheat" transform="translate(34 70) scale(.85) rotate(6)"/>
+      <use href="#wheat" transform="translate(46 76) scale(.75) rotate(-4)"/>
+      <use href="#wheat" transform="translate(62 68) scale(.9) rotate(3)"/>
+      <use href="#wheat" transform="translate(78 78) scale(.8) rotate(-6)"/>
+      <use href="#wheat" transform="translate(96 66) scale(.9) rotate(4)"/>
+      <use href="#wheat" transform="translate(112 78) scale(.75) rotate(-3)"/>
+      <use href="#wheat" transform="translate(130 68) scale(.9) rotate(6)"/>
+      <use href="#wheat" transform="translate(148 80) scale(.8) rotate(-5)"/>
+      <use href="#wheat" transform="translate(166 70) scale(.85) rotate(3)"/>
+      <use href="#wheat" transform="translate(184 80) scale(.7) rotate(-4)"/>
+
+      <use href="#wheat" transform="translate(26 116) scale(.9) rotate(-5)"/>
+      <use href="#wheat" transform="translate(44 122) scale(.8) rotate(4)"/>
+      <use href="#wheat" transform="translate(64 112) scale(.85) rotate(-3)"/>
+      <use href="#wheat" transform="translate(82 124) scale(.75) rotate(6)"/>
+      <use href="#wheat" transform="translate(100 114) scale(.9) rotate(-4)"/>
+      <use href="#wheat" transform="translate(118 124) scale(.8) rotate(3)"/>
+      <use href="#wheat" transform="translate(136 114) scale(.85) rotate(-6)"/>
+      <use href="#wheat" transform="translate(154 126) scale(.75) rotate(4)"/>
+      <use href="#wheat" transform="translate(172 116) scale(.9) rotate(-3)"/>
+
+      <use href="#wheat" transform="translate(34 170) scale(.85) rotate(4)"/>
+      <use href="#wheat" transform="translate(54 176) scale(.75) rotate(-5)"/>
+      <use href="#wheat" transform="translate(74 166) scale(.9) rotate(3)"/>
+      <use href="#wheat" transform="translate(94 178) scale(.8) rotate(-4)"/>
+      <use href="#wheat" transform="translate(114 168) scale(.85) rotate(5)"/>
+      <use href="#wheat" transform="translate(134 178) scale(.75) rotate(-3)"/>
+      <use href="#wheat" transform="translate(154 168) scale(.9) rotate(4)"/>
+      <use href="#wheat" transform="translate(174 180) scale(.8) rotate(-6)"/>
+    </g>
 
     <!-- stooks -->
-    <use href="#sheaf" transform="translate(52 154) scale(1.05)"/>
-    <use href="#sheaf" transform="translate(142 190) scale(.95)"/>
-    <use href="#sheaf" transform="translate(106 198) scale(.8)"/>
+    <use href="#sheaf" transform="translate(52 146) scale(1.1)"/>
+    <use href="#sheaf" transform="translate(148 152) scale(1.0)"/>
+    <use href="#sheaf" transform="translate(88 202) scale(1.05)"/>
+    <use href="#sheaf" transform="translate(174 204) scale(.9)"/>
 
-    <!-- poppies at the field edge -->
-    <g fill="#864A40" stroke="#373030" stroke-width="1">
-      <circle cx="22" cy="94" r="2.6"/><circle cx="26" cy="90" r="2.2"/><circle cx="19" cy="90" r="2"/>
+    <!-- farmhouse on the western edge -->
+    <g transform="translate(36 92)">
+      <ellipse cx="0" cy="13" rx="18" ry="4" fill="#6B4B2E" opacity=".25"/>
+      <path d="M-12 10 V-2 L0 -10 L12 -2 V10 Z" fill="#EFDDB4" stroke="#5B4126" stroke-width="1.4"/>
+      <path d="M-15 -1 L0 -13 L15 -1 L12 -1 L0 -10 L-12 -1 Z" fill="#A85632" stroke="#5B4126" stroke-width="1.4"/>
+      <rect x="-3" y="3" width="6" height="7" fill="#7A5A36" stroke="#5B4126" stroke-width="1"/>
+      <path d="M7 -8 V-15 H10 V-6" fill="#C58B54" stroke="#5B4126" stroke-width="1.1"/>
     </g>
-    <path d="M22 96 q1 6 0 9 M24 92 q2 5 6 6" stroke="#5A6A45" stroke-width="1.5" fill="none"/>
-    <g fill="#864A40" stroke="#373030" stroke-width="1">
-      <circle cx="180" cy="168" r="2.4"/><circle cx="184" cy="164" r="2"/><circle cx="177" cy="164" r="1.9"/>
+    <g>
+      <path d="M170 54 q-7 -12 2 -19 q10 -7 17 2 q9 10 -3 17 Z" fill="#659348"/>
+      <path d="M175 54 v9" stroke="#6B4B2E" stroke-width="2.2"/>
+      <path d="M166 50 q7 -8 16 -3" fill="none" stroke="#9BC069" stroke-width="1.6" opacity=".8"/>
     </g>
-    <path d="M180 170 q1 6 0 8" stroke="#5A6A45" stroke-width="1.5" fill="none"/>
-    <path d="M100 13 L187 62 L187 168 L100 217 L13 168 L13 62 Z" fill="none" stroke="#E8E1CF" stroke-width="1.6" opacity=".14"/>
+
+    <!-- poppies along the southern edge -->
+    <g fill="#B04A3B">
+      <circle cx="24" cy="188" r="2.1"/><circle cx="28" cy="184" r="1.7"/><circle cx="20" cy="184" r="1.6"/>
+      <circle cx="142" cy="212" r="2"/><circle cx="146" cy="208" r="1.7"/>
+    </g>
+    <g fill="none" stroke="#6E8C3B" stroke-width="1.4" stroke-linecap="round">
+      <path d="M24 190 q1 5 0 8 M144 214 q1 4 0 7"/>
+    </g>
+
+    <path d="M100 12 L188 62 L188 168 L100 218 L12 168 L12 62 Z" fill="none" stroke="#FFF2C4" stroke-width="1.2" opacity=".3"/>
   </g>
-  <path d="M100 3 L197 59 L197 171 L100 227 L3 171 L3 59 Z" fill="none" stroke="#373030" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M100 3 L197 59 L197 171 L100 227 L3 171 L3 59 Z" fill="none" stroke="#4A3A2A" stroke-width="1.7" stroke-opacity=".6" stroke-linejoin="round"/>
 </svg>

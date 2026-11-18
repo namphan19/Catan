@@ -1,7 +1,7 @@
 // Local game against bots: seat kinds on the home screen, bots play in the browser, the view stays
 // on the human (no pass-device cover between bot moves), and the expert shows a thinking hint.
 import { test, expect } from '@playwright/test';
-import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, playSetupUntilRoll, shotPath } from './helpers';
 
 test('one human against a hard and an expert bot', async ({ page }) => {
   test.setTimeout(180_000);
@@ -32,8 +32,9 @@ test('one human against a hard and an expert bot', async ({ page }) => {
     .then(() => true)
     .catch(() => false);
 
-  // Setup: the human places their pieces, the bots theirs; only the very first cover appears.
-  await confirmCover(page);
+  // Setup: the human places their pieces, the bots theirs. With a single human there is no
+  // pass-device cover at all (HotseatShell shows it only with 2+ humans).
+  await expect(page.locator('.cover')).toHaveCount(0);
   const { coversAfterFirst } = await playSetupUntilRoll(page);
   expect(coversAfterFirst).toBe(0);
   await expect(page.locator('.shell-viewing')).toHaveText(/Nam/);

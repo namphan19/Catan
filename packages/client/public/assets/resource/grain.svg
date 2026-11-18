@@ -1,25 +1,156 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect x="4" y="4" width="56" height="56" rx="10" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="2.5"/>
-  <!-- golden field -->
-  <path d="M9 47 Q20 40 32 43 Q44 46 55 40 V56 H9 Z" fill="#E0B84C" opacity=".24"/>
-  <!-- sheaf -->
-  <g stroke="#3B2F2F" stroke-linejoin="round">
-    <path d="M32 52 L22 28 M32 52 L27 22 M32 52 V15 M32 52 L37 22 M32 52 L42 28" stroke="#A67C2B" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-    <path d="M32 15 q3 -4 0 -7 q-3 3 0 7 Z" fill="#E0B84C" stroke-width="1.7"/>
-    <path d="M27 22 q-2 -5 -1 -9 q4 4 1 9 Z" fill="#E8C566" stroke-width="1.6"/>
-    <path d="M37 22 q2 -5 1 -9 q-4 4 -1 9 Z" fill="#E8C566" stroke-width="1.6"/>
-    <path d="M22 28 q-5 -3 -7 -8 q6 1 7 8 Z" fill="#E0B84C" stroke-width="1.7"/>
-    <path d="M42 28 q5 -3 7 -8 q-6 1 -7 8 Z" fill="#E0B84C" stroke-width="1.7"/>
-    <path d="M32 9 l-2 -4 M32 9 l2 -4 M26 14 l-3 -3 M27 16 l-3 -3 M38 14 l3 -3 M37 16 l3 -3 M17 21 l-4 -2 M18 23 l-4 -2 M47 21 l4 -2 M46 23 l4 -2" stroke="#A67C2B" stroke-width="1.1" opacity=".55" stroke-linecap="round"/>
-    <path d="M28 18 l-2 -3 M30 15 l-1 -3 M36 18 l2 -3 M34 15 l1 -3 M23 24 l-3 -2 M41 24 l3 -2" stroke="#8A6A2A" stroke-width=".9" opacity=".6" stroke-linecap="round"/>
-    <rect x="22" y="35" width="20" height="5" rx="2" fill="#8A5A2B" stroke-width="1.8"/>
-    <path d="M25 37.5 h14" stroke="#C9A227" stroke-width="1.2" opacity=".7"/>
-    <path d="M28 52 l-4 3 M36 52 l4 3" stroke="#A67C2B" stroke-width="1.6" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 168">
+  <defs>
+    <clipPath id="art">
+      <rect x="13" y="13" width="94" height="119" rx="5"/>
+    </clipPath>
+    <linearGradient id="wheatfield" x1="0" y1="0" x2="0.25" y2="1">
+      <stop offset="0" stop-color="#F2D77E"/>
+      <stop offset=".5" stop-color="#DDBA58"/>
+      <stop offset="1" stop-color="#BC9337"/>
+    </linearGradient>
+    <radialGradient id="wheatsun" cx="34%" cy="14%" r="82%">
+      <stop offset="0" stop-color="#FFF3B8" stop-opacity=".85"/>
+      <stop offset=".55" stop-color="#F8DD86" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#8A6424" stop-opacity="0"/>
+    </radialGradient>
+    <g id="stalk">
+      <path d="M0 34 V-16" stroke="#8A6A2C" stroke-width="1.8" stroke-linecap="round"/>
+      <g fill="#E8C55A" stroke="#8A6A2C" stroke-width=".7">
+        <ellipse cx="-2.6" cy="-13" rx="1.7" ry="3" transform="rotate(28 -2.6 -13)"/>
+        <ellipse cx="2.6" cy="-13" rx="1.7" ry="3" transform="rotate(-28 2.6 -13)"/>
+        <ellipse cx="-2.4" cy="-8.6" rx="1.7" ry="3" transform="rotate(28 -2.4 -8.6)"/>
+        <ellipse cx="2.4" cy="-8.6" rx="1.7" ry="3" transform="rotate(-28 2.4 -8.6)"/>
+        <ellipse cx="-2.1" cy="-4.2" rx="1.6" ry="2.8" transform="rotate(28 -2.1 -4.2)"/>
+        <ellipse cx="2.1" cy="-4.2" rx="1.6" ry="2.8" transform="rotate(-28 2.1 -4.2)"/>
+      </g>
+      <path d="M0 -16 l-4 -4 M0 -16 l4 -4 M0 -16 v-4" fill="none" stroke="#8A6A2C" stroke-width="1.1" stroke-linecap="round"/>
+    </g>
+    <g id="wheatmini">
+      <path d="M0 10 V-6" stroke="#8A6A2C" stroke-width="1.2" stroke-linecap="round"/>
+      <g fill="#E8C55A" stroke="#8A6A2C" stroke-width=".5">
+        <ellipse cx="-1.8" cy="-4" rx="1.2" ry="2.1" transform="rotate(28 -1.8 -4)"/>
+        <ellipse cx="1.8" cy="-4" rx="1.2" ry="2.1" transform="rotate(-28 1.8 -4)"/>
+        <ellipse cx="-1.6" cy="-1" rx="1.2" ry="2.1" transform="rotate(28 -1.6 -1)"/>
+        <ellipse cx="1.6" cy="-1" rx="1.2" ry="2.1" transform="rotate(-28 1.6 -1)"/>
+      </g>
+    </g>
+    <g id="head">
+      <g fill="#E8C55A" stroke="#8A6A2C" stroke-width=".7">
+        <ellipse cx="-2.1" cy="-5" rx="1.5" ry="2.7" transform="rotate(28 -2.1 -5)"/>
+        <ellipse cx="2.1" cy="-5" rx="1.5" ry="2.7" transform="rotate(-28 2.1 -5)"/>
+        <ellipse cx="-2" cy="-1" rx="1.5" ry="2.7" transform="rotate(28 -2 -1)"/>
+        <ellipse cx="2" cy="-1" rx="1.5" ry="2.7" transform="rotate(-28 2 -1)"/>
+        <ellipse cx="-1.7" cy="3" rx="1.4" ry="2.5" transform="rotate(28 -1.7 3)"/>
+        <ellipse cx="1.7" cy="3" rx="1.4" ry="2.5" transform="rotate(-28 1.7 3)"/>
+      </g>
+      <path d="M0 -9 v-4 M-2.4 -3 l-3 -3 M2.4 -3 l3 -3" stroke="#B58E36" stroke-width=".8" fill="none" stroke-linecap="round"/>
+    </g>
+  </defs>
+
+  <!-- card frame -->
+  <rect x="3" y="3" width="114" height="162" rx="10" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="3"/>
+  <rect x="9" y="9" width="102" height="150" rx="6" fill="#FBF5E4" stroke="#B08C55" stroke-width="1.2"/>
+
+  <!-- illustration -->
+  <g clip-path="url(#art)">
+    <rect x="13" y="13" width="94" height="119" fill="url(#wheatfield)"/>
+    <rect x="13" y="13" width="94" height="119" fill="url(#wheatsun)"/>
+    <!-- warm sky -->
+    <path d="M13 13 H107 V47 Q82 40 60 46 Q38 52 13 44 Z" fill="#F6DE92" opacity=".9"/>
+    <g fill="#FFF3C8" opacity=".55">
+      <ellipse cx="34" cy="30" rx="13" ry="4"/>
+      <ellipse cx="82" cy="34" rx="15" ry="4.5"/>
+    </g>
+    <!-- field bands -->
+    <path d="M13 52 Q38 42 60 50 Q84 58 107 46 V72 H13 Z" fill="#D9B44F"/>
+    <path d="M13 68 Q38 58 62 66 Q86 74 107 62 V92 H13 Z" fill="#C9A344"/>
+    <path d="M13 86 Q40 76 64 84 Q88 92 107 82 V112 H13 Z" fill="#E0BF63"/>
+    <path d="M13 106 Q38 96 64 104 Q88 112 107 102 V132 H13 Z" fill="#C49A3A"/>
+    <g fill="none" stroke="#9C7930" stroke-width="1.2" opacity=".45" stroke-linecap="round">
+      <path d="M16 62 q22 -8 44 -2 q22 6 44 -4 M16 82 q24 -7 48 -1 q20 5 38 -3 M16 104 q24 -6 48 0 q20 4 36 -3"/>
+    </g>
+    <!-- distant grain stalks -->
+    <g opacity=".45" stroke="#9C7930" stroke-width="1.1" stroke-linecap="round">
+      <path d="M22 78 v-10 M27 80 v-11 M33 78 v-9 M39 80 v-10"/>
+      <path d="M80 72 v-10 M85 74 v-11 M91 72 v-9 M97 74 v-10"/>
+    </g>
+    <!-- warm halo behind the sheaf -->
+    <ellipse cx="60" cy="88" rx="33" ry="36" fill="#FFF3B8" opacity=".45"/>
+    <!-- central sheaf -->
+    <g transform="translate(60 88) scale(1.12)">
+      <ellipse cx="0" cy="33" rx="31" ry="5" fill="#6B4B2E" opacity=".22"/>
+      <!-- flared skirt below the tie -->
+      <g stroke="#8A6A2C" stroke-width="1.8" fill="none" stroke-linecap="round">
+        <path d="M-5 13 L-19 31 M0 13 L-6 34 M5 13 L8 34 M10 13 L22 30"/>
+      </g>
+      <!-- stalks and wheat heads -->
+      <g stroke="#8A6A2C" stroke-width="1.8" fill="none" stroke-linecap="round">
+        <path d="M-3 13 L-26 -10"/>
+        <path d="M-2 13 L-15 -20"/>
+        <path d="M0 13 L0 -26"/>
+        <path d="M2 13 L15 -20"/>
+        <path d="M3 13 L26 -10"/>
+        <path d="M-4 13 L-34 2"/>
+        <path d="M4 13 L34 2"/>
+      </g>
+      <use href="#head" transform="translate(-26 -10) rotate(-42)"/>
+      <use href="#head" transform="translate(-15 -20) rotate(-20)"/>
+      <use href="#head" transform="translate(0 -26)"/>
+      <use href="#head" transform="translate(15 -20) rotate(20)"/>
+      <use href="#head" transform="translate(26 -10) rotate(42)"/>
+      <use href="#head" transform="translate(-34 2) rotate(-70)"/>
+      <use href="#head" transform="translate(34 2) rotate(70)"/>
+      <!-- tie band -->
+      <path d="M-14 8 Q0 3 14 8 L13 15 Q0 10 -13 15 Z" fill="#8A5E2C" stroke="#3B2F2F" stroke-width="1.3"/>
+      <path d="M-10 10 q10 -3 20 0" fill="none" stroke="#C9A227" stroke-width="1" opacity=".85"/>
+      <!-- loose grains at the base -->
+      <g fill="#E8C55A" stroke="#8A6A2C" stroke-width=".6">
+        <ellipse cx="-18" cy="29" rx="1.4" ry="2.1" transform="rotate(28 -18 29)"/>
+        <ellipse cx="16" cy="30" rx="1.4" ry="2.1" transform="rotate(-28 16 30)"/>
+        <ellipse cx="5" cy="32" rx="1.3" ry="2" transform="rotate(20 5 32)"/>
+      </g>
+    </g>
+    <!-- sunlight rays -->
+    <g stroke="#FFF6CF" stroke-width="1.3" opacity=".35" stroke-linecap="round">
+      <path d="M60 24 V34 M36 30 l-4 7 M84 30 l4 7"/>
+    </g>
+    <!-- poppies at the field edge -->
+    <g fill="#B04A3B">
+      <circle cx="22" cy="116" r="1.8"/><circle cx="26" cy="113" r="1.4"/>
+      <circle cx="97" cy="118" r="1.7"/><circle cx="101" cy="115" r="1.3"/>
+    </g>
+    <g fill="none" stroke="#6E8C3B" stroke-width="1.2" stroke-linecap="round">
+      <path d="M22 118 q1 4 0 7 M97 120 q1 4 0 7"/>
+    </g>
+    <!-- vignette -->
+    <path d="M13 13 H107 V132 H13 Z" fill="none" stroke="#7A5A1E" stroke-width="10" opacity=".1"/>
   </g>
-  <!-- loose grains -->
-  <g fill="#C9A227" stroke="#5B4632" stroke-width="1">
-    <ellipse cx="17" cy="52" rx="2.2" ry="3" transform="rotate(-20 17 52)"/>
-    <ellipse cx="47" cy="50" rx="2.2" ry="3" transform="rotate(20 47 50)"/>
-    <ellipse cx="44" cy="54" rx="1.8" ry="2.6" transform="rotate(20 44 54)"/>
+  <rect x="13" y="13" width="94" height="119" rx="5" fill="none" stroke="#3B2F2F" stroke-width="1.6"/>
+
+  <!-- corner medallions -->
+  <g>
+    <circle cx="18.5" cy="18.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="101.5" cy="18.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="18.5" cy="126.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="101.5" cy="126.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <g stroke="#3B2F2F" stroke-width=".7">
+      <g transform="translate(18.5 18.5) scale(.8)">
+        <use href="#wheatmini"/>
+      </g>
+      <g transform="translate(101.5 18.5) scale(.8) rotate(18)">
+        <use href="#wheatmini"/>
+      </g>
+      <g transform="translate(18.5 126.5) scale(.8) rotate(-18)">
+        <use href="#wheatmini"/>
+      </g>
+      <g transform="translate(101.5 126.5) scale(.8)">
+        <use href="#wheatmini"/>
+      </g>
+    </g>
   </g>
+
+  <!-- nameplate -->
+  <path d="M13 136 H107 V151 Q107 155 103 155 H17 Q13 155 13 151 Z" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.4"/>
+  <path d="M17 139 H103" stroke="#C9A227" stroke-width="1" opacity=".9"/>
+  <circle cx="60" cy="160" r="1.8" fill="#C9A227" stroke="#8B6A3C" stroke-width=".6"/>
 </svg>

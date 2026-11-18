@@ -21,10 +21,10 @@ import { makeLabelTexture, makeTokenTexture, seaUrl, terrainUrl, useCanvasTextur
 
 const REDUCED_MOTION = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const TERRAIN_FALLBACK = '#d9c79e';
+const TERRAIN_FALLBACK = '#dcc28b';
 
 /** The prism sides read as thick hand-made tiles (sandy edge), never as dark mud. */
-const TILE_SIDE = '#C9AE7E';
+const TILE_SIDE = '#D9C39A';
 
 /** Any CSS colour -> a concrete three colour (canvas textures need hex, not var()). */
 const RESOURCE_HEX: Record<string, string> = {
@@ -33,7 +33,7 @@ const RESOURCE_HEX: Record<string, string> = {
   fiber: TERRAIN_HEX.meadow,
   grain: TERRAIN_HEX.field,
   stone: TERRAIN_HEX.quarry,
-  any: '#3e7ca6',
+  any: '#2d6e9b',
 };
 
 export function SeaPlane({ fit }: { fit: BoardFit }) {
@@ -246,22 +246,28 @@ function coastBand(graph: Graph, fit: BoardFit, from: number, to: number): THREE
 }
 
 export function SeaFoam({ graph, fit }: { graph: Graph; fit: BoardFit }) {
-  const inner = useMemo(() => coastBand(graph, fit, 0.035, 0.16), [graph, fit]);
-  const outer = useMemo(() => coastBand(graph, fit, 0.16, 0.3), [graph, fit]);
+  // A real beach: warm sand right at the coast, a pale foam line, then turquoise shallows.
+  const sand = useMemo(() => coastBand(graph, fit, 0.02, 0.12), [graph, fit]);
+  const foam = useMemo(() => coastBand(graph, fit, 0.12, 0.19), [graph, fit]);
+  const shallow = useMemo(() => coastBand(graph, fit, 0.19, 0.28), [graph, fit]);
   useEffect(
     () => () => {
-      inner.dispose();
-      outer.dispose();
+      sand.dispose();
+      foam.dispose();
+      shallow.dispose();
     },
-    [inner, outer],
+    [sand, foam, shallow],
   );
   return (
     <group position-y={SEA_Y + 0.006}>
-      <mesh geometry={inner} renderOrder={1}>
-        <meshBasicMaterial color="#A8DCE4" transparent opacity={0.72} depthWrite={false} />
+      <mesh geometry={sand} renderOrder={1}>
+        <meshBasicMaterial color="#E6D2A0" transparent opacity={0.98} depthWrite={false} />
       </mesh>
-      <mesh geometry={outer} renderOrder={1}>
-        <meshBasicMaterial color="#CFEFF2" transparent opacity={0.4} depthWrite={false} />
+      <mesh geometry={foam} renderOrder={1}>
+        <meshBasicMaterial color="#DDF1E8" transparent opacity={0.9} depthWrite={false} />
+      </mesh>
+      <mesh geometry={shallow} renderOrder={1}>
+        <meshBasicMaterial color="#9FD8DC" transparent opacity={0.55} depthWrite={false} />
       </mesh>
     </group>
   );
@@ -318,7 +324,7 @@ function Harbor3D({ harbor, graph }: { harbor: HarborData; graph: Graph }) {
   const ratioTex = useCanvasTexture(() => makeLabelTexture(label), [label]);
   const iconTex = useSvgTexture(assetUrl('harbor', harbor.kind), true);
   const kindColor =
-    harbor.kind === 'any' ? '#3e7ca6' : RESOURCE_HEX[harbor.kind] ?? RESOURCE_COLORS[harbor.kind] ?? '#3e7ca6';
+    harbor.kind === 'any' ? '#2d6e9b' : RESOURCE_HEX[harbor.kind] ?? RESOURCE_COLORS[harbor.kind] ?? '#2d6e9b';
   const deckY = HEX_TOP - 0.02;
   const dockW = 0.62;
   const dockD = 0.26;

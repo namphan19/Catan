@@ -43,7 +43,13 @@ function useHandDeltas(hand: Record<string, number>, viewer: string | null): Rec
 function ResourceArt({ res }: { res: string }) {
   const path = assetUrl('resource', res);
   const ok = useAssets([path])[path];
-  return ok ? <img src={path} alt="" width={38} height={38} /> : <ResourceIcon res={res} size={30} />;
+  return ok ? (
+    <img className="res-card-art" src={path} alt="" width={60} height={84} />
+  ) : (
+    <span className="res-card-fallback">
+      <ResourceIcon res={res} size={34} />
+    </span>
+  );
 }
 
 function CardArt({ card }: { card: string }) {

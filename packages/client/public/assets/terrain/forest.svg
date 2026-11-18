@@ -3,89 +3,132 @@
     <clipPath id="hex">
       <path d="M100 3 L197 59 L197 171 L100 227 L3 171 L3 59 Z"/>
     </clipPath>
+    <linearGradient id="ground" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#6B9553"/>
+      <stop offset="0.55" stop-color="#4E7A44"/>
+      <stop offset="1" stop-color="#3C6338"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="32%" cy="18%" r="78%">
+      <stop offset="0" stop-color="#D6E39B" stop-opacity=".55"/>
+      <stop offset=".55" stop-color="#A9C878" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#2B4A2C" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="trail" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#C3A878"/>
+      <stop offset=".5" stop-color="#D3B98A"/>
+      <stop offset="1" stop-color="#B99A68"/>
+    </linearGradient>
+    <g id="crown">
+      <circle cx="-9" cy="2" r="13"/>
+      <circle cx="7" cy="-4" r="15"/>
+      <circle cx="14" cy="8" r="11"/>
+      <circle cx="-5" cy="13" r="10"/>
+      <circle cx="3" cy="6" r="16"/>
+    </g>
     <g id="pine">
-      <rect x="-3.5" y="3" width="7" height="10" fill="#504438" stroke="#373030" stroke-width="2"/>
-      <path d="M0 -47 L14 -25 L7 -25 L22 -5 L-22 -5 L-7 -25 L-14 -25 Z" fill="#263F31" stroke="#373030" stroke-width="2.2" stroke-linejoin="round"/>
-      <path d="M0 -32 L9 -18 L4 -18 L14 -4 L-14 -4 L-4 -18 L-9 -18 Z" fill="#33503E" stroke="#373030" stroke-width="1.8" stroke-linejoin="round"/>
-      <path d="M0 -18 L6 -9 L2 -9 L9 2 L-9 2 L-2 -9 L-6 -9 Z" fill="#3F624B" stroke="#373030" stroke-width="1.6" stroke-linejoin="round"/>
-      <path d="M0 -42 v9 M0 -27 v8 M0 -13 v6" stroke="#9EBAA4" stroke-width="1" opacity=".28" stroke-linecap="round"/>
-    </g>
-    <g id="pine-light">
-      <rect x="-3" y="3" width="6" height="9" fill="#5E4F40" stroke="#373030" stroke-width="1.8"/>
-      <path d="M0 -43 L12 -23 L6 -23 L19 -5 L-19 -5 L-6 -23 L-12 -23 Z" fill="#345541" stroke="#373030" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M0 -30 L8 -17 L3 -17 L12 -4 L-12 -4 L-3 -17 L-8 -17 Z" fill="#42694F" stroke="#373030" stroke-width="1.7" stroke-linejoin="round"/>
-      <path d="M0 -16 L5 -8 L2 -8 L8 2 L-8 2 L-2 -8 L-5 -8 Z" fill="#4E795B" stroke="#373030" stroke-width="1.5" stroke-linejoin="round"/>
-    </g>
-    <g id="bush">
-      <path d="M-9 2 q-5 -4 -3 -9 q1 -6 8 -5 q3 -6 9 -2 q7 2 5 8 q4 5 -2 8 q-8 4 -17 0 Z" fill="#3F624A" stroke="#373030" stroke-width="1.8" stroke-linejoin="round"/>
-      <path d="M-6 -5 q3 -3 6 0 M3 -7 q3 -2 5 1" stroke="#9EBAA4" stroke-width=".9" fill="none" opacity=".3"/>
+      <rect x="-2.4" y="8" width="4.8" height="10" rx="1.6" fill="#6B4B2E"/>
+      <path d="M0 -36 L13 -17 L7 -17 L20 -1 L-20 -1 L-7 -17 L-13 -17 Z" fill="#2C5637" stroke="#24452D" stroke-width="1.3" stroke-linejoin="round"/>
+      <path d="M0 -27 L9 -12 L4 -12 L14 0 L-14 0 L-4 -12 L-9 -12 Z" fill="#3C7048"/>
+      <path d="M-7 -16 q7 -5 13 -1" fill="none" stroke="#86B56C" stroke-width="1.5" opacity=".55" stroke-linecap="round"/>
     </g>
   </defs>
 
   <g clip-path="url(#hex)">
-    <rect width="200" height="230" fill="#507057"/>
-    <!-- mossy ground patches -->
-    <g stroke="none">
-      <ellipse cx="64" cy="76" rx="44" ry="26" fill="#45664D" opacity=".75"/>
-      <ellipse cx="138" cy="146" rx="48" ry="30" fill="#45664D" opacity=".7"/>
-      <ellipse cx="100" cy="200" rx="72" ry="30" fill="#5D7F64" opacity=".75"/>
-      <ellipse cx="134" cy="66" rx="44" ry="20" fill="#5D7F64" opacity=".55"/>
-      <ellipse cx="44" cy="128" rx="32" ry="18" fill="#5D7F64" opacity=".5"/>
+    <rect width="200" height="230" fill="url(#ground)"/>
+    <rect width="200" height="230" fill="url(#sun)"/>
+
+    <!-- soft moss banks -->
+    <g opacity=".55">
+      <ellipse cx="46" cy="52" rx="50" ry="28" fill="#7FA35D"/>
+      <ellipse cx="151" cy="44" rx="45" ry="23" fill="#759B59"/>
+      <ellipse cx="160" cy="132" rx="56" ry="40" fill="#3B6037"/>
+      <ellipse cx="37" cy="148" rx="52" ry="36" fill="#41693C"/>
+      <ellipse cx="104" cy="204" rx="80" ry="32" fill="#365A34"/>
     </g>
-    <!-- woodcut hatching -->
-    <g fill="none" stroke="#263F31" stroke-width="1.4" opacity=".24" stroke-linecap="round">
-      <path d="M28 96 q10 -6 20 0 M38 104 q10 -6 20 0 M148 96 q10 -6 20 0"/>
-      <path d="M24 154 q12 -5 24 0 M150 178 q12 -5 24 0 M116 214 q12 -5 24 0"/>
+
+    <!-- distant canopy -->
+    <g fill="#2E5637" opacity=".9">
+      <use href="#crown" transform="translate(42 52) scale(.75)"/>
+      <use href="#crown" transform="translate(92 40) scale(.65)"/>
+      <use href="#crown" transform="translate(148 54) scale(.72)"/>
+      <use href="#crown" transform="translate(176 108) scale(.6)"/>
     </g>
+
     <!-- winding forest trail -->
-    <path d="M22 174 Q52 156 74 170 Q94 182 116 168 Q138 154 178 166 L178 184 Q138 174 120 184 Q96 196 76 184 Q54 172 24 188 Z" fill="#78654F" opacity=".5"/>
-    <path d="M28 180 q22 -8 44 0 q20 8 46 -4" fill="none" stroke="#504438" stroke-width="1.4" opacity=".4" stroke-dasharray="4 6"/>
+    <path d="M20 188 Q52 172 76 184 Q102 198 124 184 Q148 168 184 180 L184 198 Q150 188 128 200 Q104 212 78 200 Q52 188 22 202 Z" fill="url(#trail)" opacity=".92"/>
+    <path d="M30 195 q24 -8 48 0 q24 8 48 -4 q18 -8 46 -2" fill="none" stroke="#8E7248" stroke-width="1.2" opacity=".5" stroke-dasharray="3 5"/>
 
-    <!-- pines: back row to front -->
-    <use href="#pine-light" transform="translate(58 90) scale(.8)"/>
-    <use href="#pine" transform="translate(100 78) scale(.92)"/>
-    <use href="#pine-light" transform="translate(146 92) scale(.75)"/>
-    <use href="#pine" transform="translate(38 116) scale(.7)"/>
-    <use href="#pine" transform="translate(78 126) scale(1.02)"/>
-    <use href="#pine-light" transform="translate(124 124) scale(.88)"/>
-    <use href="#pine" transform="translate(168 130) scale(.78)"/>
-    <use href="#pine-light" transform="translate(54 158) scale(.95)"/>
-    <use href="#pine" transform="translate(104 160) scale(1.08)"/>
-    <use href="#pine-light" transform="translate(152 160) scale(.9)"/>
-    <use href="#pine" transform="translate(72 198) scale(.8)"/>
-    <use href="#pine-light" transform="translate(126 202) scale(.86)"/>
-    <use href="#pine" transform="translate(168 198) scale(.7)"/>
+    <!-- dense forest canopy: dark under-story first -->
+    <g fill="#2B5135">
+      <use href="#crown" transform="translate(29 102) scale(1.02)"/>
+      <use href="#crown" transform="translate(72 92) scale(1.16)"/>
+      <use href="#crown" transform="translate(122 82) scale(1.05)"/>
+      <use href="#crown" transform="translate(171 96) scale(.96)"/>
+      <use href="#crown" transform="translate(50 139) scale(1.12)"/>
+      <use href="#crown" transform="translate(102 130) scale(1.22)"/>
+      <use href="#crown" transform="translate(158 144) scale(1.04)"/>
+      <use href="#crown" transform="translate(80 176) scale(.92)"/>
+      <use href="#crown" transform="translate(139 178) scale(1.0)"/>
+    </g>
+    <g fill="#386841">
+      <use href="#crown" transform="translate(31 99) scale(.86)"/>
+      <use href="#crown" transform="translate(74 89) scale(.95)"/>
+      <use href="#crown" transform="translate(124 79) scale(.86)"/>
+      <use href="#crown" transform="translate(168 94) scale(.8)"/>
+      <use href="#crown" transform="translate(51 136) scale(.92)"/>
+      <use href="#crown" transform="translate(104 127) scale(.98)"/>
+      <use href="#crown" transform="translate(155 141) scale(.85)"/>
+    </g>
+    <g fill="#4B7F4C" opacity=".95">
+      <use href="#crown" transform="translate(30 96) scale(.66)"/>
+      <use href="#crown" transform="translate(77 85) scale(.7)"/>
+      <use href="#crown" transform="translate(127 76) scale(.6)"/>
+      <use href="#crown" transform="translate(165 91) scale(.58)"/>
+      <use href="#crown" transform="translate(56 133) scale(.62)"/>
+      <use href="#crown" transform="translate(108 124) scale(.68)"/>
+      <use href="#crown" transform="translate(151 138) scale(.6)"/>
+    </g>
+    <!-- sunlit leaf tips -->
+    <g fill="#79A95C" opacity=".9">
+      <use href="#crown" transform="translate(72 79) scale(.42)"/>
+      <use href="#crown" transform="translate(118 101) scale(.4)"/>
+      <use href="#crown" transform="translate(44 130) scale(.36)"/>
+      <use href="#crown" transform="translate(159 130) scale(.34)"/>
+      <use href="#crown" transform="translate(89 168) scale(.32)"/>
+    </g>
 
-    <!-- undergrowth -->
-    <use href="#bush" transform="translate(30 74)"/>
-    <use href="#bush" transform="translate(170 74) scale(.9)"/>
-    <use href="#bush" transform="translate(24 196) scale(1.1)"/>
-    <use href="#bush" transform="translate(176 176) scale(.85)"/>
-    <path d="M44 208 q3 -10 0 -18 M53 210 q3 -10 0 -18 M140 214 q3 -10 0 -18 M149 212 q3 -10 0 -18" stroke="#263F31" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-    <!-- mushrooms -->
-    <g transform="translate(92 186)">
-      <path d="M0 8 v-5" stroke="#E8E1CF" stroke-width="2.2" stroke-linecap="round"/>
-      <path d="M-6 -2 q6 -7 12 0 Z" fill="#864A40" stroke="#373030" stroke-width="1.5"/>
-      <circle cx="-2" cy="-3" r="1" fill="#E8E1CF"/><circle cx="3" cy="-2" r=".8" fill="#E8E1CF"/>
+    <!-- conifers standing clear of the canopy -->
+    <use href="#pine" transform="translate(46 66) scale(.8)"/>
+    <use href="#pine" transform="translate(94 58) scale(.92)"/>
+    <use href="#pine" transform="translate(142 70) scale(.78)"/>
+    <use href="#pine" transform="translate(62 112) scale(.86)"/>
+    <use href="#pine" transform="translate(118 106) scale(1.0)"/>
+    <use href="#pine" transform="translate(167 112) scale(.82)"/>
+    <use href="#pine" transform="translate(88 154) scale(.9)"/>
+    <use href="#pine" transform="translate(145 158) scale(.84)"/>
+
+    <!-- undergrowth and details -->
+    <g fill="#5A8C4C">
+      <ellipse cx="22" cy="64" rx="14" ry="8"/>
+      <ellipse cx="179" cy="72" rx="12" ry="7"/>
+      <ellipse cx="22" cy="174" rx="13" ry="7"/>
+      <ellipse cx="180" cy="166" rx="11" ry="6"/>
     </g>
-    <g transform="translate(116 192) scale(.8)">
-      <path d="M0 8 v-5" stroke="#E8E1CF" stroke-width="2.2" stroke-linecap="round"/>
-      <path d="M-6 -2 q6 -7 12 0 Z" fill="#864A40" stroke="#373030" stroke-width="1.5"/>
-      <circle cx="-1" cy="-3" r="1" fill="#E8E1CF"/>
+    <g stroke="#2B4A2C" stroke-width="1.6" stroke-linecap="round" fill="none" opacity=".8">
+      <path d="M34 58 q3 -10 0 -16 M40 60 q3 -9 0 -15"/>
+      <path d="M160 66 q3 -9 0 -15 M166 68 q3 -8 0 -14"/>
+      <path d="M30 168 q3 -9 0 -15 M36 171 q3 -8 0 -14"/>
     </g>
-    <!-- fallen log -->
-    <g transform="translate(40 202) rotate(-6)">
-      <rect x="-16" y="-4" width="32" height="8" rx="4" fill="#6A5743" stroke="#373030" stroke-width="1.8"/>
-      <ellipse cx="16" cy="0" rx="3.4" ry="4" fill="#A48D45" stroke="#373030" stroke-width="1.4"/>
-      <path d="M-10 -1 h14 M-10 2 h10" stroke="#373030" stroke-width=".9" opacity=".35"/>
+    <g fill="#864A40" opacity=".9">
+      <circle cx="88" cy="196" r="2.2"/><circle cx="93" cy="199" r="1.8"/><circle cx="84" cy="200" r="1.6"/>
     </g>
-    <!-- rocks -->
-    <g fill="#787D71" stroke="#373030" stroke-width="1.6" stroke-linejoin="round">
-      <path d="M160 206 l4 -8 l10 -1 l5 7 l-4 6 Z"/>
-      <path d="M30 186 l3 -6 l8 0 l3 6 l-3 5 Z" opacity=".85"/>
+    <g fill="#B3B48F">
+      <path d="M152 198 l4 -8 l9 -1 l5 7 l-4 7 Z" opacity=".9"/>
+      <path d="M40 206 l3 -6 l7 0 l3 6 l-3 5 Z" opacity=".8"/>
     </g>
-    <!-- inner tile rim -->
-    <path d="M100 13 L187 62 L187 168 L100 217 L13 168 L13 62 Z" fill="none" stroke="#E8E1CF" stroke-width="1.6" opacity=".14"/>
+
+    <!-- inner rim light -->
+    <path d="M100 12 L188 62 L188 168 L100 218 L12 168 L12 62 Z" fill="none" stroke="#D9E4BC" stroke-width="1.2" opacity=".2"/>
   </g>
-  <path d="M100 3 L197 59 L197 171 L100 227 L3 171 L3 59 Z" fill="none" stroke="#373030" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M100 3 L197 59 L197 171 L100 227 L3 171 L3 59 Z" fill="none" stroke="#4A3A2A" stroke-width="1.7" stroke-opacity=".6" stroke-linejoin="round"/>
 </svg>

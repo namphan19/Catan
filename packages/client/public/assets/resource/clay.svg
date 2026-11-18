@@ -1,25 +1,95 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect x="4" y="4" width="56" height="56" rx="10" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="2.5"/>
-  <!-- sun-baked ground -->
-  <path d="M9 47 Q20 38 32 41 Q44 44 55 38 V56 H9 Z" fill="#B5562B" opacity=".15"/>
-  <!-- raw clay mound -->
-  <path d="M12 45 Q16 30 32 30 Q48 30 52 45 Z" fill="#B5562B" stroke="#3B2F2F" stroke-width="2.2" stroke-linejoin="round"/>
-  <path d="M20 38 q5 -4 12 -3 M36 34 q6 0 9 5" stroke="#D98E4A" stroke-width="1.8" fill="none" opacity=".85" stroke-linecap="round"/>
-  <!-- brick stack -->
-  <g stroke="#3B2F2F" stroke-linejoin="round">
-    <rect x="14" y="40" width="16" height="9.5" fill="#D98E4A" stroke-width="2"/>
-    <rect x="32" y="40" width="16" height="9.5" fill="#D98E4A" stroke-width="2"/>
-    <rect x="23" y="30" width="16" height="9.5" fill="#E0A05E" stroke-width="2"/>
-    <path d="M16 42 h8 M34 42 h8 M25 32 h8" stroke="#8A3A1B" stroke-width="1.2" opacity=".55" stroke-linecap="round"/>
-    <path d="M16 41 h5 M34 41 h5 M25 31 h5" stroke="#F0B878" stroke-width="1.2" opacity=".8" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 168">
+  <defs>
+    <clipPath id="art">
+      <rect x="13" y="13" width="94" height="119" rx="5"/>
+    </clipPath>
+    <linearGradient id="clayground" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#D98E5A"/>
+      <stop offset=".5" stop-color="#C06A3E"/>
+      <stop offset="1" stop-color="#9C4A2A"/>
+    </linearGradient>
+    <radialGradient id="claysun" cx="30%" cy="16%" r="80%">
+      <stop offset="0" stop-color="#FFE3B0" stop-opacity=".8"/>
+      <stop offset=".55" stop-color="#F2B477" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#7B341D" stop-opacity="0"/>
+    </radialGradient>
+    <g id="brick3d">
+      <path d="M-18 -8 L-4 -14 L16 -6 L2 1 Z" fill="#E0A05E" stroke="#3B2F2F" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M-18 -8 L2 1 V13 L-18 4 Z" fill="#B5562B" stroke="#3B2F2F" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M2 1 L16 -6 V6 L2 13 Z" fill="#8E3F22" stroke="#3B2F2F" stroke-width="1.2" stroke-linejoin="round"/>
+      <path d="M-15 -7 L-4 -11 L10 -6" fill="none" stroke="#F0C08A" stroke-width="1" opacity=".7"/>
+    </g>
+  </defs>
+
+  <!-- card frame -->
+  <rect x="3" y="3" width="114" height="162" rx="10" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="3"/>
+  <rect x="9" y="9" width="102" height="150" rx="6" fill="#FBF5E4" stroke="#B08C55" stroke-width="1.2"/>
+
+  <!-- illustration -->
+  <g clip-path="url(#art)">
+    <rect x="13" y="13" width="94" height="119" fill="url(#clayground)"/>
+    <rect x="13" y="13" width="94" height="119" fill="url(#claysun)"/>
+    <!-- background terraces -->
+    <path d="M13 54 Q34 38 58 44 Q82 50 107 36 V70 H13 Z" fill="#D98E5A" opacity=".8"/>
+    <path d="M13 66 Q36 52 60 58 Q84 64 107 52 V82 H13 Z" fill="#C06A3E" opacity=".7"/>
+    <path d="M13 82 Q40 72 66 80 Q90 88 107 78 V102 H13 Z" fill="#A95330" opacity=".55"/>
+    <g fill="none" stroke="#F1BE8C" stroke-width="1.2" opacity=".5">
+      <path d="M16 58 q22 -10 44 -4 q22 6 44 -6 M16 88 q24 -6 48 0 q20 6 40 -4"/>
+    </g>
+    <!-- dry scrub on the ridge -->
+    <g fill="none" stroke="#7C8A3D" stroke-width="1.8" stroke-linecap="round">
+      <path d="M28 48 q3 -9 0 -14 M34 50 q3 -8 0 -13 M86 44 q3 -9 0 -14 M92 46 q3 -8 0 -13"/>
+    </g>
+    <!-- clay pit floor -->
+    <path d="M13 104 Q34 92 58 98 Q82 104 107 94 V132 H13 Z" fill="#B85C34"/>
+    <path d="M13 114 Q38 104 62 110 Q86 116 107 108 V132 H13 Z" fill="#A24C2B"/>
+    <path d="M22 112 Q36 102 54 108" fill="none" stroke="#E3A06B" stroke-width="1.6" opacity=".6"/>
+    <!-- brick stack -->
+    <g transform="translate(60 100)">
+      <use href="#brick3d" x="-25" y="10" transform="scale(.9)"/>
+      <use href="#brick3d" x="22" y="8" transform="scale(.85)"/>
+      <use href="#brick3d" x="-2" y="-4" transform="scale(1.05)"/>
+      <use href="#brick3d" x="3" y="17" transform="scale(.75)"/>
+      <path d="M-30 25 q20 7 60 0" fill="none" stroke="#6F2D1A" stroke-width="1.2" opacity=".35"/>
+    </g>
+    <!-- loose bricks -->
+    <g transform="translate(25 124) scale(.55) rotate(-12)">
+      <use href="#brick3d"/>
+    </g>
+    <g transform="translate(94 123) scale(.5) rotate(10)">
+      <use href="#brick3d"/>
+    </g>
+    <!-- potter's trowel -->
+    <g transform="translate(89 78) rotate(24)" stroke="#3B2F2F" stroke-linejoin="round">
+      <rect x="-2.2" y="-12" width="4.4" height="11" rx="2" fill="#8A5A2B" stroke-width="1.4"/>
+      <path d="M-6 0 h12 l-6 12 Z" fill="#A7ADB5" stroke-width="1.4"/>
+      <path d="M-4 2 h8" stroke="#F3E9D2" stroke-width="1" opacity=".55"/>
+    </g>
+    <!-- vignette -->
+    <path d="M13 13 H107 V132 H13 Z" fill="none" stroke="#5F2514" stroke-width="10" opacity=".13"/>
   </g>
-  <!-- potter's trowel -->
-  <g transform="translate(49 25) rotate(22)" stroke="#3B2F2F" stroke-linejoin="round">
-    <rect x="-2.5" y="-11" width="5" height="13" rx="2" fill="#8A5A2B" stroke-width="1.8"/>
-    <path d="M-6 2 h12 l-6 11 Z" fill="#8A8D91" stroke-width="1.8"/>
-    <path d="M-4 4 h8" stroke="#F3E9D2" stroke-width="1" opacity=".4"/>
+  <rect x="13" y="13" width="94" height="119" rx="5" fill="none" stroke="#3B2F2F" stroke-width="1.6"/>
+
+  <!-- corner medallions -->
+  <g>
+    <circle cx="18.5" cy="18.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="101.5" cy="18.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="18.5" cy="126.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="101.5" cy="126.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <g stroke="#3B2F2F" stroke-width=".8">
+      <rect x="14.6" y="16.6" width="7" height="3.6" rx=".7" fill="#D98E4A"/>
+      <rect x="15.4" y="20.2" width="7" height="3.4" rx=".7" fill="#B5562B"/>
+      <rect x="97.6" y="16.6" width="7" height="3.6" rx=".7" fill="#D98E4A"/>
+      <rect x="98.4" y="20.2" width="7" height="3.4" rx=".7" fill="#B5562B"/>
+      <rect x="14.6" y="124.6" width="7" height="3.6" rx=".7" fill="#D98E4A"/>
+      <rect x="15.4" y="128.2" width="7" height="3.4" rx=".7" fill="#B5562B"/>
+      <rect x="97.6" y="124.6" width="7" height="3.6" rx=".7" fill="#D98E4A"/>
+      <rect x="98.4" y="128.2" width="7" height="3.4" rx=".7" fill="#B5562B"/>
+    </g>
   </g>
-  <!-- loose clay crumbs -->
-  <path d="M12 51 q2 -3 5 0 q2 2 0 4 q-4 1 -5 -4 Z" fill="#C97A45" stroke="#3B2F2F" stroke-width="1.4"/>
-  <path d="M46 53 q2 -2 4 0 q1 2 -1 3 q-3 0 -3 -3 Z" fill="#B5562B" stroke="#3B2F2F" stroke-width="1.3"/>
+
+  <!-- nameplate -->
+  <path d="M13 136 H107 V151 Q107 155 103 155 H17 Q13 155 13 151 Z" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.4"/>
+  <path d="M17 139 H103" stroke="#C9A227" stroke-width="1" opacity=".9"/>
+  <circle cx="60" cy="160" r="1.8" fill="#C9A227" stroke="#8B6A3C" stroke-width=".6"/>
 </svg>

@@ -24,7 +24,7 @@ export function DiceBox({ view, sh }: { view: PlayerView; sh?: StrongholdsView |
       {/* The key restarts the roll-in animation for every new roll. */}
       <div className="dice-roll" key={`${view.turn.n}:${roll.join('-')}:${face ?? ''}`}>
         {roll.map((d, i) => (
-          <Die key={i} n={d} size={52} tone={sh && i === 0 ? 'red' : 'plain'} />
+          <Die key={i} n={d} size={52} tone={i === 0 ? 'red' : 'yellow'} />
         ))}
         <span className="dice-sum" data-blocker={sum === baseConfig.blockerNumber ? 'true' : 'false'}>
           = {sum}

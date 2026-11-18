@@ -4,23 +4,25 @@
   --parchment-dark: #e4d3ae;
   --ink: #3b2f2f;
   --ink-soft: #6b5b4e;
-  --sea: #3e7ca6;
+  --sea: #2d6e9b;
   --gold: #c9a227;
   --danger: #a23b2a;
 
-  --forest: #2f5d3a;
-  --claypit: #b5562b;
-  --meadow: #8db255;
-  --field: #e0b84c;
-  --quarry: #8a8d91;
-  --waste: #d9c79e;
+  --forest: #3f7448;
+  --claypit: #b85c34;
+  --meadow: #8dbe55;
+  --field: #d9b754;
+  --quarry: #878c94;
+  --waste: #dcc28b;
 
-  --p1: #e69f00; /* orange, sun */
-  --p2: #56b4e9; /* sky, wave */
-  --p3: #009e73; /* green, leaf */
-  --p4: #cc79a7; /* reddish purple, star (was yellow #f0e442: too close to p1 orange on the board) */
-  --p5: #0072b2; /* blue, shield */
-  --p6: #d55e00; /* vermillion, flame */
+  /* Classic board-game colours: red, blue, ivory, orange, green, brown.
+     The emblem on every piece keeps players distinguishable without colour alone. */
+  --p1: #c0392b; /* red, sun */
+  --p2: #2e6da4; /* blue, wave */
+  --p3: #e9e0cc; /* ivory, leaf */
+  --p4: #d9822b; /* orange, star */
+  --p5: #3e8e4e; /* green, shield */
+  --p6: #7a4b2a; /* brown, flame */
 
   /* Cinzel is caps-only with no Vietnamese diacritics: use it ONLY for the logo and
      digits/tokens. All Vietnamese text (headings included) uses EB Garamond. */

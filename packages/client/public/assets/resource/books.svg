@@ -1,1 +1,97 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g stroke="#3B2F2F" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M4 6.5 h14 v4 H4 Z" fill="#8C5A3C"/><path d="M6 10.5 h14 v4 H6 Z" fill="#B5562B"/><path d="M3.5 14.5 h15 v4.5 h-15 Z" fill="#6E4630"/><path d="M7 8.5 h8 M9 12.5 h8 M6.5 16.7 h9" stroke="#F3E9D2" stroke-width="1.2"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 168">
+  <defs>
+    <clipPath id="art">
+      <rect x="13" y="13" width="94" height="119" rx="5"/>
+    </clipPath>
+    <linearGradient id="desk" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#C9A46A"/>
+      <stop offset=".55" stop-color="#A57C48"/>
+      <stop offset="1" stop-color="#7A5630"/>
+    </linearGradient>
+    <radialGradient id="booklight" cx="34%" cy="16%" r="80%">
+      <stop offset="0" stop-color="#FFF4D8" stop-opacity=".8"/>
+      <stop offset=".6" stop-color="#F0D59A" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#5B3E1F" stop-opacity="0"/>
+    </radialGradient>
+    <g id="bookmini">
+      <path d="M-7 -2 H3 V4 H-7 Z" fill="#8C5A3C" stroke="#3B2F2F" stroke-width=".8"/>
+      <path d="M-5 4 H5 V9 H-5 Z" fill="#B5562B" stroke="#3B2F2F" stroke-width=".8"/>
+      <path d="M-8 9 H4 V13 H-8 Z" fill="#6E4630" stroke="#3B2F2F" stroke-width=".8"/>
+    </g>
+  </defs>
+
+  <rect x="3" y="3" width="114" height="162" rx="10" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="3"/>
+  <rect x="9" y="9" width="102" height="150" rx="6" fill="#FBF5E4" stroke="#B08C55" stroke-width="1.2"/>
+
+  <g clip-path="url(#art)">
+    <rect x="13" y="13" width="94" height="119" fill="url(#desk)"/>
+    <rect x="13" y="13" width="94" height="119" fill="url(#booklight)"/>
+    <!-- bookshelf / plaster wall -->
+    <path d="M13 13 H107 V54 Q82 48 60 54 Q38 60 13 52 Z" fill="#D8BE8E" opacity=".7"/>
+    <path d="M13 54 H107 V60 H13 Z" fill="#8A5A2B" opacity=".55"/>
+    <path d="M20 62 H45 V76 H20 Z M50 62 H78 V76 H50 Z M83 62 H102 V76 H83 Z" fill="#7A5630" opacity=".28"/>
+    <!-- desk surface -->
+    <path d="M13 98 Q36 88 60 94 Q84 100 107 90 V132 H13 Z" fill="#8A6238"/>
+    <path d="M13 108 Q38 98 62 104 Q86 110 107 102 V132 H13 Z" fill="#75502C"/>
+    <g fill="none" stroke="#B98B52" stroke-width="1.4" opacity=".4">
+      <path d="M18 116 q26 -8 52 -2 q18 4 34 -2 M18 124 q26 -7 52 -1 q18 3 34 -2"/>
+    </g>
+    <!-- stack of books -->
+    <g transform="translate(60 94)">
+      <ellipse cx="0" cy="27" rx="31" ry="5" fill="#3B2F2F" opacity=".25"/>
+      <!-- bottom book -->
+      <path d="M-32 14 L-4 4 L34 14 L4 25 Z" fill="#5B3E24" stroke="#3B2F2F" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M-32 14 V21 L4 32 L4 25 Z" fill="#3F2A19" stroke="#3B2F2F" stroke-width="1.5"/>
+      <path d="M4 25 V32 L34 21 V14 Z" fill="#6E4A2A" stroke="#3B2F2F" stroke-width="1.5"/>
+      <path d="M-24 15 L0 7 L24 15" fill="none" stroke="#C9A227" stroke-width="1.1" opacity=".7"/>
+      <!-- middle red book -->
+      <path d="M-27 4 L-2 -5 L32 4 L5 14 Z" fill="#B5562B" stroke="#3B2F2F" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M-27 4 V11 L5 21 L5 14 Z" fill="#8E3F22" stroke="#3B2F2F" stroke-width="1.5"/>
+      <path d="M5 14 V21 L32 11 V4 Z" fill="#C97747" stroke="#3B2F2F" stroke-width="1.5"/>
+      <path d="M-20 5 L-2 -1 L20 5" fill="none" stroke="#F3E9D2" stroke-width="1.1" opacity=".6"/>
+      <!-- top open book -->
+      <path d="M-22 -6 L0 -14 L28 -6 L3 3 Z" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M-22 -6 V1 L3 10 L3 3 Z" fill="#E4D3AE" stroke="#3B2F2F" stroke-width="1.5"/>
+      <path d="M3 3 V10 L28 1 V-6 Z" fill="#D8C49B" stroke="#3B2F2F" stroke-width="1.5"/>
+      <path d="M0 -14 V-8 M-15 -7 L-4 -3 M-15 -3 L-4 1 M18 -7 L6 -3 M18 -3 L6 1" fill="none" stroke="#8A6A3C" stroke-width="1" opacity=".65"/>
+      <path d="M28 -6 L34 -3 L8 8 L3 3 Z" fill="#C9A227" stroke="#3B2F2F" stroke-width="1.1" opacity=".85"/>
+    </g>
+    <!-- quill and inkpot -->
+    <g transform="translate(90 110) rotate(-16)">
+      <path d="M0 0 Q8 -10 18 -22" fill="none" stroke="#5B4126" stroke-width="2" stroke-linecap="round"/>
+      <path d="M12 -15 Q18 -24 21 -25 Q22 -18 16 -12 Z" fill="#F3E9D2" stroke="#8A6A3C" stroke-width=".8"/>
+      <path d="M-2 0 q2 5 0 9" stroke="#3B2F2F" stroke-width="1.3"/>
+    </g>
+    <g transform="translate(24 118)">
+      <ellipse cx="0" cy="4" rx="8" ry="3" fill="#3B2F2F" opacity=".25"/>
+      <path d="M-8 0 H8 V5 Q8 10 0 10 Q-8 10 -8 5 Z" fill="#2E4F73" stroke="#3B2F2F" stroke-width="1.3"/>
+      <ellipse cx="0" cy="0" rx="8" ry="3" fill="#3E6A96" stroke="#3B2F2F" stroke-width="1.2"/>
+      <ellipse cx="0" cy="0" rx="5" ry="1.6" fill="#1E3854"/>
+    </g>
+    <!-- scroll -->
+    <g transform="translate(38 124) rotate(-8)">
+      <rect x="-12" y="-4" width="24" height="8" rx="4" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.1"/>
+      <circle cx="-12" cy="0" r="3.2" fill="#E4D3AE" stroke="#3B2F2F" stroke-width="1"/>
+      <circle cx="12" cy="0" r="3.2" fill="#E4D3AE" stroke="#3B2F2F" stroke-width="1"/>
+    </g>
+    <!-- vignette -->
+    <path d="M13 13 H107 V132 H13 Z" fill="none" stroke="#4A2F18" stroke-width="10" opacity=".12"/>
+  </g>
+  <rect x="13" y="13" width="94" height="119" rx="5" fill="none" stroke="#3B2F2F" stroke-width="1.6"/>
+
+  <!-- corner medallions -->
+  <g>
+    <circle cx="18.5" cy="18.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="101.5" cy="18.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="18.5" cy="126.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="101.5" cy="126.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <use href="#bookmini" transform="translate(18.5 18.5) scale(.75)"/>
+    <use href="#bookmini" transform="translate(101.5 18.5) scale(.75) rotate(8)"/>
+    <use href="#bookmini" transform="translate(18.5 126.5) scale(.75) rotate(-8)"/>
+    <use href="#bookmini" transform="translate(101.5 126.5) scale(.75)"/>
+  </g>
+
+  <path d="M13 136 H107 V151 Q107 155 103 155 H17 Q13 155 13 151 Z" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.4"/>
+  <path d="M17 139 H103" stroke="#C9A227" stroke-width="1" opacity=".9"/>
+  <circle cx="60" cy="160" r="1.8" fill="#C9A227" stroke="#8B6A3C" stroke-width=".6"/>
+</svg>

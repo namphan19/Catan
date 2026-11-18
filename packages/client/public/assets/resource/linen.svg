@@ -1,1 +1,94 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g stroke="#3B2F2F" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><path d="M4 8 q8 -4 16 0 v9 q-8 4 -16 0 Z" fill="#C9B8E0"/><path d="M4 8 q8 4 16 0" fill="none"/><path d="M8 10.5 v8 M12 11 v8.5 M16 10.5 v8" stroke-width="1.2" fill="none"/></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 168">
+  <defs>
+    <clipPath id="art">
+      <rect x="13" y="13" width="94" height="119" rx="5"/>
+    </clipPath>
+    <linearGradient id="clothbg" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#D8CBE8"/>
+      <stop offset=".55" stop-color="#B7A4D0"/>
+      <stop offset="1" stop-color="#8B76AE"/>
+    </linearGradient>
+    <radialGradient id="clothlight" cx="32%" cy="16%" r="80%">
+      <stop offset="0" stop-color="#FFF8FF" stop-opacity=".8"/>
+      <stop offset=".55" stop-color="#E8DDF4" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#5F4A7C" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="fold" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#C9B8E0"/>
+      <stop offset=".5" stop-color="#A78FC9"/>
+      <stop offset="1" stop-color="#7A63A8"/>
+    </linearGradient>
+    <g id="clothmini">
+      <path d="M-7 -3 Q0 -6 7 -3 V4 Q0 7 -7 4 Z" fill="#C9B8E0" stroke="#3B2F2F" stroke-width=".8"/>
+      <path d="M-7 -3 Q0 0 7 -3 M-3 -4 V6 M2 -4 V6" fill="none" stroke="#6E5A8A" stroke-width=".6"/>
+    </g>
+  </defs>
+
+  <rect x="3" y="3" width="114" height="162" rx="10" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="3"/>
+  <rect x="9" y="9" width="102" height="150" rx="6" fill="#FBF5E4" stroke="#B08C55" stroke-width="1.2"/>
+
+  <g clip-path="url(#art)">
+    <rect x="13" y="13" width="94" height="119" fill="url(#clothbg)"/>
+    <rect x="13" y="13" width="94" height="119" fill="url(#clothlight)"/>
+    <!-- market stall / plaster wall -->
+    <path d="M13 13 H107 V46 Q82 40 60 46 Q38 52 13 44 Z" fill="#E8DDF4" opacity=".65"/>
+    <path d="M13 48 H107 V54 H13 Z" fill="#7A5A36" opacity=".45"/>
+    <g fill="#6E5A8A" opacity=".22">
+      <path d="M18 60 H46 V74 H18 Z M52 60 H80 V74 H52 Z M86 60 H102 V74 H86 Z"/>
+    </g>
+    <!-- table -->
+    <path d="M13 98 Q36 88 60 94 Q84 100 107 90 V132 H13 Z" fill="#8A6238"/>
+    <path d="M13 108 Q38 98 62 104 Q86 110 107 102 V132 H13 Z" fill="#75502C"/>
+    <!-- folded cloth in the centre -->
+    <g transform="translate(60 90)">
+      <ellipse cx="0" cy="31" rx="33" ry="5" fill="#3B2F2F" opacity=".22"/>
+      <!-- bottom bolt -->
+      <path d="M-34 18 L-28 4 H28 L34 18 Z" fill="#8B76AE" stroke="#3B2F2F" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M-34 18 V24 Q-20 29 0 28 Q20 29 34 24 V18 Z" fill="#6E5A8A" stroke="#3B2F2F" stroke-width="1.5"/>
+      <path d="M27 5 Q36 8 36 14 Q36 20 29 22" fill="none" stroke="#C9B8E0" stroke-width="2"/>
+      <!-- middle fold -->
+      <path d="M-26 6 L-18 -8 H20 L28 6 Z" fill="#A78FC9" stroke="#3B2F2F" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M-26 6 V13 Q-8 18 12 15 Q24 13 28 10 V6 Z" fill="#8B76AE" stroke="#3B2F2F" stroke-width="1.5"/>
+      <path d="M-18 -8 Q0 -2 20 -8" fill="none" stroke="#E4D6F2" stroke-width="1.4" opacity=".75"/>
+      <!-- top folded cloth -->
+      <path d="M-20 -8 L-12 -20 H12 L20 -8 Z" fill="url(#fold)" stroke="#3B2F2F" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M-20 -8 V-1 Q-4 4 10 1 Q18 -1 20 -4 V-8 Z" fill="#9B84BE" stroke="#3B2F2F" stroke-width="1.5"/>
+      <path d="M-12 -20 Q0 -15 12 -20" fill="none" stroke="#F0E8FA" stroke-width="1.4" opacity=".8"/>
+      <path d="M-6 -18 V-4 M2 -17 V-3 M10 -18 V-5" fill="none" stroke="#6E5A8A" stroke-width="1.1" opacity=".55"/>
+      <!-- gold trim -->
+      <path d="M-32 18 Q0 23 32 18" fill="none" stroke="#C9A227" stroke-width="1.3" opacity=".8"/>
+    </g>
+    <!-- spool and needle -->
+    <g transform="translate(91 118)">
+      <rect x="-7" y="-8" width="14" height="16" rx="4" fill="#7A5A36" stroke="#3B2F2F" stroke-width="1.3"/>
+      <rect x="-9" y="-9" width="18" height="4" rx="2" fill="#A57C48" stroke="#3B2F2F" stroke-width="1.1"/>
+      <rect x="-9" y="5" width="18" height="4" rx="2" fill="#A57C48" stroke="#3B2F2F" stroke-width="1.1"/>
+      <path d="M-6 -5 q6 2 12 0 M-6 0 q6 2 12 0 M-6 4 q6 2 12 0" fill="none" stroke="#C9B8E0" stroke-width="1"/>
+      <path d="M8 -3 Q16 -10 24 -16" fill="none" stroke="#B8BCC2" stroke-width="1.6" stroke-linecap="round"/>
+      <circle cx="24" cy="-16" r=".9" fill="#3B2F2F"/>
+    </g>
+    <g transform="translate(26 118)">
+      <path d="M-9 0 Q0 -5 9 0 Q1 6 -9 0 Z" fill="#C9B8E0" stroke="#3B2F2F" stroke-width="1.2"/>
+      <path d="M-8 0 H8" stroke="#7A63A8" stroke-width="1" opacity=".6"/>
+    </g>
+    <!-- vignette -->
+    <path d="M13 13 H107 V132 H13 Z" fill="none" stroke="#4E3D66" stroke-width="10" opacity=".1"/>
+  </g>
+  <rect x="13" y="13" width="94" height="119" rx="5" fill="none" stroke="#3B2F2F" stroke-width="1.6"/>
+
+  <!-- corner medallions -->
+  <g>
+    <circle cx="18.5" cy="18.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="101.5" cy="18.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="18.5" cy="126.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="101.5" cy="126.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <use href="#clothmini" transform="translate(18.5 18.5) scale(.85)"/>
+    <use href="#clothmini" transform="translate(101.5 18.5) scale(.85) rotate(6)"/>
+    <use href="#clothmini" transform="translate(18.5 126.5) scale(.85) rotate(-6)"/>
+    <use href="#clothmini" transform="translate(101.5 126.5) scale(.85)"/>
+  </g>
+
+  <path d="M13 136 H107 V151 Q107 155 103 155 H17 Q13 155 13 151 Z" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.4"/>
+  <path d="M17 139 H103" stroke="#C9A227" stroke-width="1" opacity=".9"/>
+  <circle cx="60" cy="160" r="1.8" fill="#C9A227" stroke="#8B6A3C" stroke-width=".6"/>
+</svg>

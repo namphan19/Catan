@@ -49,22 +49,22 @@ export const TERRAIN_COLORS: Record<string, string> = {
 
 /** Same palette as hex strings, for WebGL materials (CSS var() cannot reach a shader). */
 export const PLAYER_HEX: Record<string, string> = {
-  p1: '#e69f00',
-  p2: '#56b4e9',
-  p3: '#009e73',
-  p4: '#cc79a7',
-  p5: '#0072b2',
-  p6: '#d55e00',
+  p1: '#c0392b',
+  p2: '#2e6da4',
+  p3: '#e9e0cc',
+  p4: '#d9822b',
+  p5: '#3e8e4e',
+  p6: '#7a4b2a',
 };
 
 export const TERRAIN_HEX: Record<string, string> = {
-  forest: '#2f5d3a',
-  claypit: '#b5562b',
-  meadow: '#8db255',
-  field: '#e0b84c',
-  quarry: '#8a8d91',
-  waste: '#d9c79e',
-  sea: '#3e7ca6',
+  forest: '#3f7448',
+  claypit: '#b85c34',
+  meadow: '#8dbe55',
+  field: '#d9b754',
+  quarry: '#878c94',
+  waste: '#dcc28b',
+  sea: '#2d6e9b',
 };
 
 export function playerHex(id: string): string {

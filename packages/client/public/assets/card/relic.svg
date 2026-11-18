@@ -1,16 +1,60 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 168">
-  <rect x="3" y="3" width="114" height="162" rx="10" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="3"/>
-  <rect x="10" y="10" width="100" height="148" rx="6" fill="none" stroke="#3B2F2F" stroke-width="1.5" opacity=".45"/>
-  <g transform="translate(60 70)">
-    <g stroke="#C9A227" stroke-width="2" stroke-linecap="round" opacity=".7">
-      <path d="M0 -46 L0 -36 M-32 -32 L-25 -25 M32 -32 L25 -25 M-46 0 L-36 0 M46 0 L36 0"/>
-    </g>
-    <g stroke="#3B2F2F" stroke-width="2.5" stroke-linejoin="round">
-      <path d="M-20 -34 L20 -34 C20 -14 12 -4 4 -2 L4 18 L14 22 L14 28 L-14 28 L-14 22 L-4 18 L-4 -2 C-12 -4 -20 -14 -20 -34 Z" fill="#C9A227"/>
-      <path d="M-20 -34 C-6 -30 6 -30 20 -34" fill="none" stroke-width="2"/>
-      <path d="M-24 -34 L24 -34 L24 -28 L-24 -28 Z" fill="#C9A227"/>
-    </g>
-    <path d="M-12 -22 h24" stroke="#3B2F2F" stroke-width="1.5" opacity=".5"/>
+  <defs>
+    <linearGradient id="vsky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#B24A3A"/>
+      <stop offset=".55" stop-color="#8E352A"/>
+      <stop offset="1" stop-color="#5F231D"/>
+    </linearGradient>
+    <linearGradient id="vgold" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#F4DC8E"/>
+      <stop offset=".5" stop-color="#D3A82F"/>
+      <stop offset="1" stop-color="#9A7418"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="114" height="162" rx="9" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="3"/>
+  <rect x="8.5" y="8.5" width="103" height="151" rx="5" fill="none" stroke="#C9A227" stroke-width="1.3" opacity=".8"/>
+  <path d="M11 17 Q11 12 16 12 H104 Q109 12 109 17 V34 H11 Z" fill="#6B2A22" stroke="#3B2F2F" stroke-width="1.6"/>
+  <path d="M14 15 H106" stroke="#E8C55A" stroke-width="1" opacity=".85"/>
+  <g transform="translate(60 23)" fill="#F3E9D2">
+    <path d="M0 -8 L2.4 -2.4 L8 -2 L3.8 1.6 L5.2 7.2 L0 4 L-5.2 7.2 L-3.8 1.6 L-8 -2 L-2.4 -2.4 Z"/>
   </g>
-  <path d="M30 136 h60" stroke="#3B2F2F" stroke-width="1.5" opacity=".4"/>
+  <rect x="11" y="38" width="98" height="112" fill="url(#vsky)" stroke="#3B2F2F" stroke-width="1.3"/>
+  <!-- radiant sun rays -->
+  <g stroke="#E8C55A" stroke-width="1.3" opacity=".28">
+    <path d="M60 96 L60 44 M60 96 L28 54 M60 96 L92 54 M60 96 L18 78 M60 96 L102 78 M60 96 L20 118 M60 96 L100 118"/>
+  </g>
+  <!-- laurel wreath -->
+  <g fill="none" stroke="url(#vgold)" stroke-width="4.4" stroke-linecap="round">
+    <path d="M60 142 Q24 128 22 92 Q20 62 44 50"/>
+    <path d="M60 142 Q96 128 98 92 Q100 62 76 50"/>
+  </g>
+  <g fill="#D3A82F" stroke="#6B4A12" stroke-width=".8">
+    <path d="M30 120 q-9 -4 -9 -12 q8 1 11 8 Z"/>
+    <path d="M25 102 q-9 -4 -8 -12 q8 1 10 8 Z"/>
+    <path d="M24 84 q-8 -5 -6 -13 q8 2 9 9 Z"/>
+    <path d="M28 67 q-7 -6 -4 -14 q8 4 7 11 Z"/>
+    <path d="M36 54 q-5 -8 0 -15 q6 6 4 13 Z"/>
+    <path d="M90 120 q9 -4 9 -12 q-8 1 -11 8 Z"/>
+    <path d="M95 102 q9 -4 8 -12 q-8 1 -10 8 Z"/>
+    <path d="M96 84 q8 -5 6 -13 q-8 2 -9 9 Z"/>
+    <path d="M92 67 q7 -6 4 -14 q-8 4 -7 11 Z"/>
+    <path d="M84 54 q5 -8 0 -15 q-6 6 -4 13 Z"/>
+  </g>
+  <!-- central keep on a hill -->
+  <g transform="translate(60 100)">
+    <ellipse cx="0" cy="22" rx="27" ry="5" fill="#3B1A15" opacity=".4"/>
+    <path d="M-24 20 Q-16 10 0 10 Q16 10 24 20 Z" fill="#6B8A48"/>
+    <path d="M-16 10 V-8 H16 V10 Z" fill="#E9D9A8" stroke="#3B2F2F" stroke-width="1.5"/>
+    <path d="M-20 -8 L0 -23 L20 -8 L16 -8 L0 -18 L-16 -8 Z" fill="#B24A3A" stroke="#3B2F2F" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M-11 10 V-2 H-5 V10 M5 10 V-2 H11 V10" fill="#8E352A" stroke="#3B2F2F" stroke-width="1.2"/>
+    <path d="M-2 10 V2 Q0 0 2 2 V10 Z" fill="#3B2F2F" opacity=".6"/>
+    <path d="M0 -23 V-31" stroke="#3B2F2F" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M0 -31 L9 -27 L0 -23 Z" fill="#E8C55A" stroke="#3B2F2F" stroke-width=".9"/>
+    <path d="M-16 -3 H16" stroke="#C9A227" stroke-width="1.1" opacity=".7"/>
+  </g>
+  <!-- star above -->
+  <path d="M60 42 L63 50 L71 50 L65 55 L67 63 L60 58 L53 63 L55 55 L49 50 L57 50 Z" fill="#F4DC8E" stroke="#6B4A12" stroke-width="1"/>
+  <rect x="11" y="38" width="98" height="112" fill="none" stroke="#3B2F2F" stroke-width="1.3"/>
+  <path d="M30 156 H90" stroke="#8B6A3C" stroke-width="1.2" opacity=".5"/>
+  <circle cx="60" cy="158" r="2.2" fill="#C9A227" stroke="#3B2F2F" stroke-width=".8"/>
 </svg>

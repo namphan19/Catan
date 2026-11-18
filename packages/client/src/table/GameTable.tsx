@@ -7,6 +7,7 @@ import type { Action, GameEvent, PlayerId, PlayerView, StrongholdsView, Validati
 import { StrongholdsPanel } from '../strongholds/StrongholdsPanel';
 import { BoardExtras } from '../strongholds/BoardExtras';
 import { BagDialog, ChoiceDialog } from '../strongholds/ChoiceDialogs';
+import { CardReveal, useReveals } from '../strongholds/CardReveal';
 import { narrow, nextStage } from '../strongholds/chooser';
 import { stagePrompt, valueLabel } from '../strongholds/labels';
 import { useI18n, resKey } from '../i18n';
@@ -50,6 +51,8 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const name = useName();
   const check = validate ?? (() => ({ ok: true } as Validation));
   const [toasts, pushToast] = useToasts();
+  const reveals = useReveals();
+  const pushReveal = reveals.push;
   const [pending, setPending] = useState<Pending>(null);
   const [boardMode, setBoardMode] = useState<BoardMode>(readBoardMode);
   const [tradeTab, setTradeTab] = useState<TradeTab>('bank');
@@ -139,6 +142,15 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
         });
         continue;
       }
+      // An advance card played by someone else is shown face up with its effect (playtest:
+      // the card names alone meant nothing to the others); the viewer's own plays stay a toast.
+      if (ev.e === 'ext' && ev.id === 'strongholds') {
+        const d = (ev.data ?? {}) as { type?: string; player?: string; card?: string };
+        if (d.type === 'played' && d.card && d.player && d.player !== viewerRef.current) {
+          pushReveal(d.player, d.card);
+          continue;
+        }
+      }
       const line = describeEvent(ev, t, name);
       if (line) pushToast({ text: line, kind: ev.e === 'won' ? 'gold' : 'info' });
     }
@@ -150,7 +162,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
       setProducing(ids.length > 0 ? new Set(ids) : undefined);
       pulseTimer.current = window.setTimeout(() => setProducing(undefined), 2200);
     }
-  }, [events, t, name, pushToast]);
+  }, [events, t, name, pushToast, pushReveal]);
   useEffect(() => () => window.clearTimeout(pulseTimer.current), []);
 
   // Online play: colleagues switch to other windows while waiting. When it becomes the
@@ -388,6 +400,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
           <DiceBox view={view} sh={sh} />
           <CostCard view={view} />
           <ToastStack toasts={toasts} />
+          {reveals.current && <CardReveal reveal={reveals.current} onClose={reveals.close} t={t} name={name} />}
           {boardHint && !(choice && stage?.board) && (
             <div className="board-hint" role="status">
               <span>{boardHint.text}</span>

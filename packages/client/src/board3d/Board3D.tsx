@@ -128,12 +128,12 @@ function Lights({ fit }: { fit: BoardFit }) {
   const bound = fit.radius + 3;
   return (
     <>
-      <ambientLight intensity={0.72} color="#fff1d6" />
-      <hemisphereLight args={['#f8ecd2', '#7a8f6a', 0.6]} />
+      <ambientLight intensity={0.46} color="#fff1d6" />
+      <hemisphereLight args={['#f8ecd2', '#6b7f5c', 0.42]} />
       <directionalLight
         ref={light}
         position={[fit.cx + 9, 18, fit.cz + 11]}
-        intensity={1.9}
+        intensity={1.55}
         color="#ffe2b0"
         castShadow
         shadow-mapSize-width={2048}
@@ -146,7 +146,7 @@ function Lights({ fit }: { fit: BoardFit }) {
         shadow-camera-near={1}
         shadow-camera-far={60}
       />
-      <directionalLight position={[fit.cx - 10, 8, fit.cz - 8]} intensity={0.35} color="#d8e8f2" />
+      <directionalLight position={[fit.cx - 10, 8, fit.cz - 8]} intensity={0.28} color="#d8e8f2" />
     </>
   );
 }
@@ -319,7 +319,7 @@ export default function Board3D(props: Board3DProps) {
           gl.setClearColor(new THREE.Color('#e9dcc0'), 1);
           gl.shadowMap.type = THREE.PCFSoftShadowMap;
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.05;
+          gl.toneMappingExposure = 0.96;
           scene.background = new THREE.Color('#e9dcc0');
         }}
       >

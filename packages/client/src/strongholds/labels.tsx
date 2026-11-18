@@ -46,11 +46,61 @@ export function describeShAction(a: Action, t: TFn, name: NameFn): string | null
     case 'sh:improve':
       return t('shlog_improve', { name: who, track: trackName(t, x.track) });
     case 'sh:play':
-      return t('shlog_play', { name: who, card: t(String(x.card)) });
+      return `${t('shlog_play', { name: who, card: t(String(x.card)) })} — ${t(`cardfx_${String(x.card)}`)}`;
     case 'sh:resolve':
-      return t('shlog_resolve', { name: who });
+      return describeResolve(x, t, who);
     default:
       return t(`shlog_${a.t.slice(3)}`, { name: who });
+  }
+}
+
+/** "2× Gỗ, 1× Len" (plain text; the log line of a resolve stays a string). */
+function bagText(bag: unknown, t: TFn): string {
+  return Object.entries((bag ?? {}) as Record<string, number>)
+    .filter(([, n]) => (n || 0) > 0)
+    .map(([r, n]) => `${n}× ${t(resKey(r))}`)
+    .join(', ');
+}
+
+/**
+ * Log line for the answer to a pending choice. Says WHAT was chosen whenever the engine shows it
+ * to this viewer (the deck drawn from, the resource taken...); private answers (cards and bags
+ * of other players, removed by redactAction) fall back to a line without the detail.
+ */
+function describeResolve(x: Record<string, unknown>, t: TFn, who: string): string {
+  const kind = String(x.kind ?? '');
+  const card = typeof x.card === 'string' ? t(x.card) : null;
+  const bag = x.bag ? bagText(x.bag, t) : '';
+  switch (kind) {
+    case 'pickDeck':
+      return t('shres_pickDeck', { name: who, track: trackName(t, x.deck) });
+    case 'provision':
+      return t('shres_provision', { name: who, res: t(resKey(String(x.resource))) });
+    case 'pillage':
+      return t('shres_pillage', { name: who });
+    case 'relocate':
+      return t('shres_relocate', { name: who });
+    case 'trimHand':
+      return card ? t('shres_trimHandCard', { name: who, card }) : t('shres_trimHand', { name: who });
+    case 'bazaarGive':
+      return typeof x.resource === 'string'
+        ? t('shres_bazaarGiveRes', { name: who, res: t(resKey(x.resource)) })
+        : t('shres_bazaarGive', { name: who });
+    case 'informantTake':
+      if (x.skip) return t('shres_informantSkip', { name: who });
+      return card ? t('shres_informantTakeCard', { name: who, card }) : t('shres_informantTake', { name: who });
+    case 'turncoatRemove':
+      return t('shres_turncoatRemove', { name: who });
+    case 'turncoatPlace':
+      return x.skip
+        ? t('shres_turncoatSkip', { name: who })
+        : t('shres_turncoatPlace', { name: who, level: Number(x.level) });
+    case 'titheTake':
+    case 'dowryGive':
+    case 'sabotageDiscard':
+      return bag ? t(`shres_${kind}Bag`, { name: who, bag }) : t(`shres_${kind}`, { name: who });
+    default:
+      return t('shlog_resolve', { name: who });
   }
 }
 

@@ -10,7 +10,7 @@ import type {
   Pieces,
   VertexId,
 } from '@hexgame/engine';
-import { SIZE, getBoardGraph, boardExtent, edgeGeom, hexPoints, vertexPos } from './geom';
+import { SIZE, getBoardGraph, boardExtent, edgeGeom, hexCenter, hexPoints, vertexPos } from './geom';
 import { HexTile } from './HexTile';
 import { Harbor } from './Harbor';
 import { Blocker, PiecesLayer } from './Piece';
@@ -53,7 +53,7 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
   const { t } = useI18n();
   const graph = useMemo(() => getBoardGraph(layout), [layout]);
   const ext = useMemo(() => boardExtent(graph), [graph]);
-  // Screen-reader / tooltip names for spots: the neighbouring tiles ("Rừng 8, Ruộng lúa 3"),
+  // Screen-reader / tooltip names for spots: the neighbouring tiles ("Rừng 8, Cánh đồng 3"),
   // never internal ids like "v:-1,2,N" (ids stay in data-id for tests and debugging).
   const hexName = useMemo(() => {
     const byId = new Map(board.hexes.map((h) => [h.id, h] as const));
@@ -131,6 +131,31 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
   const seaPath = assetUrl('terrain', 'sea');
   const seaOk = useAssets([seaPath])[seaPath];
 
+  // The island sits on a sandy coast ring with a pale foam band. Only the hexes that touch
+  // the coast are enlarged behind the tiles; the copies overlap under their inland neighbours
+  // and only the outer silhouette of the whole island shows, following the hex edges.
+  const coastal = useMemo(() => {
+    const set = new Set<string>();
+    for (const e of graph.coast) for (const h of graph.edgeHexes[e] ?? []) set.add(h);
+    return set;
+  }, [graph]);
+  const coast = (scale: number, fill: string, opacity = 1) =>
+    board.hexes
+      .filter((h) => coastal.has(h.id))
+      .map((h) => {
+        const c = hexCenter(h.id);
+        return (
+          <polygon
+            key={`${fill}-${h.id}`}
+            points={hexPoints(h.q, h.r)}
+            fill={fill}
+            opacity={opacity}
+            pointerEvents="none"
+            transform={`translate(${c.x} ${c.y}) scale(${scale}) translate(${-c.x} ${-c.y})`}
+          />
+        );
+      });
+
   return (
     <div className="board-wrap">
       <svg
@@ -157,6 +182,9 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
             fill={seaOk ? 'url(#seaPat)' : 'var(--sea)'}
             onClick={() => onMiss?.()}
           />
+          {coast(1.21, '#8FCDD4', 0.62)}
+          {coast(1.16, '#DDF1E8', 0.9)}
+          {coast(1.09, '#E6D2A0')}
           {board.hexes.map((h) => (
             <HexTile key={h.id} hex={h} producing={producing?.has(h.id)} />
           ))}

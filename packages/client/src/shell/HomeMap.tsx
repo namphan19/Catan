@@ -109,14 +109,14 @@ export function HomeMap({ label }: { label: string }) {
           <circle cx={CX} cy={CY} r="244" />
         </clipPath>
         <radialGradient id="hm-water" cx="48%" cy="40%" r="68%">
-          <stop offset="0" stopColor="#4F93BC" />
-          <stop offset="1" stopColor="#356F96" />
+          <stop offset="0" stopColor="#3E86B2" />
+          <stop offset="1" stopColor="#245E89" />
         </radialGradient>
         <pattern id="hm-waves" width="86" height="62" patternUnits="userSpaceOnUse">
           <path
             d="M-12 16 Q10 8 32 16 T76 16"
             fill="none"
-            stroke="#8FC3DB"
+            stroke="#7FC3DB"
             strokeWidth="2"
             strokeLinecap="round"
             opacity=".32"
@@ -124,7 +124,7 @@ export function HomeMap({ label }: { label: string }) {
           <path
             d="M-12 48 Q10 40 32 48 T76 48"
             fill="none"
-            stroke="#2C5F84"
+            stroke="#1D4F74"
             strokeWidth="2"
             strokeLinecap="round"
             opacity=".32"
@@ -210,7 +210,7 @@ export function HomeMap({ label }: { label: string }) {
               key={`beach${i}`}
               d={HEX_PATH}
               transform={`translate(${CX + h.dx} ${CY + h.dy}) scale(1.065)`}
-              fill="#D9C79E"
+              fill="#E6D2A0"
             />
           ))}
           {ISLAND.map((h, i) => (
