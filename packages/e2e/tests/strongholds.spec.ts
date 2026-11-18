@@ -52,6 +52,25 @@ test('a mid-game position: wardens on the board and the staged chooser', async (
   await clearHover(page);
   await page.screenshot({ path: shotPath('strongholds-midgame.png', testInfo.project.name), fullPage: true });
 
+  // Advance cards sit in the bottom-left of the board, above the hand, by name only (PO 2026-11-18):
+  // a click opens the full card with its effect and the Play button; Esc closes it again.
+  await expect(page.locator('.sh-panel .sh-card')).toHaveCount(0);
+  const tab = page.locator('.sh-hand .sh-hand-tab').first();
+  await expect(tab).toBeVisible();
+  const boardBox = (await page.locator('.board-area').boundingBox())!;
+  const tabBox = (await tab.boundingBox())!;
+  expect(tabBox.x - boardBox.x, 'cards in the left part of the board').toBeLessThan(boardBox.width / 3);
+  expect(boardBox.y + boardBox.height - (tabBox.y + tabBox.height), 'cards at the bottom of the board').toBeLessThan(40);
+  await expect(page.locator('.sh-hand-face')).toHaveCount(0);
+  await tab.click();
+  const face = page.locator('.sh-hand-face');
+  await expect(face).toBeVisible();
+  await expect(face.locator('.sh-reveal-fx')).not.toBeEmpty();
+  await expect(face.getByRole('button', { name: 'Chơi', exact: true })).toBeVisible();
+  await page.screenshot({ path: shotPath('strongholds-card-open.png', testInfo.project.name), fullPage: true });
+  await page.keyboard.press('Escape');
+  await expect(face).toHaveCount(0);
+
   // Start any enabled expansion action: the chooser must ask for a spot on the board or show options.
   const button = page.locator('.sh-panel button[data-sh]:not([disabled]), .sh-panel button[data-improve]:not([disabled])').first();
   if ((await button.count()) > 0) {

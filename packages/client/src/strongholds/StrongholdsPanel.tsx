@@ -1,6 +1,7 @@
 // Side panel of the Strongholds expansion: raid track, every player's improvement levels, the
-// viewer's expansion actions and advance cards. Buttons are enabled only when getLegalActions
-// contains a matching action; clicking hands those actions to the staged chooser.
+// viewer's expansion actions (the advance cards sit on the board: AdvanceHand). Buttons are
+// enabled only when getLegalActions contains a matching action; clicking hands those actions to
+// the staged chooser.
 import type { Action, PlayerView, StrongholdsView } from '@hexgame/engine';
 import { SH, TRACKS } from '@hexgame/engine';
 import { resKey, useI18n } from '../i18n';
@@ -27,7 +28,6 @@ export function StrongholdsPanel({ view, sh, legal, onStart }: PanelProps) {
   const name = useName();
   const me = view.viewer;
   const mine = view.players.find((p) => p.id === me);
-  const cards = mine?.cards ?? [];
   const of = (type: string, pred?: (a: Record<string, unknown>) => boolean): Action[] =>
     legal.filter((a) => a.t === type && (!pred || pred(a as unknown as Record<string, unknown>)));
 
@@ -37,8 +37,6 @@ export function StrongholdsPanel({ view, sh, legal, onStart }: PanelProps) {
   const defenders = view.players.reduce((s, p) => s + strength(p.id), 0);
   const stepsLeft = SH.raidTrack - sh.raid.pos;
 
-  const groups = new Map<string, number>();
-  for (const c of cards) groups.set(c, (groups.get(c) ?? 0) + 1);
   const bazaar = of('sh:bazaarOffer');
 
   return (
@@ -180,55 +178,7 @@ export function StrongholdsPanel({ view, sh, legal, onStart }: PanelProps) {
             </div>
           </div>
 
-          <div className="sh-group">
-            <span className="sh-label">
-              {t('sh_cards')}{' '}
-              <small className={cards.length > SH.handLimit ? 'sh-bad' : 'sh-muted'}>
-                {cards.length}/{SH.handLimit}
-              </small>
-            </span>
-            {groups.size === 0 ? (
-              <p className="sh-muted sh-empty">{t('sh_noCards')}</p>
-            ) : (
-              <ul className="sh-cards">
-                {[...groups.entries()].map(([card, n]) => {
-                  const plays = of('sh:play', (a) => a.card === card);
-                  const drops = of('sh:discardCard', (a) => a.card === card);
-                  return (
-                    <li key={card} className="sh-card" data-card={card}>
-                      <div className="sh-card-text">
-                        <b>
-                          {t(card)}
-                          {n > 1 ? ` ×${n}` : ''}
-                        </b>
-                        <span>{t(`cardfx_${card}`)}</span>
-                      </div>
-                      <div className="sh-card-btns">
-                        <Button
-                          className="sh-btn"
-                          variant="primary"
-                          disabled={plays.length === 0}
-                          onClick={() => onStart(plays, t(card))}
-                        >
-                          {t('sh_play')}
-                        </Button>
-                        {drops.length > 0 && (
-                          <Button className="sh-btn" variant="danger" onClick={() => onStart(drops, t('sh_discard'))}>
-                            {t('sh_discard')}
-                          </Button>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            {sh.vpCards[me].length > 0 && (
-              <p className="sh-muted">
-                {t('sh_vpCards')}: {sh.vpCards[me].map((c) => t(c)).join(', ')}
-              </p>
-            )}
-          </div>
+          {/* The viewer's advance cards moved to the bottom-left of the board (AdvanceHand). */}
         </>
       )}
     </section>

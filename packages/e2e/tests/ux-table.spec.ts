@@ -118,16 +118,22 @@ test('6 players: six player cards and the log fit without page scroll', async ({
   await startGame(page, '6', 'e2e-large');
   await expect(page.locator('.seats .seat')).toHaveCount(6);
   const m = await page.evaluate(() => {
-    const body = document.querySelector('.sidepanel-body')!.getBoundingClientRect();
+    // The log panel is hidden for now (GameTable SHOW_LOG): without it only the page fit is checked.
+    const body = document.querySelector('.sidepanel-body')?.getBoundingClientRect() ?? null;
     const seats = Array.from(document.querySelectorAll('.seats .seat')).map((s) => s.getBoundingClientRect());
     return {
       pageFits: document.documentElement.scrollHeight <= window.innerHeight + 1,
-      logHeight: body.height,
+      hasLog: body !== null,
+      logHeight: body?.height ?? 0,
       lastSeatBottom: Math.max(...seats.map((r) => r.bottom)),
-      bodyTop: body.top,
+      bodyTop: body?.top ?? 0,
     };
   });
   expect(m.pageFits, 'no page scroll').toBe(true);
+  if (!m.hasLog) {
+    expect(errors()).toEqual([]);
+    return;
+  }
   expect(m.lastSeatBottom, 'player cards end above the log').toBeLessThanOrEqual(m.bodyTop);
   expect(m.logHeight, `log height ${m.logHeight}`).toBeGreaterThanOrEqual(test.info().project.name === 'tablet' ? 60 : 160);
   expect(errors()).toEqual([]);

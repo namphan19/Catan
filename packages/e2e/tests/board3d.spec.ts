@@ -129,7 +129,8 @@ test.describe('3D board', () => {
     await expect(page.locator('.board3d-wrap')).toHaveCount(0);
     await expect(page.locator('.pieces .piece-settlement')).toHaveCount(8);
     expect(await page.locator('.pieces .piece-road').count()).toBeGreaterThanOrEqual(8);
-    await expect(page.locator('.log-list li').first()).toBeVisible();
+    // The log panel is hidden for now (GameTable SHOW_LOG); check it only when it is shown.
+    if ((await page.locator('.log-list').count()) > 0) await expect(page.locator('.log-list li').first()).toBeVisible();
 
     // The choice is remembered.
     expect(await page.evaluate(() => localStorage.getItem('boschtan.boardView'))).toBe('2d');

@@ -9,9 +9,10 @@
   border: 2px solid var(--ink);
   border-radius: 6px;
   font-size: 13px;
-  /* The side column has a fixed height: the panel scrolls inside it instead of pushing the log out. */
+  /* The side column has a fixed height: the panel scrolls inside it (the log under it is hidden
+     for now, so it may use the whole column). */
   flex: 0 1 auto;
-  max-height: 70%;
+  max-height: 100%;
   min-height: 150px;
   overflow-y: auto;
 }
@@ -67,21 +68,6 @@
 .sh-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
 .sh-panel .btn.sh-btn { padding: 2px 8px; font-size: 13px; min-height: 26px; }
 .sh-cost { display: inline-flex; align-items: center; gap: 1px; margin-left: 6px; font-weight: 700; }
-
-.sh-cards { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
-.sh-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  padding: 4px 6px;
-  background: var(--parchment);
-  border: 1px solid var(--ink);
-  border-radius: 4px;
-}
-.sh-card-text { display: flex; flex-direction: column; min-width: 0; }
-.sh-card-text span { font-size: 12px; color: var(--ink-soft); }
-.sh-card-btns { display: flex; gap: 4px; flex-shrink: 0; }
 
 /* Prompt bar of the staged chooser, over the top of the board. */
 .sh-pickbar {
@@ -185,4 +171,88 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .sh-reveal-card { animation: none; }
+}
+
+/* The viewer's advance cards (AdvanceHand): bottom-left of the board, just above "Bài của bạn".
+   Collapsed tabs show the card name only; the open card rises above them. */
+.sh-hand {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  /* Leave room for the price card in the bottom-right corner. */
+  max-width: calc(100% - 230px);
+}
+.sh-hand-head {
+  padding: 1px 8px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: rgba(243, 233, 210, 0.95);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.sh-hand-vp { margin-left: 8px; color: var(--ink); text-transform: none; letter-spacing: 0; }
+.sh-hand-tabs {
+  display: flex;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 2px 2px 4px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.sh-hand-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 140px;
+  padding: 6px 10px 5px;
+  border: 2px solid var(--ink);
+  border-top: 6px solid var(--deck, var(--ink-soft));
+  border-radius: 8px;
+  background: var(--parchment);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 120ms ease-out;
+}
+.sh-hand-tab:hover,
+.sh-hand-tab[aria-expanded='true'] { transform: translateY(-4px); }
+.sh-hand-tab[aria-expanded='true'] { outline: 3px solid var(--deck, var(--ink-soft)); outline-offset: 1px; }
+.sh-hand-tab:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.sh-hand-tab.playable { box-shadow: 0 0 0 3px var(--gold), 0 3px 8px rgba(0, 0, 0, 0.3); }
+.sh-hand-tab.droppable { box-shadow: 0 0 0 3px var(--danger), 0 3px 8px rgba(0, 0, 0, 0.3); }
+.sh-hand-tab-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sh-hand-tab-n { flex-shrink: 0; color: var(--ink-soft); }
+.sh-hand-face {
+  width: min(280px, 100%);
+  padding: 12px 16px 14px;
+  border: 3px solid var(--deck, var(--ink-soft));
+  border-radius: 14px;
+  background: var(--parchment);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 0 4px color-mix(in srgb, var(--deck, var(--ink-soft)) 18%, transparent);
+  text-align: center;
+  animation: sh-reveal-in 200ms ease-out;
+}
+.sh-hand-face .sh-reveal-name { font-size: 1.45rem; }
+.sh-hand-face .sh-reveal-fx { font-size: 1rem; }
+.sh-hand-face-btns { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
+/* Toasts share the bottom-left corner: lift them above the card strip. */
+.board-area.has-sh-hand .toast-stack { bottom: 76px; }
+@media (max-width: 900px) {
+  .sh-hand { max-width: calc(100% - 20px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sh-hand-face { animation: none; }
+  .sh-hand-tab { transition: none; }
 }
