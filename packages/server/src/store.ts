@@ -11,6 +11,8 @@ export interface PersistedSeat {
   tokenHash: string;
   /** Present for server-side bot seats. */
   bot?: BotLevelName;
+  /** A human seat currently played by its stand-in bot. */
+  afk?: boolean;
 }
 
 export interface PersistedRoom {
@@ -98,7 +100,8 @@ function isPersistedSeat(s: PersistedSeat): boolean {
     s.name.length <= 24 &&
     typeof s.tokenHash === 'string' &&
     /^[0-9a-f]{64}$/.test(s.tokenHash) &&
-    (s.bot === undefined || isBotLevel(s.bot))
+    (s.bot === undefined || isBotLevel(s.bot)) &&
+    (s.afk === undefined || typeof s.afk === 'boolean')
   );
 }
 

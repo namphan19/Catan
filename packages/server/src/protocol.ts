@@ -12,6 +12,8 @@ export interface RoomOptions {
 
 export const BOT_LEVELS = ['easy', 'normal', 'hard', 'expert'] as const;
 export type BotLevelName = (typeof BOT_LEVELS)[number];
+/** The level of the stand-in bot that plays a seat whose owner is away (setAfk). */
+export const AFK_BOT_LEVEL: BotLevelName = 'normal';
 export const isBotLevel = (v: unknown): v is BotLevelName =>
   typeof v === 'string' && (BOT_LEVELS as readonly string[]).includes(v);
 
@@ -26,6 +28,8 @@ export type ClientMsg =
   | { type: 'kick'; seat: string; reqId?: string }
   /** Host-only, lobby-only: fill the next free seat with a server-side bot. */
   | { type: 'addBot'; level: BotLevelName; reqId?: string }
+  /** Running game only: hand my seat to a stand-in bot (AFK_BOT_LEVEL) while I am away, or take it back. */
+  | { type: 'setAfk'; afk: boolean; reqId?: string }
   | { type: 'action'; action: unknown; reqId?: string }
   | { type: 'requestState'; reqId?: string };
 
@@ -39,12 +43,15 @@ export type ServerMsg =
       playerCount: number;
       options: RoomOptions;
       /** `bot` is set for server-side bot seats (always connected and ready). */
-      seats: { seat: string; name: string; connected: boolean; ready: boolean; bot?: BotLevelName }[];
+      /** `afk` is set while a stand-in bot plays a human seat (its owner handed it over with setAfk). */
+      seats: { seat: string; name: string; connected: boolean; ready: boolean; bot?: BotLevelName; afk?: boolean }[];
       you: string | null;
       started: boolean;
     }
   | { type: 'state'; view: unknown; legal: unknown[]; seq: number }
   | { type: 'events'; events: unknown[]; seq: number }
+  /** To everyone in the room when a seat is handed to its stand-in bot (afk) or taken back. */
+  | { type: 'afk'; seat: string; name: string; afk: boolean }
   | { type: 'error'; reqId?: string; code: string; message: string };
 
 export interface ParseOk {
@@ -226,6 +233,12 @@ export function parseClientMessage(text: string): ParseResult {
         if (!isBotLevel(level))
           return { ok: false, code: 'BAD_MESSAGE', message: 'addBot needs a level: easy, normal or hard.' };
         return { ok: true, msg: { type: 'addBot', level, reqId } };
+      }
+      case 'setAfk': {
+        const afk = raw.afk;
+        if (typeof afk !== 'boolean')
+          return { ok: false, code: 'BAD_MESSAGE', message: 'setAfk needs a boolean afk field.' };
+        return { ok: true, msg: { type: 'setAfk', afk, reqId } };
       }
       case 'action': {
         const action = raw.action;

@@ -37,6 +37,7 @@ const KNOWN_CODES = new Set([
   'NOT_READY',
   'NOT_IN_GAME',
   'IMPERSONATION',
+  'AFK_ACTIVE',
   'RATE_LIMIT',
   'INTERNAL',
   // engine validation codes (packages/engine validation + rules)

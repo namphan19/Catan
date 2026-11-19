@@ -336,6 +336,17 @@ export const vi: Record<string, string> = {
   home_needHuman: 'Cần ít nhất một ghế là người chơi.',
   strip_botThinking: '{name} đang nghĩ…',
 
+  // Away mode: a stand-in bot plays my seat until I take it back.
+  afk_go: '🤖 Cho bot chơi thay',
+  afk_goTitle: 'Bạn bận? Bot (mức {level}) sẽ tạm chơi thay bạn cho đến khi bạn quay lại.',
+  afk_back: 'Tôi đã quay lại',
+  afk_banner: '🤖 Bot (mức {level}) đang chơi thay bạn. Bấm "Tôi đã quay lại" để tự chơi tiếp.',
+  afk_popOnTitle: 'Bot vào chơi thay',
+  afk_popOn: '{name} tạm vắng mặt. Từ giờ bot (mức {level}) sẽ chơi thay {name} cho đến khi người này quay lại.',
+  afk_popOffTitle: 'Người chơi đã quay lại',
+  afk_popOff: '{name} đã quay lại và tự chơi tiếp. Bot không còn chơi thay nữa.',
+  afk_ok: 'Đã hiểu',
+
   // Server error codes (protocol + engine) — unknown codes show the server message.
   err_unknown: 'Lỗi từ máy chủ: {msg}',
   err_BAD_MESSAGE: 'Tin nhắn không hợp lệ.',
@@ -393,6 +404,7 @@ export const vi: Record<string, string> = {
   err_BAD_HEX: 'Ô hex không hợp lệ.',
   err_BAD_TARGET: 'Đích không hợp lệ.',
   err_BAD_VERTEX: 'Đỉnh không hợp lệ.',
+  err_AFK_ACTIVE: 'Bot đang chơi thay bạn; bấm "Tôi đã quay lại" trước.',
   err_KICKED: 'Bạn đã bị chủ phòng mời ra khỏi phòng.',
   err_SEAT_TAKEN_OVER: 'Một phiên khác đã vào chỗ của bạn. Hãy vào lại phòng để lấy lại chỗ.',
 

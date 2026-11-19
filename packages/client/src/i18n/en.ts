@@ -320,6 +320,17 @@ export const en: Record<string, string> = {
   home_needHuman: 'At least one seat must be a human player.',
   strip_botThinking: '{name} is thinking…',
 
+  // Away mode: a stand-in bot plays my seat until I take it back.
+  afk_go: '🤖 Let a bot play for me',
+  afk_goTitle: 'Busy? A bot ({level}) plays for you until you come back.',
+  afk_back: "I'm back",
+  afk_banner: `🤖 A bot ({level}) is playing for you. Click "I'm back" to play yourself again.`,
+  afk_popOnTitle: 'A bot takes over',
+  afk_popOn: '{name} is away. A bot ({level}) plays for {name} until they come back.',
+  afk_popOffTitle: 'Player is back',
+  afk_popOff: '{name} is back and plays again. The bot no longer plays for them.',
+  afk_ok: 'Got it',
+
   // Server error codes (protocol + engine) — unknown codes show the server message.
   err_unknown: 'Server error: {msg}',
   err_BAD_MESSAGE: 'Invalid message.',
@@ -377,6 +388,7 @@ export const en: Record<string, string> = {
   err_BAD_HEX: 'Invalid hex.',
   err_BAD_TARGET: 'Invalid target.',
   err_BAD_VERTEX: 'Invalid vertex.',
+  err_AFK_ACTIVE: `A bot is playing for you; click "I'm back" first.`,
   err_KICKED: 'The host removed you from the room.',
   err_SEAT_TAKEN_OVER: 'Another session took over your seat. Rejoin the room to reclaim it.',
 

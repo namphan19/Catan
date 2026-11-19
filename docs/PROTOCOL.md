@@ -30,6 +30,7 @@ redacted data (getPlayerView / getEventsView).
 | startGame | - | host only, all seats filled and ready |
 | kick | seat | host only, lobby only (before start): frees that seat and closes its connection with code KICKED (also removes a bot) |
 | addBot | level: 'easy' \| 'normal' \| 'hard' \| 'expert' | host only, lobby only: fills the next free seat with a server-side bot (always ready; named "Bot", "Bot 2", ...) |
+| setAfk | afk: boolean | in game (not after the win): `true` hands the sender's seat to a stand-in 'normal' bot while they are away, `false` takes it back. Everyone in the room gets an `afk` notice; while the bot plays, the sender's own actions are refused with AFK_ACTIVE. Repeating the current value only resyncs `room` |
 | action | action: Action (engine format; `player` must equal the sender's seat) | in game |
 | requestState | - | after reconnect / when the client is unsure |
 
@@ -37,14 +38,24 @@ redacted data (getPlayerView / getEventsView).
 | type | fields |
 |---|---|
 | welcome | sessionToken, name |
-| room | code, hostSeat, playerCount, options, seats: [{ seat: "p1".., name, connected, ready, bot?: level }], you: seat or null, started |
+| room | code, hostSeat, playerCount, options, seats: [{ seat: "p1".., name, connected, ready, bot?: level, afk?: true }], you: seat or null, started |
 | state | view: PlayerView (getPlayerView for the receiver), legal: Action[] (getLegalActions for the receiver), seq (log length) |
 | events | events: GameEvent[] (getEventsView for the receiver), seq |
+| afk | seat, name, afk: boolean - to everyone in the room when a seat is handed to its stand-in bot or taken back (clients show a popup; the seat's `afk` flag in `room` is the lasting state) |
 | error | reqId?, code, message |
 
 After every applied action the server sends each connected seat `events` then `state` (both redacted for
 that seat). Bot seats act on the server through the same engine path (validated, persisted, broadcast); a bot
 decides from its own redacted view only, and bots pause while no human is connected. Spectators are out of scope.
+A seat with `afk` is played exactly like a 'normal' bot seat (also persisted, so it survives a restart) until its owner
+sends `setAfk` false; it stays a human seat (it can host, keeps its token).
+
+**Bots answering someone else's trade offer** hold back their answer for `BOT_RESPOND_DELAY_MS` = 8 s after the offer was
+made, as long as another human (not the offerer, not yet answered, holding the requested cards) could still accept;
+once those humans answered, or when none could, the bot answers after the normal move pause. Reason: a bot that
+answers within a second lets the offerer confirm with the bot before the humans have read the offer. 8 s is about
+what a person needs to notice the offer, read give/get, check their hand and click, and stays well below the 30 s a
+bot's own offer waits (`BOT_TRADE_WAIT_MS`). Hub option `botRespondDelayMs`.
 
 ## Server rules
 - Validate every `action` with the engine; reject `player` != sender seat with code IMPERSONATION.
