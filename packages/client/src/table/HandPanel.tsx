@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PlayerView } from '@hexgame/engine';
 import { useI18n, resKey, cardKey, RESOURCE_ORDER } from '../i18n';
-import { assetUrl, useAssets } from '../board/assets';
+import { art2dUrl, useAssets } from '../board/assets';
 import { ResourceIcon } from '../ui/ResourceIcon';
 
 interface Delta {
@@ -41,10 +41,10 @@ function useHandDeltas(hand: Record<string, number>, viewer: string | null): Rec
 }
 
 function ResourceArt({ res }: { res: string }) {
-  const path = assetUrl('resource', res);
-  const ok = useAssets([path])[path];
-  return ok ? (
-    <img className="res-card-art" src={path} alt="" width={60} height={84} />
+  // Painted card (Tripo, art2d/card); the goods icon on a blank card until it has loaded.
+  const path = art2dUrl('card', res);
+  return useAssets([path])[path] ? (
+    <img className="res-card-art painted" src={path} alt="" width={60} height={84} />
   ) : (
     <span className="res-card-fallback">
       <ResourceIcon res={res} size={34} />
@@ -53,9 +53,8 @@ function ResourceArt({ res }: { res: string }) {
 }
 
 function CardArt({ card }: { card: string }) {
-  const path = assetUrl('card', card);
-  const ok = useAssets([path])[path];
-  return ok ? <img src={path} alt="" width={40} height={56} /> : <span className="dev-card-blank" aria-hidden="true" />;
+  const path = art2dUrl('card', card);
+  return useAssets([path])[path] ? <img className="dev-card-art painted" src={path} alt="" width={40} height={56} /> : <span className="dev-card-blank" aria-hidden="true" />;
 }
 
 export function HandPanel({ view }: { view: PlayerView }) {

@@ -1,75 +1,61 @@
-// Harbor drawn OUT IN THE SEA so the coast stays clear for pieces: two wooden piers run from the
-// coast edge's corners to a small dock, and a badge [icon · ratio] floats beyond the dock.
-// Geometry is shared with the 3D board (geom.ts harborGeom / harborBadgeCentre).
+// Harbor as a TILE, like a physical board-game piece (PO request): one tile of the sea frame
+// (Board draws the ring with SeaTile), next to the coast edge and on the same grid as the land
+// tiles, so it can never look off. On it: two wooden jetties running to the edge's two corners (the trading spots) and a
+// parchment medallion with the goods icon and the trade ratio printed in the middle.
+// The 3D board keeps its own dock + badge (geom.ts harborGeom / harborBadgeCentre).
 import type { Graph, Harbor as HarborData } from '@hexgame/engine';
-import { assetUrl, useAssets } from './assets';
-import { harborBadgeCentre, harborGeom, SIZE } from './geom';
+import { art2dUrl, useAssets } from './assets';
+import { edgeGeom, harborTileCentre, SIZE } from './geom';
 import { useI18n, resKey } from '../i18n';
 import { RESOURCE_COLORS } from '../ui/colors';
 
-/** Badge size in board pixels (icon + ratio pill). */
-export const HARBOR_BADGE_W = 58;
-export const HARBOR_BADGE_H = 26;
-
 type Pt = { x: number; y: number };
 
-function Pier({ from, to }: { from: Pt; to: Pt }) {
+const lerp = (p: Pt, q: Pt, t: number): Pt => ({ x: p.x + (q.x - p.x) * t, y: p.y + (q.y - p.y) * t });
+
+/** A short jetty from a point inside the harbor tile out to (just short of) a coast corner. */
+function Jetty({ from, to }: { from: Pt; to: Pt }) {
   const len = Math.hypot(to.x - from.x, to.y - from.y);
   const ang = (Math.atan2(to.y - from.y, to.x - from.x) * 180) / Math.PI;
-  const planks = Math.max(2, Math.floor(len / 6));
+  const w = SIZE * 0.15;
+  const planks = Math.max(2, Math.round(len / 5));
   return (
-    <g transform={`translate(${from.x} ${from.y}) rotate(${ang})`}>
-      {/* two beams with planks across */}
-      <rect x={0} y={-5.5} width={len} height={11} rx={1.5} className="harbor-pier" />
-      {Array.from({ length: planks }, (_, i) => (
-        <line key={i} x1={(i + 0.5) * (len / planks)} y1={-5.5} x2={(i + 0.5) * (len / planks)} y2={5.5} className="harbor-plank" />
-      ))}
+    <g transform={`translate(${from.x} ${from.y}) rotate(${ang})`} className="harbor-jetty">
+      <rect x={0} y={-w / 2} width={len} height={w} rx={1.4} className="harbor-pier" />
+      {Array.from({ length: planks - 1 }, (_, i) => {
+        const x = ((i + 1) * len) / planks;
+        return <line key={i} x1={x} y1={-w / 2} x2={x} y2={w / 2} className="harbor-plank" />;
+      })}
     </g>
   );
 }
 
 export function Harbor({ harbor, graph }: { harbor: HarborData; graph: Graph }) {
   const { t } = useI18n();
-  const path = assetUrl('harbor', harbor.kind);
-  const ok = useAssets([path])[path];
-  const h = harborGeom(graph, harbor.edge);
+  const painted = art2dUrl('icon', harbor.kind);
+  const icon = useAssets([painted])[painted] ? painted : null;
+  const g = edgeGeom(graph, harbor.edge);
+  const c = harborTileCentre(graph, harbor.edge);
   const label = `${harbor.ratio}:1`;
   const color = harbor.kind === 'any' ? 'var(--sea)' : RESOURCE_COLORS[harbor.kind] ?? 'var(--sea)';
-  const badge = harborBadgeCentre(h, HARBOR_BADGE_W, HARBOR_BADGE_H);
-  const dockAng = (Math.atan2(h.t.y, h.t.x) * 180) / Math.PI;
-  const dockW = SIZE * 0.62;
-  const dockH = SIZE * 0.24;
-  const icon = 22;
   const title = harbor.kind === 'any' ? t('dlg_rate', { r: harbor.ratio }) : `${t(resKey(harbor.kind))} · ${label}`;
+  const mr = SIZE * 0.4;
+  const iconSize = SIZE * 0.42;
   return (
-    <g className="harbor">
-      <Pier from={h.pierFromA} to={h.pierToA} />
-      <Pier from={h.pierFromB} to={h.pierToB} />
-      {/* dock platform with mooring posts; the trim shows the harbor's resource colour */}
-      <g transform={`translate(${h.dock.x} ${h.dock.y}) rotate(${dockAng})`}>
-        <rect x={-dockW / 2} y={-dockH / 2} width={dockW} height={dockH} rx={2} className="harbor-dock" />
-        <line x1={-dockW / 2 + 3} y1={dockH / 2 - 2} x2={dockW / 2 - 3} y2={dockH / 2 - 2} stroke={color} strokeWidth={3} />
-        {[-dockW / 2, dockW / 2].map((x) => (
-          <circle key={x} cx={x} cy={-dockH / 2} r={3.2} className="harbor-post" />
-        ))}
-      </g>
-      {/* badge out in the sea: [icon | ratio] */}
-      <g transform={`translate(${badge.x} ${badge.y})`}>
-        <rect
-          x={-HARBOR_BADGE_W / 2}
-          y={-HARBOR_BADGE_H / 2}
-          width={HARBOR_BADGE_W}
-          height={HARBOR_BADGE_H}
-          rx={HARBOR_BADGE_H / 2}
-          className="harbor-badge"
-          style={{ stroke: color }}
-        />
-        {ok ? (
-          <image href={path} x={-HARBOR_BADGE_W / 2 + 2} y={-icon / 2} width={icon} height={icon} />
+    <g className="harbor" data-kind={harbor.kind}>
+      {/* Jetties to the two corners of the coast edge: those are the harbor's building spots. */}
+      {[g.a, g.b].map((v, i) => (
+        <Jetty key={i} from={lerp(v, c, 0.5)} to={lerp(v, c, 0.1)} />
+      ))}
+      {/* Printed medallion: goods icon over the ratio, rimmed in the goods colour. */}
+      <g transform={`translate(${c.x} ${c.y})`}>
+        <circle r={mr} className="harbor-medallion" style={{ stroke: color }} />
+        {icon ? (
+          <image href={icon} x={-iconSize / 2} y={-mr * 0.86} width={iconSize} height={iconSize} />
         ) : (
-          <circle cx={-HARBOR_BADGE_W / 2 + 2 + icon / 2} r={icon / 2 - 1} fill="var(--parchment-dark)" stroke={color} strokeWidth={2.5} />
+          <circle cy={-mr * 0.35} r={iconSize / 2.6} fill="var(--parchment-dark)" stroke={color} strokeWidth={2.5} />
         )}
-        <text x={-HARBOR_BADGE_W / 2 + icon + 18} y={6} textAnchor="middle" className="harbor-ratio">
+        <text y={mr * 0.5} textAnchor="middle" dominantBaseline="central" className="harbor-ratio">
           {label}
         </text>
       </g>

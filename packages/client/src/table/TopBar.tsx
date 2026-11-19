@@ -1,18 +1,21 @@
-// Slim top bar: wordmark, turn label, help, 2D/3D toggle, language. The "what to do now"
+// Slim top bar: wordmark, turn label, help, language (the 2D/3D toggle was removed with the
+// 3D board, see archive/3d). The "what to do now"
 // sentence lives in StatusBanner, the dice in DiceBox, the players in PlayerCards.
+import type { ReactNode } from 'react';
 import type { PlayerView } from '@hexgame/engine';
 import { useI18n, type Lang } from '../i18n';
-import type { BoardMode } from '../board/BoardSwitch';
 
 export function TopBar({
   view,
-  boardMode,
-  onBoardMode,
+  info,
+  actions,
   onHelp,
 }: {
   view: PlayerView;
-  boardMode?: BoardMode;
-  onBoardMode?: (m: BoardMode) => void;
+  /** Shell info (who is viewing / room code), shown after the turn label. */
+  info?: ReactNode;
+  /** Shell buttons (pass device, export log, home), right-aligned before help + language. */
+  actions?: ReactNode;
   onHelp?: () => void;
 }) {
   const { t, lang, setLang } = useI18n();
@@ -29,35 +32,13 @@ export function TopBar({
       <div className="topbar-left">
         <h1 className="game-title">{t('appTitle')}</h1>
         <span className="turn-label">{turnLabel}</span>
+        {info && <span className="topbar-info">{info}</span>}
       </div>
+      {actions && <div className="topbar-actions">{actions}</div>}
       {onHelp && (
         <button type="button" className="btn btn-ghost btn-help" onClick={onHelp} aria-label={t('help_title')} title={t('help_title')}>
           ?
         </button>
-      )}
-      {onBoardMode && (
-        <div className="view-toggle" role="group" aria-label={t('board_view')}>
-          <button
-            type="button"
-            className={boardMode !== '3d' ? 'view-toggle-btn active' : 'view-toggle-btn'}
-            aria-pressed={boardMode !== '3d'}
-            aria-label={t('board_view2d')}
-            title={t('board_view2d')}
-            onClick={() => onBoardMode('2d')}
-          >
-            2D
-          </button>
-          <button
-            type="button"
-            className={boardMode === '3d' ? 'view-toggle-btn active' : 'view-toggle-btn'}
-            aria-pressed={boardMode === '3d'}
-            aria-label={t('board_view3d')}
-            title={t('board_view3d')}
-            onClick={() => onBoardMode('3d')}
-          >
-            3D
-          </button>
-        </div>
       )}
       <button
         type="button"

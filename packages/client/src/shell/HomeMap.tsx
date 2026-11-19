@@ -1,7 +1,7 @@
 // Decorative hero chart for the home screen. Pure SVG built from the game's own terrain
 // art, piece art and palette, so the hub looks like the same hand-made world as the board.
 import { PIECE_ART } from '../board/pieceArt';
-import { assetUrl } from '../board/assets';
+import { art2dUrl } from '../board/assets';
 import { playerHex } from '../ui/colors';
 
 const R = 64;
@@ -214,13 +214,17 @@ export function HomeMap({ label }: { label: string }) {
             />
           ))}
           {ISLAND.map((h, i) => (
+            // Painted Tripo tiles, a little smaller than their cell so the sand shows
+            // between them, like the game board.
             <image
               key={`tile${i}`}
-              href={assetUrl('terrain', h.terrain)}
+              href={art2dUrl('terrain', h.terrain)}
               x={CX + h.dx - IMG_W / 2}
               y={CY + h.dy - IMG_H / 2}
               width={IMG_W}
               height={IMG_H}
+              preserveAspectRatio="none"
+              transform={`translate(${CX + h.dx} ${CY + h.dy}) scale(0.95) translate(${-(CX + h.dx)} ${-(CY + h.dy)})`}
             />
           ))}
 

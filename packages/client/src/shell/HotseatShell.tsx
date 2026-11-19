@@ -68,33 +68,39 @@ function ShellInner({ names, view, legal, onAction, events, validate, errors, ex
         />
       )}
       <div className="shell">
-        <div className="shell-strip">
-          <span className="shell-viewing">{t('strip_viewing', { name: actorName ?? t('you') })}</span>
-          {thinking && (
-            <span className="shell-thinking" role="status" aria-live="polite">
-              {t('strip_botThinking', { name: name(thinking) })}
-            </span>
-          )}
-          {shared && (
-            <button type="button" className="btn btn-ghost" onClick={() => setCovered(true)}>
-              {t('strip_pass')}
-            </button>
-          )}
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => {
-              setExportText(exportLog());
-              setExportOpen(true);
-            }}
-          >
-            {t('strip_export')}
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={onHome}>
-            {t('strip_home')}
-          </button>
-        </div>
         <GameTable
+          barInfo={
+            <>
+              <span className="shell-viewing">{t('strip_viewing', { name: actorName ?? t('you') })}</span>
+              {thinking && (
+                <span className="shell-thinking" role="status" aria-live="polite">
+                  {t('strip_botThinking', { name: name(thinking) })}
+                </span>
+              )}
+            </>
+          }
+          barActions={
+            <>
+              {shared && (
+                <button type="button" className="btn btn-ghost" onClick={() => setCovered(true)}>
+                  {t('strip_pass')}
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setExportText(exportLog());
+                  setExportOpen(true);
+                }}
+              >
+                {t('strip_export')}
+              </button>
+              <button type="button" className="btn btn-ghost" onClick={onHome}>
+                {t('strip_home')}
+              </button>
+            </>
+          }
           view={view}
           legal={legal}
           onAction={onAction}

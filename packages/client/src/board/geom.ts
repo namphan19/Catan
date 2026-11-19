@@ -96,6 +96,14 @@ export function harborGeom(graph: Graph, e: EdgeId): HarborGeom {
   };
 }
 
+/** 2D harbor tile: centre of the sea hex across the coast edge from its land hex. */
+export function harborTileCentre(graph: Graph, e: EdgeId): Pt {
+  const g = edgeGeom(graph, e);
+  const land = graph.edgeHexes[e]?.[0];
+  const c = land ? hexCenter(land) : g.mid;
+  return { x: g.a.x + g.b.x - c.x, y: g.a.y + g.b.y - c.y };
+}
+
 /**
  * Centre of a badge of size w×h (pixels, screen-aligned) placed beyond the dock along the
  * normal, far enough that the badge never overlaps the dock whatever the edge direction.
@@ -119,10 +127,11 @@ export function boardExtent(graph: Graph): { x: number; y: number; w: number; h:
     maxX = Math.max(maxX, c.x);
     maxY = Math.max(maxY, c.y);
   }
-  // Hex radius + harbor piers, dock and the badge out in the sea (harborBadgeCentre). Coast
-  // normals of pointy-top hexes are horizontal or ±60°, so badges reach further sideways.
+  // Hex radius + the harbor tiles (2D: a whole sea hex beyond the coast, harborTileCentre;
+  // 3D: dock + badge). A sea hex beside a ±60° coast edge reaches 1.5 + 1 SIZE vertically and
+  // a horizontal one 1.73 + 0.87 SIZE sideways.
   const mx = SIZE * 2.8;
-  const my = SIZE * 2.2;
+  const my = SIZE * 2.6;
   return { x: minX - mx, y: minY - my, w: maxX - minX + 2 * mx, h: maxY - minY + 2 * my };
 }
 

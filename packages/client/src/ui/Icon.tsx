@@ -7,7 +7,9 @@ import tradeRaw from '../../public/assets/ui/trade.svg?raw';
 import cardRaw from '../../public/assets/ui/card.svg?raw';
 import buildRaw from '../../public/assets/ui/build.svg?raw';
 import infoRaw from '../../public/assets/ui/info.svg?raw';
+import { useId } from 'react';
 import { PIECE_ART, parseArt, type Art } from '../board/pieceArt';
+import { art2dUrl, useAssets } from '../board/assets';
 
 const UI_ART: Record<string, Art | null> = {
   roll: parseArt(rollRaw),
@@ -35,14 +37,46 @@ export function UiIcon({ name, size = 18 }: { name: UiIconName; size?: number })
   );
 }
 
-/** A board piece (road / settlement / city) as a small icon in the given player colour. */
+/**
+ * A board piece (road / settlement / city) as a small icon in the given player colour, drawn
+ * exactly like the piece on the 2D board (PO request): the painted block sprite tinted with
+ * the same multiply filter (art2d/piece), and the road as the board's flat bar. Falls back to
+ * the vector piece art while the sprite is loading or missing.
+ */
 export function PieceIcon({ kind, color, size = 18 }: { kind: 'road' | 'settlement' | 'city'; color: string; size?: number }) {
+  const fid = `pi-tint-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const sprite = art2dUrl('piece', kind === 'road' ? 'settlement' : kind);
+  const loaded = useAssets([sprite])[sprite];
+  if (kind === 'road') {
+    // Same bar as board/Piece.tsx Road: player colour, ink outline, light top / dark bottom strip.
+    const w = Math.round(size * 1.5);
+    const h = Math.max(5, Math.round(size * 0.42));
+    return (
+      <svg className="pieceicon" width={w} height={h} viewBox="0 0 40 10" style={{ color }} aria-hidden="true">
+        <rect x={0.8} y={0.8} width={38.4} height={8.4} rx={2.6} fill="currentColor" stroke="#3B2F2F" strokeWidth={1.3} />
+        <rect x={2.5} y={1.9} width={35} height={2.2} rx={1} fill="#FFFFFF" opacity={0.32} />
+        <rect x={2.5} y={6.4} width={35} height={1.7} rx={0.8} fill="#1B1512" opacity={0.18} />
+      </svg>
+    );
+  }
+  if (loaded) {
+    const box = Math.round(size * 1.15);
+    return (
+      <svg className="pieceicon" width={box} height={box} viewBox="0 0 100 100" aria-hidden="true">
+        <filter id={fid} colorInterpolationFilters="sRGB" x="-10%" y="-10%" width="120%" height="120%">
+          <feFlood style={{ floodColor: color }} result="c" />
+          <feBlend in="c" in2="SourceGraphic" mode="multiply" result="m" />
+          <feComposite in="m" in2="SourceAlpha" operator="in" />
+        </filter>
+        <image href={sprite} x={0} y={0} width={100} height={100} preserveAspectRatio="xMidYMid meet" filter={`url(#${fid})`} />
+      </svg>
+    );
+  }
   const art = PIECE_ART[kind] ?? null;
   if (!art) {
     return <span className="pieceicon pieceicon-fallback" style={{ width: size, height: size, background: color }} aria-hidden="true" />;
   }
   const [, , vw = 1, vh = 1] = art.viewBox.split(/[\s,]+/).map(Number);
-  // Fit into a box 1.5 x 1 of `size` (the road art is very wide).
   const k = Math.min((size * 1.5) / vw, size / vh);
   return (
     <svg

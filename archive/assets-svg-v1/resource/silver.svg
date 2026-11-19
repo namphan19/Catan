@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 168">
+  <defs>
+    <clipPath id="art">
+      <rect x="13" y="13" width="94" height="119" rx="5"/>
+    </clipPath>
+    <linearGradient id="vault" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#5E748A"/>
+      <stop offset=".55" stop-color="#42576C"/>
+      <stop offset="1" stop-color="#293A4C"/>
+    </linearGradient>
+    <radialGradient id="vaultlight" cx="32%" cy="14%" r="80%">
+      <stop offset="0" stop-color="#E8F2FA" stop-opacity=".75"/>
+      <stop offset=".55" stop-color="#B8CEDF" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#1A2938" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ingot" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#F1F4F7"/>
+      <stop offset=".45" stop-color="#C8CFD7"/>
+      <stop offset="1" stop-color="#8D97A3"/>
+    </linearGradient>
+    <g id="coin">
+      <ellipse cx="0" cy="5" rx="9" ry="3.4" fill="#7E8894" stroke="#3B2F2F" stroke-width="1"/>
+      <ellipse cx="0" cy="2.5" rx="9" ry="3.4" fill="#B8BFC7" stroke="#3B2F2F" stroke-width="1"/>
+      <ellipse cx="0" cy="0" rx="9" ry="3.4" fill="#E4E8EC" stroke="#3B2F2F" stroke-width="1"/>
+      <path d="M-4 0 H4" stroke="#8D97A3" stroke-width=".9"/>
+    </g>
+    <g id="silvermini">
+      <ellipse cx="0" cy="3" rx="6" ry="2.4" fill="#9CA6B1" stroke="#3B2F2F" stroke-width=".7"/>
+      <ellipse cx="0" cy="1" rx="6" ry="2.4" fill="#D5DADF" stroke="#3B2F2F" stroke-width=".7"/>
+      <ellipse cx="0" cy="-1" rx="5" ry="2" fill="#F0F3F5" stroke="#3B2F2F" stroke-width=".7"/>
+    </g>
+  </defs>
+
+  <rect x="3" y="3" width="114" height="162" rx="10" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="3"/>
+  <rect x="9" y="9" width="102" height="150" rx="6" fill="#FBF5E4" stroke="#B08C55" stroke-width="1.2"/>
+
+  <g clip-path="url(#art)">
+    <rect x="13" y="13" width="94" height="119" fill="url(#vault)"/>
+    <rect x="13" y="13" width="94" height="119" fill="url(#vaultlight)"/>
+    <!-- stone wall and strongbox -->
+    <path d="M13 13 H107 V48 Q80 42 58 48 Q36 54 13 46 Z" fill="#4E6378" opacity=".8"/>
+    <g fill="none" stroke="#8DA0B2" stroke-width="1" opacity=".38">
+      <path d="M18 22 H42 V34 H18 Z M48 22 H74 V34 H48 Z M80 22 H102 V34 H80 Z M18 40 H48 V50 H18 Z M54 40 H86 V50 H54 Z"/>
+    </g>
+    <!-- table -->
+    <path d="M13 96 Q36 86 60 92 Q84 98 107 88 V132 H13 Z" fill="#3F5265"/>
+    <path d="M13 106 Q38 96 62 102 Q86 108 107 100 V132 H13 Z" fill="#334554"/>
+    <g fill="none" stroke="#7E94A8" stroke-width="1.2" opacity=".35">
+      <path d="M18 114 q26 -7 52 -1 q18 4 34 -2 M18 123 q26 -6 52 0 q18 3 34 -2"/>
+    </g>
+    <!-- stacked coins -->
+    <g transform="translate(60 100)">
+      <ellipse cx="0" cy="29" rx="34" ry="6" fill="#111B24" opacity=".4"/>
+      <use href="#coin" x="-24" y="18"/>
+      <use href="#coin" x="-12" y="20"/>
+      <use href="#coin" x="0" y="21"/>
+      <use href="#coin" x="12" y="20"/>
+      <use href="#coin" x="24" y="18"/>
+      <use href="#coin" x="-18" y="12"/>
+      <use href="#coin" x="-6" y="14"/>
+      <use href="#coin" x="6" y="14"/>
+      <use href="#coin" x="18" y="12"/>
+      <use href="#coin" x="-12" y="6"/>
+      <use href="#coin" x="0" y="8"/>
+      <use href="#coin" x="12" y="6"/>
+      <use href="#coin" x="-6" y="0"/>
+      <use href="#coin" x="6" y="0"/>
+      <use href="#coin" x="0" y="-6"/>
+      <!-- loose coins at the sides -->
+      <g transform="translate(-34 25) rotate(-15)"><use href="#coin"/></g>
+      <g transform="translate(34 23) rotate(12)"><use href="#coin"/></g>
+      <!-- silver ingot on the pile -->
+      <g transform="translate(0 -20) rotate(-6)">
+        <path d="M-25 -3 L-17 -12 L17 -9 L25 1 L18 9 L-18 8 Z" fill="url(#ingot)" stroke="#3B2F2F" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M-17 -12 L17 -9 L10 -2 L-10 -4 Z" fill="#F7FAFC" opacity=".8"/>
+        <path d="M-18 8 L-10 -4 L10 -2 L18 9 Z" fill="#AEB8C2" opacity=".8"/>
+        <path d="M-10 -4 L10 -2" fill="none" stroke="#6F7B88" stroke-width="1"/>
+        <circle cx="-8" cy="3" r="1" fill="#6F7B88"/>
+        <path d="M4 2 q3 1 6 0" fill="none" stroke="#6F7B88" stroke-width=".7"/>
+      </g>
+    </g>
+    <!-- balance scale in the background -->
+    <g transform="translate(90 66) scale(.8)" stroke="#3B2F2F" stroke-width="1.1" fill="none">
+      <path d="M0 22 V-8 M-12 -6 H12" stroke="#8A5A2B" stroke-width="2" stroke-linecap="round"/>
+      <path d="M-12 -6 L-18 4 M12 -6 L18 4" stroke="#8A5A2B" stroke-width="1.3"/>
+      <path d="M-24 4 Q-18 12 -12 4 Z" fill="#B8BFC7" stroke-width="1"/>
+      <path d="M12 4 Q18 12 24 4 Z" fill="#B8BFC7" stroke-width="1"/>
+    </g>
+    <g transform="translate(29 72)">
+      <path d="M-10 8 Q-8 -6 0 -12 Q8 -6 10 8 Z" fill="#3B2F2F" opacity=".25"/>
+      <use href="#silvermini" transform="translate(0 6) scale(1.1)"/>
+      <use href="#silvermini" transform="translate(-9 3) scale(.9) rotate(-10)"/>
+    </g>
+    <!-- vignette -->
+    <path d="M13 13 H107 V132 H13 Z" fill="none" stroke="#16222D" stroke-width="10" opacity=".16"/>
+  </g>
+  <rect x="13" y="13" width="94" height="119" rx="5" fill="none" stroke="#3B2F2F" stroke-width="1.6"/>
+
+  <!-- corner medallions -->
+  <g>
+    <circle cx="18.5" cy="18.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="101.5" cy="18.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="18.5" cy="126.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="101.5" cy="126.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <use href="#silvermini" transform="translate(18.5 18.5) scale(.85)"/>
+    <use href="#silvermini" transform="translate(101.5 18.5) scale(.85) rotate(10)"/>
+    <use href="#silvermini" transform="translate(18.5 126.5) scale(.85) rotate(-10)"/>
+    <use href="#silvermini" transform="translate(101.5 126.5) scale(.85)"/>
+  </g>
+
+  <path d="M13 136 H107 V151 Q107 155 103 155 H17 Q13 155 13 151 Z" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.4"/>
+  <path d="M17 139 H103" stroke="#C9A227" stroke-width="1" opacity=".9"/>
+  <circle cx="60" cy="160" r="1.8" fill="#C9A227" stroke="#8B6A3C" stroke-width=".6"/>
+</svg>

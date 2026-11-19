@@ -540,9 +540,16 @@ button {
   transition: fill 0.15s ease;
 }
 
+.token-disc {
+  fill: #f6eedb;
+  stroke: var(--ink);
+  stroke-width: 1.3px;
+  filter: drop-shadow(0 1.2px 1px rgba(27, 21, 18, 0.4));
+}
+
 .token-num {
   font-family: var(--font-logo);
-  font-size: 20px;
+  font-size: 17px;
   fill: var(--ink);
   pointer-events: none;
 }
@@ -550,7 +557,7 @@ button {
 .token-num.hot {
   fill: var(--danger);
   font-weight: 900;
-  font-size: 23px;
+  font-size: 19.5px;
 }
 
 .blocker-glyph {
@@ -563,7 +570,7 @@ button {
    outline (V2 — at 13px/3px stroke the colon was swallowed and read as "31"). */
 .harbor-ratio {
   font-family: var(--font-logo);
-  font-size: 16px;
+  font-size: 13.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
   fill: var(--ink);
@@ -573,35 +580,23 @@ button {
   stroke-linejoin: round;
 }
 
-/* Harbor out in the sea (Harbor.tsx): wooden piers from the coast corners to a dock, and a
-   parchment badge [icon · ratio] beyond the dock, rimmed in the harbor's resource colour. */
+/* Harbor tile (Harbor.tsx): a sea hex next to the coast with two wooden jetties and a
+   printed parchment medallion [icon over ratio], rimmed in the harbor's goods colour. */
 .harbor-pier {
   fill: #a6743e;
   stroke: var(--ink);
-  stroke-width: 1.4;
+  stroke-width: 1.2;
 }
 
 .harbor-plank {
   stroke: #6b4e2e;
-  stroke-width: 1;
+  stroke-width: 0.9;
 }
 
-.harbor-dock {
-  fill: #8a5a2b;
-  stroke: var(--ink);
-  stroke-width: 1.6;
-}
-
-.harbor-post {
-  fill: #5b4126;
-  stroke: var(--ink);
-  stroke-width: 1;
-}
-
-.harbor-badge {
-  fill: var(--parchment);
-  stroke-width: 2.5;
-  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.35));
+.harbor-medallion {
+  fill: #f6eedb;
+  stroke-width: 2.6px;
+  filter: drop-shadow(0 1.2px 1px rgba(27, 21, 18, 0.4));
 }
 
 .hl-vertex {
