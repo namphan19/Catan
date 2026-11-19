@@ -679,6 +679,9 @@ button {
 .dialog-overlay.docked .dialog {
   pointer-events: auto;
   max-width: 420px;
+  /* The overlay's top padding already eats 206px: cap to what is left so the actions stay on screen
+     (the body scrolls instead of the dialog running off the bottom). */
+  max-height: calc(100vh - 222px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 @media (max-width: 1180px) {
@@ -686,6 +689,7 @@ button {
 }
 @media (max-width: 900px) {
   .dialog-overlay.docked { place-items: end center; padding: 16px; }
+  .dialog-overlay.docked .dialog { max-height: calc(100vh - 32px); }
 }
 
 .dialog {
@@ -812,12 +816,43 @@ button {
   margin-top: 10px;
 }
 
-/* Give / get side by side when there is room (keeps the dialog short), stacked on narrow screens. */
-.trade-sides {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 8px;
+/* Offer / counter composer: one table, a row per card kind (card | have | give | get). */
+.trade-grid {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
 }
+.trade-grid th,
+.trade-grid td {
+  padding: 3px 4px;
+  text-align: center;
+  white-space: nowrap;
+}
+.trade-grid thead th {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--ink-soft);
+  border-bottom: 2px solid var(--ink);
+}
+.trade-grid tbody tr + tr > * {
+  border-top: 1px solid rgba(59, 47, 47, 0.15);
+}
+.trade-grid tbody th {
+  text-align: left;
+  font-weight: normal;
+}
+.trade-grid .col-give { background: rgba(178, 34, 34, 0.06); }
+.trade-grid .col-get { background: rgba(46, 125, 50, 0.07); }
+.trade-grid .col-have { color: var(--ink-soft); }
+.trade-grid .stepper { gap: 4px; }
+.trade-grid .stepper .btn {
+  min-height: 26px;
+  padding: 1px 7px;
+}
+.trade-grid .stepper output { color: var(--ink-soft); }
+.trade-grid .stepper output.on { color: var(--ink); }
 
 .trade-from {
   margin: 0 0 8px;

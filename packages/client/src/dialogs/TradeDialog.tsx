@@ -444,26 +444,14 @@ function OfferComposer({
       }}
     >
       <p className="hint">{t(mode === 'offer' ? 'dlg_offerHint' : 'dlg_counterHint')}</p>
-      <div className="trade-sides">
-        <Fieldset label={t('dlg_youGive')}>
-          <BagSteppers
-            side="give"
-            bag={give}
-            onBump={(r, d) => bump(give, setGive, r, d, hand[r] ?? 0)}
-            hand={hand}
-            t={t}
-          />
-        </Fieldset>
-        <Fieldset label={t('dlg_youGet')}>
-          <BagSteppers
-            side="get"
-            bag={get}
-            onBump={(r, d) => bump(get, setGet, r, d, mode === 'offer' ? 99 : partnerHand)}
-            hand={hand}
-            t={t}
-          />
-        </Fieldset>
-      </div>
+      <TradeGrid
+        give={give}
+        get={get}
+        hand={hand}
+        onGive={(r, d) => bump(give, setGive, r, d, hand[r] ?? 0)}
+        onGet={(r, d) => bump(get, setGet, r, d, mode === 'offer' ? 99 : partnerHand)}
+        t={t}
+      />
       {empty ? (
         <p className="hint">{t('dlg_pickBoth')}</p>
       ) : (
@@ -483,50 +471,59 @@ function OfferComposer({
   );
 }
 
-function BagSteppers({
-  side,
-  bag,
-  onBump,
+/** One table for both sides of an offer: card | you give | you get | you have (one row per kind). */
+function TradeGrid({
+  give,
+  get,
   hand,
+  onGive,
+  onGet,
   t,
 }: {
-  side: 'give' | 'get';
-  bag: Bag;
-  onBump: (r: string, d: number) => void;
+  give: Bag;
+  get: Bag;
   hand: Bag;
+  onGive: (r: string, d: number) => void;
+  onGet: (r: string, d: number) => void;
   t: TFn;
 }) {
-  const sideName = t(side === 'give' ? 'dlg_youGive' : 'dlg_youGet');
+  const step = (r: string, bag: Bag, sideName: string, onBump: (r: string, d: number) => void, maxed: boolean) => (
+    <div className="stepper">
+      <Button aria-label={`− ${t(resKey(r))} (${sideName})`} disabled={(bag[r] ?? 0) === 0} onClick={() => onBump(r, -1)}>
+        −
+      </Button>
+      <output className={(bag[r] ?? 0) > 0 ? 'on' : undefined}>{bag[r] ?? 0}</output>
+      <Button aria-label={`+ ${t(resKey(r))} (${sideName})`} disabled={maxed} onClick={() => onBump(r, +1)}>
+        +
+      </Button>
+    </div>
+  );
   return (
-    <ul className="pick-list">
-      {resourceKinds(hand).map((r) => (
-        <li key={r} className="pick-row">
-          <span className="res-chip" style={{ '--res': RESOURCE_COLORS[r] } as React.CSSProperties}>
-            <ResourceIcon res={r} size={18} />
-            <span className="res-name">{t(resKey(r))}</span>
-            {/* Only the give side shows the own count: on the get side it read like an offer. */}
-            {side === 'give' && <span className="res-count" title={t('dlg_inHand')}>{hand[r] ?? 0}</span>}
-          </span>
-          <div className="stepper">
-            <Button
-              aria-label={`− ${t(resKey(r))} (${sideName})`}
-              disabled={(bag[r] ?? 0) === 0}
-              onClick={() => onBump(r, -1)}
-            >
-              −
-            </Button>
-            <output>{bag[r] ?? 0}</output>
-            <Button
-              aria-label={`+ ${t(resKey(r))} (${sideName})`}
-              disabled={side === 'give' && (bag[r] ?? 0) >= (hand[r] ?? 0)}
-              onClick={() => onBump(r, +1)}
-            >
-              +
-            </Button>
-          </div>
-        </li>
-      ))}
-    </ul>
+    <table className="trade-grid">
+      <thead>
+        <tr>
+          <th scope="col">{t('dlg_colCard')}</th>
+          <th scope="col" className="col-have" title={t('dlg_inHand')}>{t('dlg_colHave')}</th>
+          <th scope="col" className="col-give">{t('dlg_youGive')}</th>
+          <th scope="col" className="col-get">{t('dlg_youGet')}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {resourceKinds(hand).map((r) => (
+          <tr key={r}>
+            <th scope="row">
+              <span className="res-chip" style={{ '--res': RESOURCE_COLORS[r] } as React.CSSProperties}>
+                <ResourceIcon res={r} size={18} />
+                <span className="res-name">{t(resKey(r))}</span>
+              </span>
+            </th>
+            <td className="col-have res-count">{hand[r] ?? 0}</td>
+            <td className="col-give">{step(r, give, t('dlg_youGive'), onGive, (give[r] ?? 0) >= (hand[r] ?? 0))}</td>
+            <td className="col-get">{step(r, get, t('dlg_youGet'), onGet, false)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 

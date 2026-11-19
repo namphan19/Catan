@@ -163,6 +163,8 @@ export const en: Record<string, string> = {
   dlg_youGive: 'You give',
   dlg_youGet: 'You get',
   dlg_inHand: 'Cards you hold',
+  dlg_colCard: 'Card',
+  dlg_colHave: 'You have',
   dlg_bankNone: 'You do not hold enough cards of one kind to trade with the bank (4:1, or 3:1 / 2:1 with a harbor).',
   dlg_bankNotTurn: 'You can only trade with the bank on your own turn.',
   dlg_bankRollFirst: 'Roll the dice first, then trade.',

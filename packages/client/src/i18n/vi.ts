@@ -176,6 +176,8 @@ export const vi: Record<string, string> = {
   dlg_youGive: 'Bạn đưa',
   dlg_youGet: 'Bạn nhận',
   dlg_inHand: 'Số lá bạn đang có',
+  dlg_colCard: 'Lá bài',
+  dlg_colHave: 'Bạn có',
   dlg_bankNone: 'Bạn chưa có đủ lá cùng loại để đổi với ngân hàng (4:1, hoặc 3:1 / 2:1 nếu có cảng).',
   dlg_bankNotTurn: 'Bạn chỉ đổi với ngân hàng được trong lượt của mình.',
   dlg_bankRollFirst: 'Hãy gieo xúc xắc trước, rồi mới đổi bài.',
