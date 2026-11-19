@@ -1101,3 +1101,173 @@ button {
   border-radius: 10px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
+
+/* ---------- Room chat: floating bubble + panel ---------- */
+.chat {
+  z-index: 45;
+}
+/* In the game: board area, under the zoom buttons (open sea, clear of dice, cost card, toasts). */
+.chat-board {
+  position: absolute;
+  left: 10px;
+  top: 140px;
+}
+/* In the lobby: bottom-right corner of the page. */
+.chat-page {
+  position: fixed;
+  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: 8px;
+}
+.chat-bubble {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background: var(--parchment);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+.chat-bubble:hover {
+  transform: scale(1.06);
+}
+.chat-bubble[aria-expanded='true'] {
+  background: var(--gold);
+}
+.chat-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 11px;
+  border: 2px solid var(--parchment);
+  background: var(--danger);
+  color: #fff;
+  font: 700 0.75rem/18px var(--font-body);
+  text-align: center;
+}
+.chat-bubble.has-unread {
+  animation: chat-pulse 1.6s ease-in-out 3;
+}
+@keyframes chat-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+.chat-panel {
+  width: min(320px, calc(100vw - 32px));
+  height: min(380px, 60vh);
+  display: flex;
+  flex-direction: column;
+  background: var(--parchment);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+.chat-board .chat-panel {
+  margin-top: 8px;
+  max-height: calc(100vh - 360px);
+  min-height: 200px;
+}
+.chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px 4px 12px;
+  border-bottom: 2px solid var(--ink);
+}
+.chat-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+.chat-list {
+  flex: 1;
+  margin: 0;
+  padding: 8px 10px;
+  list-style: none;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.chat-empty {
+  color: var(--ink-soft);
+  font-style: italic;
+  font-size: 0.9rem;
+}
+.chat-line {
+  display: flex;
+  flex-direction: column;
+  max-width: 85%;
+  align-self: flex-start;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(59, 47, 47, 0.2);
+}
+.chat-line.mine {
+  align-self: flex-end;
+  background: rgba(201, 162, 39, 0.22);
+}
+.chat-meta {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 0.75rem;
+}
+.chat-dot {
+  align-self: center;
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+  border: 1px solid var(--ink);
+}
+.chat-meta time {
+  color: var(--ink-soft);
+}
+.chat-text {
+  font-size: 0.92rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.chat-form {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-top: 2px solid var(--ink);
+}
+.chat-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  font: inherit;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: #fff;
+}
+/* Narrow screens: the board area is short, so the open panel docks to the bottom of the screen. */
+@media (max-width: 900px) {
+  .chat-board .chat-panel {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    height: min(380px, 60vh);
+    max-height: none;
+    margin: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-bubble, .chat-bubble.has-unread { animation: none; transition: none; }
+}

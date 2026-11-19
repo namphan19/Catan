@@ -24,6 +24,8 @@ export type OutMsg =
   | { type: 'startGame' }
   | { type: 'kick'; seat: string }
   | { type: 'addBot'; level: BotLevel }
+  /** Lobby or game: a chat line to everyone in my room. */
+  | { type: 'chat'; text: string }
   /** Running game only: a stand-in bot plays my seat while I am away (afk: true), or I take it back. */
   | { type: 'setAfk'; afk: boolean }
   | { type: 'action'; action: unknown }
@@ -44,9 +46,27 @@ export type ServerMsg =
     }
   | { type: 'state'; view: unknown; legal: unknown[]; seq: number }
   | { type: 'events'; events: unknown[]; seq: number }
+  /** A chat line, to everyone in the room (the sender too). */
+  | { type: 'chat'; message: ChatMessage }
+  /** The room's recent chat lines (oldest first), on entering a room / requestState. */
+  | { type: 'chatHistory'; messages: ChatMessage[] }
   /** A seat was handed to its stand-in bot (afk) or taken back - shown to everyone as a popup. */
   | { type: 'afk'; seat: string; name: string; afk: boolean }
   | { type: 'error'; reqId?: string; code: string; message: string };
+
+export interface ChatMessage {
+  /** Grows per room. */
+  id: number;
+  seat: string;
+  /** The sender's name when the line was sent. */
+  name: string;
+  text: string;
+  /** Server time (epoch ms). */
+  at: number;
+}
+
+/** Longest chat line (server: CHAT_MAX_LEN). */
+export const CHAT_MAX_LEN = 300;
 
 export interface RoomSeat {
   seat: string;

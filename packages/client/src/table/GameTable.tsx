@@ -51,9 +51,11 @@ export interface GameTableProps {
    *  pass device, export log, home). PO: one header row instead of two. */
   barInfo?: ReactNode;
   barActions?: ReactNode;
+  /** Extra floating UI inside the board area (online chat bubble). */
+  boardOverlay?: ReactNode;
 }
 
-export function GameTable({ view, legal, onAction, events, validate, errors, onExport, onHome, botSeats, barInfo, barActions }: GameTableProps) {
+export function GameTable({ view, legal, onAction, events, validate, errors, onExport, onHome, botSeats, barInfo, barActions, boardOverlay }: GameTableProps) {
   const { t } = useI18n();
   const name = useName();
   const check = validate ?? (() => ({ ok: true } as Validation));
@@ -389,6 +391,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
           <CostCard view={view} />
           {sh && <AdvanceHand view={view} sh={sh} legal={legal} onStart={startChoice} />}
           <ToastStack toasts={toasts} />
+          {boardOverlay}
           {reveals.current && <CardReveal reveal={reveals.current} onClose={reveals.close} t={t} name={name} />}
           {boardHint && !(choice && stage?.board) && (
             <div className="board-hint" role="status">

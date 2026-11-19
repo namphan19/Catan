@@ -331,6 +331,16 @@ export const en: Record<string, string> = {
   afk_popOff: '{name} is back and plays again. The bot no longer plays for them.',
   afk_ok: 'Got it',
 
+  // Room chat (floating bubble).
+  chat_title: 'Chat',
+  chat_open: 'Open chat',
+  chat_openUnread: 'Open chat ({n} new)',
+  chat_hide: 'Hide chat',
+  chat_empty: 'No messages yet. Say hello!',
+  chat_placeholder: 'Type a message…',
+  chat_send: 'Send',
+  chat_you: 'You',
+
   // Server error codes (protocol + engine) — unknown codes show the server message.
   err_unknown: 'Server error: {msg}',
   err_BAD_MESSAGE: 'Invalid message.',
@@ -389,6 +399,8 @@ export const en: Record<string, string> = {
   err_BAD_TARGET: 'Invalid target.',
   err_BAD_VERTEX: 'Invalid vertex.',
   err_AFK_ACTIVE: `A bot is playing for you; click "I'm back" first.`,
+  err_BAD_CHAT: 'A message must be 1 to 300 characters long.',
+  err_CHAT_RATE: 'You are sending messages too fast; wait a few seconds.',
   err_KICKED: 'The host removed you from the room.',
   err_SEAT_TAKEN_OVER: 'Another session took over your seat. Rejoin the room to reclaim it.',
 

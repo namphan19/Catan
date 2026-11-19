@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Action, GameEvent, PlayerView } from '@hexgame/engine';
 import { Connection } from '../net/connection';
-import type { BotLevel, RoomInfo, RoomOptions, ServerMsg } from '../net/protocol';
+import type { BotLevel, ChatMessage, RoomInfo, RoomOptions, ServerMsg } from '../net/protocol';
 import { AFK_BOT_LEVEL, CODE_RE } from '../net/protocol';
 import { useErrorText } from '../net/errors';
 import { useI18n } from '../i18n';
@@ -15,6 +15,7 @@ import { Lobby } from './Lobby';
 import { GameTable } from '../table/GameTable';
 import { Dialog } from '../ui/Dialog';
 import { Button } from '../ui/Button';
+import { ChatBubble } from './ChatBubble';
 
 /** A seat was handed to its stand-in bot or taken back (server `afk` message). */
 interface AfkNotice {
@@ -55,6 +56,8 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
   /** Popups for the other players' "a bot plays for me" / "I am back" switches, oldest first. */
   const [afkNotices, setAfkNotices] = useState<AfkNotice[]>([]);
   const afkSeq = useRef(0);
+  /** Chat lines of the current room, oldest first. */
+  const [chat, setChat] = useState<ChatMessage[]>([]);
 
   // Latest values for the connection callbacks (created once, closure-safe via refs).
   const nameRef = useRef(name);
@@ -93,6 +96,15 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
         setEvents((prev) => [...prev, ...(msg.events as GameEvent[])]);
         break;
       }
+      case 'chat': {
+        const m = msg.message;
+        setChat((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m].slice(-100)));
+        break;
+      }
+      case 'chatHistory':
+        // Authoritative recent history (join / reconnect): replaces what we had.
+        setChat(msg.messages);
+        break;
       case 'afk': {
         // My own switch needs no popup: the "a bot plays for you" banner shows it.
         if (msg.seat !== roomRef.current?.you)
@@ -123,6 +135,7 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
     setEvents([]);
     setErrors([]);
     setAfkNotices([]);
+    setChat([]);
   }, []);
 
   /** Final WebSocket close codes (no reconnect): 4001 KICKED clears the session and shows
@@ -236,6 +249,10 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
     connRef.current?.send({ type: 'setAfk', afk });
   }, []);
 
+  const sendChat = useCallback((text: string) => {
+    connRef.current?.send({ type: 'chat', text });
+  }, []);
+
   const sendAction = useCallback((a: Action) => {
     // The server only accepts actions naming our own seat; legal actions from the server
     // already carry it, but be defensive for engine shapes without a player field.
@@ -295,6 +312,9 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
           onLangToggle={onLangToggle}
         />
       )}
+      {screen === 'lobby' && room && (
+        <ChatBubble messages={chat} you={room.you} onSend={sendChat} placement="page" roomCode={room.code} />
+      )}
       {screen === 'game' && room && (
         <NamesProvider names={names}>
           <div className="shell">
@@ -332,6 +352,9 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
                 errors={errors}
                 onHome={leaveRoom}
                 botSeats={botSeats}
+                boardOverlay={
+                  <ChatBubble messages={chat} you={room.you} onSend={sendChat} placement="board" roomCode={room.code} />
+                }
               />
             ) : (
               <div className="shell-strip">

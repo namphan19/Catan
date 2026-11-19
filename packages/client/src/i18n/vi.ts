@@ -347,6 +347,16 @@ export const vi: Record<string, string> = {
   afk_popOff: '{name} đã quay lại và tự chơi tiếp. Bot không còn chơi thay nữa.',
   afk_ok: 'Đã hiểu',
 
+  // Room chat (floating bubble).
+  chat_title: 'Trò chuyện',
+  chat_open: 'Mở trò chuyện',
+  chat_openUnread: 'Mở trò chuyện ({n} tin mới)',
+  chat_hide: 'Ẩn trò chuyện',
+  chat_empty: 'Chưa có tin nhắn nào. Chào mọi người đi!',
+  chat_placeholder: 'Nhập tin nhắn…',
+  chat_send: 'Gửi',
+  chat_you: 'Bạn',
+
   // Server error codes (protocol + engine) — unknown codes show the server message.
   err_unknown: 'Lỗi từ máy chủ: {msg}',
   err_BAD_MESSAGE: 'Tin nhắn không hợp lệ.',
@@ -405,6 +415,8 @@ export const vi: Record<string, string> = {
   err_BAD_TARGET: 'Đích không hợp lệ.',
   err_BAD_VERTEX: 'Đỉnh không hợp lệ.',
   err_AFK_ACTIVE: 'Bot đang chơi thay bạn; bấm "Tôi đã quay lại" trước.',
+  err_BAD_CHAT: 'Tin nhắn phải dài 1 đến 300 ký tự.',
+  err_CHAT_RATE: 'Bạn gửi tin nhắn nhanh quá, đợi vài giây nhé.',
   err_KICKED: 'Bạn đã bị chủ phòng mời ra khỏi phòng.',
   err_SEAT_TAKEN_OVER: 'Một phiên khác đã vào chỗ của bạn. Hãy vào lại phòng để lấy lại chỗ.',
 

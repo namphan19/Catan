@@ -24,7 +24,7 @@ import {
   type PlayerId,
 } from '@hexgame/engine';
 import {
-  AFK_BOT_LEVEL, CODE_RE, parseClientMessage, type BotLevelName, type ClientMsg, type RoomOptions, type ServerMsg,
+  AFK_BOT_LEVEL, CODE_RE, parseClientMessage, type BotLevelName, type ChatMessage, type ClientMsg, type RoomOptions, type ServerMsg,
 } from './protocol';
 import { RoomStore, type PersistedRoom } from './store';
 
@@ -44,6 +44,8 @@ export interface ConnRecord {
   seat: PlayerId | null;
   /** Failed joinRoom attempts on this connection (brute-force budget, see limits.ts). */
   failedJoins: number;
+  /** Times of this connection's recent chat lines (chat rate limit). */
+  chatTimes: number[];
 }
 
 interface RoomPlayer {
@@ -76,6 +78,10 @@ interface Room {
   tradeSince?: number;
   /** An expert bot is searching; set `cancelled` to drop the result. */
   thinking?: { cancelled: boolean };
+  /** The last CHAT_HISTORY chat lines (memory only, not persisted). */
+  chat: ChatMessage[];
+  /** Id of the last chat line. */
+  chatSeq: number;
 }
 
 export interface HubOptions {
@@ -103,6 +109,12 @@ export const DEFAULT_BOT_TRADE_WAIT_MS = BOT_TRADE_WAIT_MS;
 export const DEFAULT_BOT_RESPOND_DELAY_MS = BOT_RESPOND_DELAY_MS;
 /** Bot seats are named "Bot", "Bot 2", ...; clients show the level from the seat's `bot` field. */
 const BOT_NAME = 'Bot';
+
+/** Chat lines a room keeps for players who join or reconnect later. */
+export const CHAT_HISTORY = 50;
+/** Chat rate limit per connection: at most CHAT_BURST lines per CHAT_WINDOW_MS. */
+export const CHAT_BURST = 5;
+export const CHAT_WINDOW_MS = 10_000;
 
 export const DEFAULT_ROOM_LIMIT = 50;
 export const DEFAULT_IDLE_MS = 30 * 60 * 1000;
@@ -182,6 +194,7 @@ export class Hub {
       roomCode: null,
       seat: null,
       failedJoins: 0,
+      chatTimes: [],
     };
     this.conns.set(conn.id, rec);
     return rec;
@@ -255,6 +268,8 @@ export class Hub {
           players,
           game: { state, actions: [...p.actions] },
           emptySince: Date.now(),
+          chat: [],
+          chatSeq: 0,
         };
         this.rooms.set(room.code, room);
         count++;
@@ -311,6 +326,9 @@ export class Hub {
         break;
       case 'setAfk':
         this.onSetAfk(rec, msg);
+        break;
+      case 'chat':
+        this.onChat(rec, msg);
         break;
       case 'action':
         this.onAction(rec, msg);
@@ -372,6 +390,8 @@ export class Hub {
       started: false,
       players: [player],
       emptySince: null,
+      chat: [],
+      chatSeq: 0,
     };
     this.rooms.set(room.code, room);
     this.attachToRoom(rec, room, 0);
@@ -399,6 +419,7 @@ export class Hub {
       this.afterRoomChange(room);
       console.log(`[room] ${room.code} ${rec.seat} reconnected`);
       rec.conn.send({ type: 'room', ...this.roomMsg(room, rec) });
+      this.sendChatHistory(rec, room);
       if (room.started) {
         this.sendState(rec, room);
         this.scheduleBots(room); // bots pause while nobody is connected
@@ -419,6 +440,7 @@ export class Hub {
     this.afterRoomChange(room);
     this.broadcastRoom(room);
     rec.conn.send({ type: 'room', ...this.roomMsg(room, rec) });
+    this.sendChatHistory(rec, room);
   }
 
   private onLeaveRoom(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'leaveRoom' }>): void {
@@ -532,6 +554,33 @@ export class Hub {
     console.log(`[room] ${room.code} ${seatOf(room.players.length - 1)} bot added (${msg.level})`);
     this.afterRoomChange(room);
     this.broadcastRoom(room);
+  }
+
+  // ------------------------------------------------------------------ chat
+
+  /** Lobby or game: relay a chat line to everyone in the room and keep it in the short history. */
+  private onChat(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'chat' }>): void {
+    const room = rec.roomCode ? this.rooms.get(rec.roomCode) : undefined;
+    const idx = room && rec.token ? room.players.findIndex((p) => hashEquals(p.tokenHash, hashToken(rec.token))) : -1;
+    if (!room || !rec.seat || idx === -1) {
+      this.error(rec.conn, msg.reqId, 'NOT_IN_ROOM', 'You are not in a room.');
+      return;
+    }
+    const now = Date.now();
+    rec.chatTimes = rec.chatTimes.filter((at) => now - at < CHAT_WINDOW_MS);
+    if (rec.chatTimes.length >= CHAT_BURST) {
+      this.error(rec.conn, msg.reqId, 'CHAT_RATE', 'You are sending chat messages too fast.');
+      return;
+    }
+    rec.chatTimes.push(now);
+    const message: ChatMessage = { id: ++room.chatSeq, seat: seatOf(idx), name: room.players[idx].name, text: msg.text, at: now };
+    room.chat.push(message);
+    if (room.chat.length > CHAT_HISTORY) room.chat.splice(0, room.chat.length - CHAT_HISTORY);
+    for (const r of this.connsInRoom(room)) r.conn.send({ type: 'chat', message });
+  }
+
+  private sendChatHistory(rec: ConnRecord, room: Room): void {
+    rec.conn.send({ type: 'chatHistory', messages: room.chat });
   }
 
   // ------------------------------------------------------------------ game
@@ -785,6 +834,7 @@ export class Hub {
       return;
     }
     rec.conn.send({ type: 'room', ...this.roomMsg(room, rec) });
+    this.sendChatHistory(rec, room);
     if (room.started) this.sendState(rec, room);
   }
 
