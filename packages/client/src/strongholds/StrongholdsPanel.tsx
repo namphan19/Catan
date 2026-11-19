@@ -181,6 +181,56 @@ export function StrongholdsPanel({ view, sh, legal, onStart }: PanelProps) {
           {/* The viewer's advance cards moved to the bottom-left of the board (AdvanceHand). */}
         </>
       )}
+
+      {/* PO 2026-11-19: the freed log space shows what each track gives: the level-3 perk, the
+          level-4 capital and who holds it, the cards left in its deck; then the caravan. */}
+      <div className="sh-group sh-tracks">
+        <span className="sh-label">{t('sh_tracks')}</span>
+        {TRACKS.map((tr) => {
+          const cap = sh.capitals[tr];
+          const myLevel = me ? sh.levels[me]?.[tr] ?? 0 : 0;
+          const fixed = !!cap && sh.levels[cap.owner]?.[tr] >= SH.maxLevel;
+          return (
+            <div key={tr} className="sh-trackinfo" data-track={tr}>
+              <div className="sh-trackinfo-head">
+                <ResourceIcon res={SH.trackCommodity[tr]} size={16} />
+                <b>{trackName(t, tr)}</b>
+                <span className="sh-muted sh-trackinfo-deck">{t('sh_deckLeft', { n: sh.deckCounts[tr] ?? 0 })}</span>
+              </div>
+              <p className={myLevel >= SH.perkLevel ? 'sh-trackinfo-row sh-reached' : 'sh-trackinfo-row'}>
+                <span className="sh-trackinfo-lvl">{t('sh_perkAt', { n: SH.perkLevel })}</span>{' '}
+                {t(`sh_perk_${tr}`)}
+                {myLevel >= SH.perkLevel && (
+                  <span className="sh-tick" title={t('sh_reached')} aria-label={t('sh_reached')}>
+                    ✓
+                  </span>
+                )}
+              </p>
+              <p className="sh-trackinfo-row">
+                <span className="sh-trackinfo-lvl">{t('sh_capitalAt', { n: SH.capitalLevel, vp: SH.capitalVP })}</span>:{' '}
+                {cap ? (
+                  <span className="sh-trackinfo-owner">
+                    <Emblem id={playerEmblem(cap.owner)} size={12} color={playerColor(cap.owner)} /> {name(cap.owner)}
+                    {fixed && <span className="sh-muted"> ({t('sh_capitalFixed')})</span>}
+                  </span>
+                ) : (
+                  <span className="sh-muted">{t('sh_capitalNone')}</span>
+                )}
+              </p>
+            </div>
+          );
+        })}
+        <p className="sh-raid-info">
+          {sh.caravan ? (
+            <>
+              <Emblem id={playerEmblem(sh.caravan.owner)} size={12} color={playerColor(sh.caravan.owner)} />{' '}
+              {t('sh_caravanHolder', { name: name(sh.caravan.owner), vp: SH.caravanVP })}
+            </>
+          ) : (
+            <span className="sh-muted">{t('sh_caravanNone')}</span>
+          )}
+        </p>
+      </div>
     </section>
   );
 }

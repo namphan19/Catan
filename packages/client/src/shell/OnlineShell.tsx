@@ -266,17 +266,15 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
       {screen === 'game' && room && (
         <NamesProvider names={names}>
           <div className="shell">
-            <div className="shell-strip">
-              <span className="shell-viewing">{t('net_room', { code: room.code })}</span>
-              <button type="button" className="btn btn-ghost" onClick={onLangToggle}>
-                🌐 {t('langToggle')}
-              </button>
-              <button type="button" className="btn btn-ghost" onClick={leaveRoom}>
-                {t('net_home')}
-              </button>
-            </div>
+            {/* The room code and the home button live in the game's single top bar. */}
             {view ? (
               <GameTable
+                barInfo={<span className="shell-viewing">{t('net_room', { code: room.code })}</span>}
+                barActions={
+                  <button type="button" className="btn btn-ghost" onClick={leaveRoom}>
+                    {t('net_home')}
+                  </button>
+                }
                 view={view}
                 legal={legal}
                 onAction={sendAction}
@@ -286,7 +284,13 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
                 botSeats={botSeats}
               />
             ) : (
-              <p className="hint net-loading">{t('net_loading')}</p>
+              <div className="shell-strip">
+                <span className="shell-viewing">{t('net_room', { code: room.code })}</span>
+                <button type="button" className="btn btn-ghost" onClick={leaveRoom}>
+                  {t('net_home')}
+                </button>
+                <p className="hint net-loading">{t('net_loading')}</p>
+              </div>
             )}
           </div>
         </NamesProvider>

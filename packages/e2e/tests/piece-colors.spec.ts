@@ -3,8 +3,13 @@
 // the player colour. This spec renders the 4-player setup with REAL clicks and then
 // asserts, in the browser's computed style, that piece shapes really are painted in the
 // players' colours (from ui/colors.ts -> tokens.css --p1..--p6) and never black, for
-// settlements AND a road. It also checks the colour-blind safety pairing: every building
-// carries the owner's emblem seal, and the art keeps its ink outline.
+// settlements AND a road. It also checks that the pieces carry no emblem seal (PO decision)
+// and that the art keeps its outline / painted sprite.
+//
+// Two art modes are accepted: the painted Tripo sprites (art2d/piece/*.webp, grey art tinted
+// by a per-seat multiply filter whose feFlood carries the player colour) and the vector
+// fallback (inline SVG with fill="currentColor"). Either way the probe reports the colour
+// the piece is painted with.
 import { test, expect, type Page } from '@playwright/test';
 import { PLAYER_COLORS } from '../../client/src/ui/colors';
 import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
@@ -43,15 +48,29 @@ async function probePieces(page: Page): Promise<PieceProbe> {
       Array.from(document.querySelectorAll(sel))
         .map((el) => getComputedStyle(el as Element).fill)
         .filter((f) => f !== 'none');
+    // Painted sprite: <image filter="url(#tint-pN)">; its colour is the filter's flood colour.
+    const tints = (sel: string) =>
+      Array.from(document.querySelectorAll(sel)).map((el) => {
+        const id = /url\(#([\w-]+)\)/.exec(el.getAttribute('filter') ?? '')?.[1];
+        const flood = id ? document.getElementById(id)?.querySelector('feFlood') : null;
+        return flood ? getComputedStyle(flood).floodColor : 'none';
+      });
+    const sprites = (sel: string) => tints(sel.split(',').map((x) => `${x.trim()}[data-sprite]`).join(', '));
     const buildings = document.querySelectorAll('.pieces .piece-settlement, .pieces .piece-city').length;
     return {
       // Only the art's currentColor shapes: strokes-only decoration keeps SVG's default
       // black fill (unpainted), which must not count as a "black piece".
-      buildingFills: fills('.pieces .piece-settlement [fill="currentColor"], .pieces .piece-city [fill="currentColor"]'),
-      roadFills: fills('.pieces .piece-road [fill="currentColor"]'),
+      buildingFills: [
+        ...fills('.pieces .piece-settlement [fill="currentColor"], .pieces .piece-city [fill="currentColor"]'),
+        ...sprites('.pieces .piece-settlement, .pieces .piece-city'),
+      ],
+      roadFills: [...fills('.pieces .piece-road [fill="currentColor"]'), ...sprites('.pieces .piece-road')],
       buildings,
       emblemSeals: document.querySelectorAll('.pieces .piece-emblem').length,
-      outlinedPaths: document.querySelectorAll('.pieces .piece-body [stroke="#3B2F2F"]').length,
+      // Vector art keeps the artist's ink outline; painted sprites carry their own shading.
+      outlinedPaths:
+        document.querySelectorAll('.pieces .piece-body [stroke="#3B2F2F"]').length +
+        document.querySelectorAll('.pieces [data-sprite]').length,
     };
   });
 }
@@ -94,10 +113,10 @@ test('4-player setup: settlements and roads render in player colours, never blac
     expect(expected.has(f), `road fill ${f} must be a player colour from ui/colors.ts`).toBe(true);
   }
 
-  // Colour is not the only signal: every building carries its owner's emblem seal, and
-  // the art keeps the ink outline from the artist's files.
-  expect(probe.emblemSeals, 'one emblem seal per settlement/city').toBe(probe.buildings);
-  expect(probe.outlinedPaths, 'ink outline present in the inlined piece art').toBeGreaterThan(0);
+  // PO decision (2026-11-18): no emblem seals on the pieces any more (the board is clear
+  // enough by colour); make sure none come back by accident.
+  expect(probe.emblemSeals, 'no emblem seals on settlements/cities').toBe(0);
+  expect(probe.outlinedPaths, 'ink outline (vector) or painted sprite present in the piece art').toBeGreaterThan(0);
 
   await clearHover(page);
   await page.screenshot({ path: shotPath('pieces-colors.png', project), fullPage: true });

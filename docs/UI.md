@@ -39,7 +39,7 @@ Visible names follow the base-game rulebooks; internal ids stay neutral so the e
 | --gold | #C9A227 | highlights, awards |
 | --danger | #A23B2A | errors, 6/8 tokens |
 | --forest #3F7448, --claypit #B85C34, --meadow #8DBE55, --field #D9B754, --quarry #878C94, --waste #DCC28B | terrains |
-Player colours (classic board-game set; every piece also carries its owner's emblem, so colour is never the only signal):
+Player colours (classic board-game set). PO decision 2026-11-18: board pieces no longer carry the owner's emblem (the board is clear enough by colour); emblems stay in the player strip and log:
 p1 #C0392B (red, sun), p2 #2E6DA4 (blue, wave), p3 #E9E0CC (ivory, leaf), p4 #D9822B (orange, star),
 p5 #3E8E4E (green, shield), p6 #7A4B2A (brown, flame).
 

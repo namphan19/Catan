@@ -1,7 +1,7 @@
 // The game table. Takes { view, legal, onAction, events } only (docs/UI.md) so the online
 // client can reuse it. Every button, highlight and dialog option derives from getLegalActions;
 // disabled reasons come from validateAction. No rules logic lives here.
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { BOT_TRADE_WAIT_MS } from '@hexgame/engine';
 import type { Action, GameEvent, PlayerId, PlayerView, StrongholdsView, Validation } from '@hexgame/engine';
 import { StrongholdsPanel } from '../strongholds/StrongholdsPanel';
@@ -17,7 +17,7 @@ import { playerColor, playerEmblem } from '../ui/colors';
 import { Emblem } from '../ui/Emblem';
 import { Button } from '../ui/Button';
 import { ToastStack, useToasts } from '../ui/Toast';
-import { BoardSwitch, readBoardMode, writeBoardMode, type BoardMode } from '../board/BoardSwitch';
+import { Board } from '../board/Board';
 import { EMPTY_HIGHLIGHTS, type Highlights } from '../board/Highlights';
 import { TopBar } from './TopBar';
 import { PlayerCards } from './PlayerCards';
@@ -27,13 +27,11 @@ import { CostCard } from './CostCard';
 import { HelpDialog } from './HelpDialog';
 import { HandPanel } from './HandPanel';
 import { ActionBar, type Pending } from './ActionBar';
-import { SidePanel } from './SidePanel';
 import { describeEvent } from './describe';
 import { DiscardDialog, StealDialog, TradeDialog, CardDialog, type TradeTab, type PickCard } from '../dialogs';
 
-/** PO 2026-11-18: the log side panel (Nhật ký / Đổi bài tabs) is hidden for now. Set to true to
- * bring it back; LogPanel and SidePanel are left untouched. Trade status shows in the trade dialog. */
-const SHOW_LOG = false;
+// PO 2026-11-19: the log side panel (Nhật ký / Đổi bài tabs) is removed; events still show as
+// toasts and trade status in the trade dialog. The side column exists only for the Strongholds panel.
 
 export interface GameTableProps {
   view: PlayerView;
@@ -49,9 +47,13 @@ export interface GameTableProps {
   onHome?: () => void;
   /** Seats played by bots: their trade offers expire after BOT_TRADE_WAIT_MS (shown as a countdown). */
   botSeats?: readonly PlayerId[];
+  /** Shell info + buttons shown inside the game's single top bar (who is viewing / room code,
+   *  pass device, export log, home). PO: one header row instead of two. */
+  barInfo?: ReactNode;
+  barActions?: ReactNode;
 }
 
-export function GameTable({ view, legal, onAction, events, validate, errors, onExport, onHome, botSeats }: GameTableProps) {
+export function GameTable({ view, legal, onAction, events, validate, errors, onExport, onHome, botSeats, barInfo, barActions }: GameTableProps) {
   const { t } = useI18n();
   const name = useName();
   const check = validate ?? (() => ({ ok: true } as Validation));
@@ -59,7 +61,6 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const reveals = useReveals();
   const pushReveal = reveals.push;
   const [pending, setPending] = useState<Pending>(null);
-  const [boardMode, setBoardMode] = useState<BoardMode>(readBoardMode);
   const [tradeTab, setTradeTab] = useState<TradeTab>('bank');
   const [tradeOpen, setTradeOpen] = useState<TradeTab | null>(null);
   const [cardOpen, setCardOpen] = useState<PickCard | null>(null);
@@ -336,18 +337,6 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
     }
   };
 
-  const changeBoardMode = (m: BoardMode) => {
-    setBoardMode(m);
-    writeBoardMode(m);
-  };
-
-  // 3D unavailable / lost its context: switch back to the SVG board and say why.
-  const boardFallback = useCallback(() => {
-    setBoardMode('2d');
-    writeBoardMode('2d');
-    pushToast({ text: t('board3d_fallback'), kind: 'error' });
-  }, [t, pushToast]);
-
   const closeTrade = () => {
     autoOpened.current = false;
     setTradeOpen(null);
@@ -366,11 +355,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
 
   return (
     <div className="table">
-      <TopBar
-        view={view}
-        boardMode={boardMode}
-        onBoardMode={changeBoardMode}
-        onHelp={() => setHelpOpen(true)} />
+      <TopBar view={view} info={barInfo} actions={barActions} onHelp={() => setHelpOpen(true)} />
       {/* PO 2026-11-17: the players sit in one row on top (no status sentence any more); whose turn
           it is shows as the gold ring, what to do next as a pulsing Roll / End turn button. */}
       <div className="seat-strip">
@@ -378,11 +363,8 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
       </div>
       <div className="table-main">
         <div className={sh ? 'board-area has-sh-hand' : 'board-area'}>
-          <BoardSwitch
-            mode={boardMode}
+          <Board
             overlay={sh ? <BoardExtras pieces={view.pieces} sh={sh} /> : undefined}
-            strongholds={sh}
-            onFallback={boardFallback}
             layout={view.init.layout}
             board={view.board}
             pieces={view.pieces}
@@ -436,10 +418,9 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
             </div>
           )}
         </div>
-        {(sh || SHOW_LOG) && (
+        {sh && (
           <aside className="sidecol">
-            {sh && <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />}
-            {SHOW_LOG && <SidePanel view={view} />}
+            <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />
           </aside>
         )}
       </div>
@@ -477,7 +458,15 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
         />
       )}
       {cardOpen && !mustDiscard && !mustSteal && (
-        <CardDialog card={cardOpen} legal={legal} onAction={onAction} onClose={closeCard} />
+        <CardDialog
+          card={cardOpen}
+          legal={legal}
+          onAction={(a) => {
+            onAction(a);
+            closeCard(); // the card is played: its choices are gone, so close instead of showing "no options"
+          }}
+          onClose={closeCard}
+        />
       )}
 
       {choice && stage && !stage.board && (

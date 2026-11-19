@@ -5,10 +5,6 @@ import * as path from 'node:path';
 import { test, expect } from '@playwright/test';
 import { VI, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
 
-test.beforeEach(({}, testInfo) => {
-  test.skip(testInfo.project.name === '3d', 'expansion games use the 2D board');
-});
-
 test('a new expansion game: option, setup with a city, panel and raid track', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   const errors = captureErrors(page);
@@ -49,6 +45,17 @@ test('a mid-game position: wardens on the board and the staged chooser', async (
 
   await expect(page.locator('.sh-panel')).toBeVisible();
   expect(await page.locator('.sh-warden').count()).toBeGreaterThanOrEqual(2);
+  // The panel fills the side column (the log was removed) and ends with the track reference:
+  // perk, capital and deck count for each of the 3 tracks, then the caravan.
+  await expect(page.locator('.sh-panel .sh-trackinfo')).toHaveCount(3);
+  await expect(page.locator('.sh-panel .sh-trackinfo').first()).toContainText('Cấp 3');
+  await expect(page.locator('.sh-panel .sh-trackinfo').first()).toContainText('Kinh đô');
+  const fill = await page.evaluate(() => {
+    const col = document.querySelector('.sidecol')!.getBoundingClientRect();
+    const panel = document.querySelector('.sh-panel')!.getBoundingClientRect();
+    return { col: col.height, panel: panel.height };
+  });
+  expect(fill.panel, `panel ${fill.panel}px of column ${fill.col}px`).toBeGreaterThanOrEqual(fill.col - 4);
   await clearHover(page);
   await page.screenshot({ path: shotPath('strongholds-midgame.png', testInfo.project.name), fullPage: true });
 
@@ -74,7 +81,6 @@ test('a mid-game position: wardens on the board and the staged chooser', async (
   // Start any enabled expansion action: the chooser must ask for a spot on the board or show options.
   const button = page.locator('.sh-panel button[data-sh]:not([disabled]), .sh-panel button[data-improve]:not([disabled])').first();
   if ((await button.count()) > 0) {
-    const before = await page.locator('.log-line, .log li').count();
     await button.click();
     const asking = page.locator('.sh-pickbar, .sh-options');
     const asked = await asking.first().isVisible().catch(() => false);
@@ -85,9 +91,6 @@ test('a mid-game position: wardens on the board and the staged chooser', async (
       if ((await hit.count()) > 0) await hit.click();
       else await page.locator('.sh-options button').first().click();
     }
-    await expect
-      .poll(async () => (await page.locator('.log-line, .log li').count()) >= before)
-      .toBeTruthy();
   }
   expect(errors()).toEqual([]);
 });

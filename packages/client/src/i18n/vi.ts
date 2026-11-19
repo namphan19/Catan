@@ -120,11 +120,6 @@ export const vi: Record<string, string> = {
   board_zoomIn: 'Phóng to',
   board_zoomOut: 'Thu nhỏ',
   board_reset: 'Vừa khung',
-  board_view: 'Kiểu bàn cờ',
-  board_view2d: 'Bàn cờ 2D',
-  board_view3d: 'Bàn cờ 3D',
-  board3d_fallback: '3D không khả dụng trên máy này — đã quay lại bàn cờ 2D.',
-  board3d_loading: 'Đang dựng bàn cờ 3D…',
   board_pickHint: 'Chọn một điểm, cạnh hoặc ô được tô sáng trên bàn cờ.',
   board_pickFirst: 'Hãy chọn một hành động ở thanh dưới trước.',
   board_vertex: 'Điểm',
@@ -140,21 +135,15 @@ export const vi: Record<string, string> = {
   hand_total: 'Tổng: {n}',
 
   // Side panel
-  side_log: 'Nhật ký',
-  side_trade: 'Đổi bài',
   side_costs: 'Chi phí',
   side_costsNote: 'Chi phí của bộ luật cơ bản (đổi theo các bộ luật mở rộng).',
   side_costsRoad: 'Đường',
   side_costsSettlement: 'Làng',
   side_costsCity: 'Thành phố',
   side_costsCard: 'Thẻ phát triển',
-  side_noTrade: 'Không có đề nghị đổi bài nào đang mở.',
-  side_tradeFrom: '{name} đề nghị:',
-  side_tradeResponses: 'Phản hồi:',
   side_pending: 'Chưa trả lời',
   side_accepted: 'Đã chấp nhận',
   side_declined: 'Đã từ chối',
-  log_empty: 'Chưa có nước đi nào.',
 
   // Dialogs
   dlg_close: 'Đóng',
