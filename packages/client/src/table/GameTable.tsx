@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BOT_TRADE_WAIT_MS } from '@hexgame/engine';
 import type { Action, GameEvent, PlayerId, PlayerView, StrongholdsView, Validation } from '@hexgame/engine';
 import { StrongholdsPanel } from '../strongholds/StrongholdsPanel';
+import { AdvanceHand } from '../strongholds/AdvanceHand';
 import { BoardExtras } from '../strongholds/BoardExtras';
 import { BagDialog, ChoiceDialog } from '../strongholds/ChoiceDialogs';
 import { CardReveal, useReveals } from '../strongholds/CardReveal';
@@ -29,6 +30,10 @@ import { ActionBar, type Pending } from './ActionBar';
 import { SidePanel } from './SidePanel';
 import { describeEvent } from './describe';
 import { DiscardDialog, StealDialog, TradeDialog, CardDialog, type TradeTab, type PickCard } from '../dialogs';
+
+/** PO 2026-11-18: the log side panel (Nhật ký / Đổi bài tabs) is hidden for now. Set to true to
+ * bring it back; LogPanel and SidePanel are left untouched. Trade status shows in the trade dialog. */
+const SHOW_LOG = false;
 
 export interface GameTableProps {
   view: PlayerView;
@@ -233,8 +238,9 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const mustSteal = legal.some((a) => a.t === 'steal');
   const mustRespond = legal.some((a) => a.t === 'respondTrade');
 
-  // Open the trade dialog when an offer needs an answer; re-arm on each new offer. An offer the
-  // viewer cannot accept (missing cards) does not pop up: it only shows as a badge.
+  // Open the trade dialog the moment an offer needs an answer; re-arm on each new offer. PO
+  // 2026-11-18: it always pops up, also when the viewer lacks the cards (then only "decline" or a
+  // counter is possible, and the dialog says why accepting is greyed out).
   const offerKey = view.trade
     ? `${view.trade.from}:${JSON.stringify(view.trade.give)}:${JSON.stringify(view.trade.get)}`
     : '';
@@ -247,7 +253,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const myOfferOpen = !!view.trade && view.trade.from === view.viewer;
   const hadMyOffer = useRef(false);
   useEffect(() => {
-    if (mustRespond && canAcceptOffer && offerKey && offerKey !== lastOffer.current) {
+    if (mustRespond && offerKey && offerKey !== lastOffer.current) {
       setTradeOpen('players');
       setTradeTab('players');
       autoOpened.current = true;
@@ -256,7 +262,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
       autoOpened.current = false;
     }
     lastOffer.current = offerKey; // cleared when the offer ends, so the next offer opens again
-  }, [mustRespond, canAcceptOffer, offerKey]);
+  }, [mustRespond, offerKey]);
   useEffect(() => {
     if (hadMyOffer.current && !myOfferOpen) setTradeOpen(null);
     hadMyOffer.current = myOfferOpen;
@@ -371,7 +377,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
         <PlayerCards view={view} />
       </div>
       <div className="table-main">
-        <div className="board-area">
+        <div className={sh ? 'board-area has-sh-hand' : 'board-area'}>
           <BoardSwitch
             mode={boardMode}
             overlay={sh ? <BoardExtras pieces={view.pieces} sh={sh} /> : undefined}
@@ -399,6 +405,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
           />
           <DiceBox view={view} sh={sh} />
           <CostCard view={view} />
+          {sh && <AdvanceHand view={view} sh={sh} legal={legal} onStart={startChoice} />}
           <ToastStack toasts={toasts} />
           {reveals.current && <CardReveal reveal={reveals.current} onClose={reveals.close} t={t} name={name} />}
           {boardHint && !(choice && stage?.board) && (
@@ -429,10 +436,12 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
             </div>
           )}
         </div>
-        <aside className="sidecol">
-          {sh && <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />}
-          <SidePanel view={view} />
-        </aside>
+        {(sh || SHOW_LOG) && (
+          <aside className="sidecol">
+            {sh && <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />}
+            {SHOW_LOG && <SidePanel view={view} />}
+          </aside>
+        )}
       </div>
       <div className="table-bottom">
         <HandPanel view={view} />
