@@ -27,13 +27,11 @@ import { CostCard } from './CostCard';
 import { HelpDialog } from './HelpDialog';
 import { HandPanel } from './HandPanel';
 import { ActionBar, type Pending } from './ActionBar';
-import { SidePanel } from './SidePanel';
 import { describeEvent } from './describe';
 import { DiscardDialog, StealDialog, TradeDialog, CardDialog, type TradeTab, type PickCard } from '../dialogs';
 
-/** PO 2026-11-18: the log side panel (Nhật ký / Đổi bài tabs) is hidden for now. Set to true to
- * bring it back; LogPanel and SidePanel are left untouched. Trade status shows in the trade dialog. */
-const SHOW_LOG = false;
+// PO 2026-11-19: the log side panel (Nhật ký / Đổi bài tabs) is removed; events still show as
+// toasts and trade status in the trade dialog. The side column exists only for the Strongholds panel.
 
 export interface GameTableProps {
   view: PlayerView;
@@ -420,10 +418,9 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
             </div>
           )}
         </div>
-        {(sh || SHOW_LOG) && (
+        {sh && (
           <aside className="sidecol">
-            {sh && <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />}
-            {SHOW_LOG && <SidePanel view={view} />}
+            <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />
           </aside>
         )}
       </div>

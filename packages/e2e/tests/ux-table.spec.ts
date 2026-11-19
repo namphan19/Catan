@@ -113,29 +113,14 @@ test('the board fills the board area', async ({ page }) => {
   expect(errors()).toEqual([]);
 });
 
-test('6 players: six player cards and the log fit without page scroll', async ({ page }) => {
+test('6 players: six player cards fit without page scroll, no log column', async ({ page }) => {
   const errors = captureErrors(page);
   await startGame(page, '6', 'e2e-large');
   await expect(page.locator('.seats .seat')).toHaveCount(6);
-  const m = await page.evaluate(() => {
-    // The log panel is hidden for now (GameTable SHOW_LOG): without it only the page fit is checked.
-    const body = document.querySelector('.sidepanel-body')?.getBoundingClientRect() ?? null;
-    const seats = Array.from(document.querySelectorAll('.seats .seat')).map((s) => s.getBoundingClientRect());
-    return {
-      pageFits: document.documentElement.scrollHeight <= window.innerHeight + 1,
-      hasLog: body !== null,
-      logHeight: body?.height ?? 0,
-      lastSeatBottom: Math.max(...seats.map((r) => r.bottom)),
-      bodyTop: body?.top ?? 0,
-    };
-  });
-  expect(m.pageFits, 'no page scroll').toBe(true);
-  if (!m.hasLog) {
-    expect(errors()).toEqual([]);
-    return;
-  }
-  expect(m.lastSeatBottom, 'player cards end above the log').toBeLessThanOrEqual(m.bodyTop);
-  expect(m.logHeight, `log height ${m.logHeight}`).toBeGreaterThanOrEqual(test.info().project.name === 'tablet' ? 60 : 160);
+  // PO 2026-11-19: the log side panel is removed; a base game has no side column at all.
+  await expect(page.locator('.sidecol')).toHaveCount(0);
+  const pageFits = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);
+  expect(pageFits, 'no page scroll').toBe(true);
   expect(errors()).toEqual([]);
 });
 

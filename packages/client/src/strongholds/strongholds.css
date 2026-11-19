@@ -9,13 +9,36 @@
   border: 2px solid var(--ink);
   border-radius: 6px;
   font-size: 13px;
-  /* The side column has a fixed height: the panel scrolls inside it (the log under it is hidden
-     for now, so it may use the whole column). */
-  flex: 0 1 auto;
-  max-height: 100%;
+  /* The side column has a fixed height and holds only this panel (the log was removed, PO
+     2026-11-19): it fills the whole column and scrolls inside it. */
+  flex: 1 1 auto;
   min-height: 150px;
   overflow-y: auto;
 }
+
+/* Track reference (perk, capital, deck) in the space the log used to take. Deck colours as on
+   the advance cards (.sh-reveal-*). */
+.sh-tracks { gap: 6px; }
+.sh-trackinfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 5px 8px 6px;
+  background: var(--parchment);
+  border: 1px solid color-mix(in srgb, var(--ink) 35%, transparent);
+  border-left: 4px solid var(--ink-soft);
+  border-radius: 4px;
+}
+.sh-trackinfo[data-track='commerce'] { border-left-color: var(--gold); }
+.sh-trackinfo[data-track='council'] { border-left-color: var(--sea); }
+.sh-trackinfo[data-track='learning'] { border-left-color: var(--forest); }
+.sh-trackinfo-head { display: flex; align-items: center; gap: 6px; }
+.sh-trackinfo-deck { margin-left: auto; font-size: 12px; }
+.sh-trackinfo-row { margin: 0; font-size: 12.5px; line-height: 1.35; }
+.sh-trackinfo-lvl { font-weight: 700; }
+.sh-trackinfo-owner { font-weight: 600; white-space: nowrap; }
+.sh-reached { color: #2f5d3a; }
+.sh-tick { margin-left: 4px; font-weight: 700; }
 .sh-head {
   margin: 0;
   font-size: 16px;

@@ -135,21 +135,15 @@ export const vi: Record<string, string> = {
   hand_total: 'Tổng: {n}',
 
   // Side panel
-  side_log: 'Nhật ký',
-  side_trade: 'Đổi bài',
   side_costs: 'Chi phí',
   side_costsNote: 'Chi phí của bộ luật cơ bản (đổi theo các bộ luật mở rộng).',
   side_costsRoad: 'Đường',
   side_costsSettlement: 'Làng',
   side_costsCity: 'Thành phố',
   side_costsCard: 'Thẻ phát triển',
-  side_noTrade: 'Không có đề nghị đổi bài nào đang mở.',
-  side_tradeFrom: '{name} đề nghị:',
-  side_tradeResponses: 'Phản hồi:',
   side_pending: 'Chưa trả lời',
   side_accepted: 'Đã chấp nhận',
   side_declined: 'Đã từ chối',
-  log_empty: 'Chưa có nước đi nào.',
 
   // Dialogs
   dlg_close: 'Đóng',
