@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 168">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8FC4D9"/>
+      <stop offset=".55" stop-color="#C9DFD9"/>
+      <stop offset="1" stop-color="#E9D9A8"/>
+    </linearGradient>
+    <linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7FAE52"/>
+      <stop offset="1" stop-color="#3F723C"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="114" height="162" rx="9" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="3"/>
+  <rect x="8.5" y="8.5" width="103" height="151" rx="5" fill="none" stroke="#C9A227" stroke-width="1.3" opacity=".8"/>
+  <!-- title band -->
+  <path d="M11 17 Q11 12 16 12 H104 Q109 12 109 17 V34 H11 Z" fill="#7E2F27" stroke="#3B2F2F" stroke-width="1.6"/>
+  <path d="M14 15 H106" stroke="#D9A64A" stroke-width="1" opacity=".8"/>
+  <g transform="translate(60 23)" fill="#F3E9D2">
+    <path d="M0 -7 L6 3 H3 V7 H-3 V3 H-6 Z"/>
+  </g>
+  <!-- illustration -->
+  <rect x="11" y="38" width="98" height="112" fill="url(#sky)" stroke="#3B2F2F" stroke-width="1.3"/>
+  <path d="M11 102 Q38 84 62 96 Q86 108 109 92 V150 H11 Z" fill="url(#field)"/>
+  <path d="M11 114 Q36 100 62 110 Q88 120 109 106 V150 H11 Z" fill="#3C6E3A" opacity=".75"/>
+  <g fill="#E9D9A8" opacity=".8">
+    <ellipse cx="30" cy="56" rx="15" ry="6"/>
+    <ellipse cx="90" cy="50" rx="17" ry="6"/>
+  </g>
+  <!-- knight on horse -->
+  <g transform="translate(60 112)">
+    <ellipse cx="2" cy="29" rx="35" ry="5" fill="#1B1512" opacity=".25"/>
+    <!-- horse legs -->
+    <path d="M-20 14 L-24 28 M-12 16 L-12 29 M12 16 L14 29 M20 14 L26 27" stroke="#3B2A22" stroke-width="4" stroke-linecap="round"/>
+    <path d="M-24 28 h-3 M-12 29 h-3 M14 29 h-3 M26 27 h3" stroke="#1B1512" stroke-width="2" stroke-linecap="round"/>
+    <!-- horse body and neck -->
+    <path d="M-25 4 Q-22 -10 -6 -11 Q8 -12 18 -4 Q24 0 26 6 Q20 15 8 16 Q-8 18 -20 12 Q-26 9 -25 4 Z" fill="#4A3328" stroke="#241A15" stroke-width="1.7"/>
+    <path d="M16 -4 Q22 -18 31 -21 Q38 -23 39 -17 Q36 -11 32 -8 L27 2 Z" fill="#4A3328" stroke="#241A15" stroke-width="1.7"/>
+    <path d="M31 -21 Q38 -24 40 -19 L36 -16 L39 -13 Q34 -11 30 -14 Z" fill="#3A2820" stroke="#241A15" stroke-width="1.4"/>
+    <circle cx="35" cy="-18" r="1" fill="#F3E9D2"/>
+    <path d="M20 -9 Q26 -12 31 -9" fill="none" stroke="#2C201A" stroke-width="2"/>
+    <!-- caparison in red and gold -->
+    <path d="M-18 2 Q-6 -6 10 0 L13 11 Q-2 16 -16 10 Z" fill="#8E3B2C" stroke="#3B2F2F" stroke-width="1.3"/>
+    <path d="M-12 2 L-8 12 M-2 0 L1 13 M8 1 L10 12" stroke="#C9A227" stroke-width="1.4" opacity=".8"/>
+  </g>
+  <!-- rider -->
+  <g transform="translate(62 70)">
+    <path d="M-10 26 Q-12 12 -3 8 Q8 5 13 14 L14 26 Z" fill="#C9A227" stroke="#3B2F2F" stroke-width="1.5"/>
+    <path d="M-7 12 Q-2 5 8 7 L12 14 Q2 18 -7 12 Z" fill="#E8C55A" opacity=".7"/>
+    <circle cx="4" cy="-1" r="8" fill="#E8C55A" stroke="#3B2F2F" stroke-width="1.5"/>
+    <path d="M-4 1 Q4 -7 12 1 L10 7 Q4 11 -2 6 Z" fill="#C9A227" stroke="#3B2F2F" stroke-width="1.2"/>
+    <path d="M-3 1 H11" stroke="#3B2F2F" stroke-width="1.2"/>
+    <path d="M2 -8 Q1 -16 6 -20 Q10 -22 10 -17 Q7 -13 8 -7 Z" fill="#8E3B2C" stroke="#3B2F2F" stroke-width="1.1"/>
+    <path d="M11 -2 Q20 1 23 6" fill="none" stroke="#3B2F2F" stroke-width="2" stroke-linecap="round"/>
+    <!-- shield with a star -->
+    <path d="M-14 6 Q-8 4 -5 8 V18 Q-8 25 -14 27 Q-20 23 -21 16 V8 Q-18 5 -14 6 Z" fill="#2F5D8A" stroke="#3B2F2F" stroke-width="1.5"/>
+    <path d="M-14 10 L-11 15 H-17 Z" fill="#E8C55A"/>
+    <circle cx="-14" cy="19" r="2" fill="#E8C55A"/>
+  </g>
+  <!-- spear -->
+  <path d="M35 146 L48 52" stroke="#5B4126" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M48 52 l-3 -11 l9 4 Z" fill="#C9D0D4" stroke="#3B2F2F" stroke-width="1.1"/>
+  <!-- foreground flowers -->
+  <g fill="#D9A64A">
+    <circle cx="25" cy="140" r="2"/><circle cx="30" cy="145" r="1.6"/><circle cx="92" cy="142" r="2"/>
+  </g>
+  <rect x="11" y="38" width="98" height="112" fill="none" stroke="#3B2F2F" stroke-width="1.3"/>
+  <path d="M30 156 H90" stroke="#8B6A3C" stroke-width="1.2" opacity=".5"/>
+  <circle cx="60" cy="158" r="2.2" fill="#C9A227" stroke="#3B2F2F" stroke-width=".8"/>
+</svg>

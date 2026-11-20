@@ -111,3 +111,78 @@
 
 .sh-warden.inactive { opacity: 0.9; }
 .sh-extras { pointer-events: none; }
+
+/* A card another player just played, face up over the board (CardReveal). The empty area
+   around the card lets clicks through to the board. */
+.sh-reveal {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.sh-reveal-card {
+  --deck: var(--ink-soft);
+  position: relative;
+  overflow: hidden;
+  width: min(300px, calc(100% - 32px));
+  padding: 14px 18px 18px;
+  border: 3px solid var(--deck);
+  border-radius: 14px;
+  background: var(--parchment);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 0 4px color-mix(in srgb, var(--deck) 18%, transparent);
+  text-align: center;
+  cursor: pointer;
+  pointer-events: auto;
+  animation: sh-reveal-in 260ms ease-out;
+}
+.sh-reveal-commerce { --deck: var(--gold); }
+.sh-reveal-council { --deck: var(--sea); }
+.sh-reveal-learning { --deck: var(--forest); }
+.sh-reveal-who { font-size: 0.95rem; color: var(--ink-soft); }
+.sh-reveal-deck {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 1px 10px;
+  border-radius: 999px;
+  background: var(--deck);
+  color: var(--parchment);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.sh-reveal-name {
+  margin: 8px 0 6px;
+  font-family: var(--font-head);
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--ink);
+}
+.sh-reveal-fx { margin: 0 0 12px; font-size: 1.05rem; line-height: 1.35; }
+.sh-reveal-timer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 4px;
+  width: 100%;
+  background: var(--deck);
+  transform-origin: left;
+  animation-name: sh-reveal-timer;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes sh-reveal-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.92); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes sh-reveal-timer {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sh-reveal-card { animation: none; }
+}

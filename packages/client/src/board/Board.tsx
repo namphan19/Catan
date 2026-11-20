@@ -10,12 +10,12 @@ import type {
   Pieces,
   VertexId,
 } from '@hexgame/engine';
-import { SIZE, getBoardGraph, boardExtent, edgeGeom, hexPoints, vertexPos } from './geom';
-import { HexTile } from './HexTile';
+import { SIZE, getBoardGraph, boardExtent, edgeGeom, hexCenter, hexPoints, vertexPos } from './geom';
+import { HexTile, SeaTile } from './HexTile';
 import { Harbor } from './Harbor';
-import { Blocker, PiecesLayer } from './Piece';
+import { Blocker, PieceTintDefs, PiecesLayer } from './Piece';
 import { EMPTY_HIGHLIGHTS, HighlightsLayer, type Highlights } from './Highlights';
-import { assetUrl, useAssets } from './assets';
+import { art2dUrl, useAssets } from './assets';
 import { useI18n } from '../i18n';
 
 export interface BoardProps {
@@ -53,7 +53,7 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
   const { t } = useI18n();
   const graph = useMemo(() => getBoardGraph(layout), [layout]);
   const ext = useMemo(() => boardExtent(graph), [graph]);
-  // Screen-reader / tooltip names for spots: the neighbouring tiles ("Rừng 8, Ruộng lúa 3"),
+  // Screen-reader / tooltip names for spots: the neighbouring tiles ("Rừng 8, Cánh đồng 3"),
   // never internal ids like "v:-1,2,N" (ids stay in data-id for tests and debugging).
   const hexName = useMemo(() => {
     const byId = new Map(board.hexes.map((h) => [h.id, h] as const));
@@ -72,6 +72,23 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
   const drag = useRef<{ x: number; y: number; tx: number; ty: number; active: boolean } | null>(null);
   const hl = highlights ?? EMPTY_HIGHLIGHTS;
 
+  // Keep the board's centre inside the viewBox, so a fast drag / zoom can never push the
+  // whole island off-screen and leave only the sea.
+  const clampTf = (t: Tf): Tf => {
+    const cx = ext.x + ext.w / 2;
+    const cy = ext.y + ext.h / 2;
+    const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+    // Screen centre = c * s + t; it must stay within [ext.x, ext.x + ext.w] (same for y).
+    return {
+      s: t.s,
+      tx: clamp(t.tx, ext.x - cx * t.s, ext.x + ext.w - cx * t.s),
+      ty: clamp(t.ty, ext.y - cy * t.s, ext.y + ext.h - cy * t.s),
+    };
+  };
+
+  const clampRef = useRef(clampTf);
+  clampRef.current = clampTf;
+
   // Wheel zoom anchored at the cursor (native listener so preventDefault works).
   useEffect(() => {
     const el = svgRef.current;
@@ -85,7 +102,7 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
         const s = Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev.s * Math.exp(-e.deltaY * 0.0012)));
         const bx = (pt.x - prev.tx) / prev.s;
         const by = (pt.y - prev.ty) / prev.s;
-        return { s, tx: pt.x - bx * s, ty: pt.y - by * s };
+        return clampRef.current({ s, tx: pt.x - bx * s, ty: pt.y - by * s });
       });
     };
     el.addEventListener('wheel', onWheel, { passive: false });
@@ -102,34 +119,62 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect) return;
     drag.current = { x: e.clientX, y: e.clientY, tx: tf.tx, ty: tf.ty, active: false };
-    const pxPerUnit = rect.width / ext.w;
+    // The viewBox is fitted with "meet": the smaller ratio is the real px per user unit.
+    const pxPerUnit = Math.min(rect.width / ext.w, rect.height / ext.h);
     const pointerId = e.pointerId;
     const move = (ev: PointerEvent) => {
-      if (!drag.current) return;
-      const dx = ev.clientX - drag.current.x;
-      const dy = ev.clientY - drag.current.y;
-      if (!drag.current.active) {
+      const d = drag.current;
+      if (!d) return;
+      const dx = ev.clientX - d.x;
+      const dy = ev.clientY - d.y;
+      if (!d.active) {
         if (Math.abs(dx) + Math.abs(dy) <= PAN_THRESHOLD) return; // still just a press
-        drag.current.active = true;
+        d.active = true;
         svgRef.current?.setPointerCapture(pointerId);
       }
-      setTf((prev) => ({ ...prev, tx: drag.current!.tx + dx / pxPerUnit, ty: drag.current!.ty + dy / pxPerUnit }));
+      // Compute the target now: the updater runs later, when a fast release may already
+      // have cleared drag.current (reading it there crashed the board to a blank screen).
+      const tx = d.tx + dx / pxPerUnit;
+      const ty = d.ty + dy / pxPerUnit;
+      setTf((prev) => clampTf({ ...prev, tx, ty }));
     };
     const up = () => {
       drag.current = null;
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
   };
 
   const zoomBy = (f: number) => {
-    setTf((prev) => ({ ...prev, s: Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev.s * f)) }));
+    setTf((prev) => clampTf({ ...prev, s: Math.min(MAX_SCALE, Math.max(MIN_SCALE, prev.s * f)) }));
   };
 
-  const seaPath = assetUrl('terrain', 'sea');
+  // Painted, seamless sea (art2d) in large tiles; flat sea colour until it has loaded.
+  const seaPath = art2dUrl('terrain', 'sea');
   const seaOk = useAssets([seaPath])[seaPath];
+  const seaTile = SIZE * 4.2;
+
+  // Sea frame (PO request): one ring of sea tiles all around the island, like the frame of a
+  // physical board, so the map reads as one rounded board. Harbors are tiles of this ring
+  // (Harbor draws its jetties + medallion on top). The sand bed spans island + ring, so every
+  // tile, land or sea, shows the same seam.
+  const seaRing = useMemo(() => {
+    const land = new Set(board.hexes.map((h) => `${h.q},${h.r}`));
+    const ring = new Map<string, { q: number; r: number }>();
+    const dirs = [[1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]];
+    for (const h of board.hexes)
+      for (const [dq, dr] of dirs) {
+        const q = h.q + dq;
+        const r = h.r + dr;
+        const k = `${q},${r}`;
+        if (!land.has(k)) ring.set(k, { q, r });
+      }
+    return [...ring.values()];
+  }, [board]);
 
   return (
     <div className="board-wrap">
@@ -142,9 +187,10 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
         onPointerDown={onPointerDown}
       >
         <defs>
-          <pattern id="seaPat" width={SIZE * 1.2} height={SIZE * 1.2} patternUnits="userSpaceOnUse">
-            <image href={seaPath} width={SIZE * 1.2} height={SIZE * 1.2} />
+          <pattern id="seaPat" width={seaTile} height={seaTile} patternUnits="userSpaceOnUse">
+            <image href={seaPath} width={seaTile} height={seaTile} preserveAspectRatio="none" />
           </pattern>
+          <PieceTintDefs />
         </defs>
         <g transform={`translate(${tf.tx} ${tf.ty}) scale(${tf.s})`}>
           {/* The sea reaches far beyond the viewBox: the letterboxed area around the fitted
@@ -157,6 +203,16 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
             fill={seaOk ? 'url(#seaPat)' : 'var(--sea)'}
             onClick={() => onMiss?.()}
           />
+          {/* Sand bed under every tile (island + sea ring): tiles are drawn a little smaller
+              than their cell (HexTile TILE_GAP), so this shows as a seam between neighbours. */}
+          <g className="board-bed" style={{ filter: 'drop-shadow(0 3px 4px rgba(27, 21, 18, 0.45))' }}>
+            {[...board.hexes, ...seaRing].map((h) => (
+              <polygon key={`bed-${h.q},${h.r}`} points={hexPoints(h.q, h.r)} fill="#CDB27C" stroke="#CDB27C" strokeWidth={1.5} pointerEvents="none" />
+            ))}
+          </g>
+          {seaRing.map((h) => (
+            <SeaTile key={`sea-${h.q},${h.r}`} q={h.q} r={h.r} />
+          ))}
           {board.hexes.map((h) => (
             <HexTile key={h.id} hex={h} producing={producing?.has(h.id)} />
           ))}

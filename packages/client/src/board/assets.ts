@@ -30,6 +30,11 @@ export function assetUrl(kind: string, name: string): string {
   return kind ? `/assets/${kind}/${name}.svg` : `/assets/${name}.svg`;
 }
 
+/** Painted raster art made with Tripo (tools/art/build.py): /assets/art2d/<kind>/<name>.webp. */
+export function art2dUrl(kind: 'terrain' | 'piece' | 'card' | 'icon', name: string): string {
+  return `/assets/art2d/${kind}/${name}.webp`;
+}
+
 /** Returns a map path -> loaded-ok for the given asset paths (true only when the image loaded). */
 export function useAssets(paths: string[]): Record<string, boolean> {
   const key = paths.join('|');

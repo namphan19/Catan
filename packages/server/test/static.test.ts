@@ -50,6 +50,9 @@ beforeEach(() => {
   fs.writeFileSync(path.join(root, 'index.html'), '<html>SPA-INDEX</html>');
   fs.writeFileSync(path.join(root, 'assets', 'app-a1b2c3d4.js'), 'console.log("bundle");');
   fs.writeFileSync(path.join(root, 'assets', 'icon-e5f6a7b8.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
+  fs.mkdirSync(path.join(root, 'assets', 'terrain'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'assets', 'terrain', 'forest.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
+  fs.writeFileSync(path.join(root, 'assets', 'token.svg'), '<svg xmlns="http://www.w3.org/2000/svg"/>');
   fs.writeFileSync(path.join(root, 'data.json'), '{"k":1}');
   // A secret in the PARENT of the served root: no traversal variant may ever serve it.
   fs.writeFileSync(path.join(base, 'secret.txt'), 'TOPSECRET');
@@ -85,6 +88,9 @@ describe('static handler', () => {
     expect(call(h, 'GET', '/index.html').headers['cache-control']).toBe('no-cache');
     expect(call(h, 'GET', '/').headers['cache-control']).toBe('no-cache');
     expect(call(h, 'GET', '/data.json').headers['cache-control']).toBe('no-cache');
+    // Unhashed game art under /assets/ keeps its URL when redrawn: never immutable.
+    expect(call(h, 'GET', '/assets/terrain/forest.svg').headers['cache-control']).toBe('no-cache');
+    expect(call(h, 'GET', '/assets/token.svg').headers['cache-control']).toBe('no-cache');
   });
 
   it('sends X-Content-Type-Options: nosniff on every response', () => {

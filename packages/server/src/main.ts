@@ -118,10 +118,15 @@ function sendFile(res: http.ServerResponse, file: string, pathname: string, stat
  * hashed bundle files under /assets/, no-cache for everything else (index.html must be
  * revalidated), and a CSP on SVG (scriptable when navigated to directly).
  */
+const HASHED_BUNDLE = /^\/assets\/[^/]+-[A-Za-z0-9_-]{8}\.[A-Za-z0-9]+$/;
+
 function securityHeaders(pathname: string, file: string): Record<string, string> {
   const headers: Record<string, string> = {
     'X-Content-Type-Options': 'nosniff',
-    'Cache-Control': pathname.startsWith('/assets/')
+    // Only Vite's content-hashed bundles (/assets/<name>-<8-char hash>.<ext>, no subfolder) may
+    // be immutable. The game art (public/assets/**, e.g. /assets/terrain/forest.svg) keeps the
+    // same URL when it is redrawn, so it must be revalidated or browsers keep the old art.
+    'Cache-Control': HASHED_BUNDLE.test(pathname)
       ? 'public, max-age=31536000, immutable'
       : 'no-cache',
   };

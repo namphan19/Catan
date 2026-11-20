@@ -1,7 +1,7 @@
 // Decorative hero chart for the home screen. Pure SVG built from the game's own terrain
 // art, piece art and palette, so the hub looks like the same hand-made world as the board.
 import { PIECE_ART } from '../board/pieceArt';
-import { assetUrl } from '../board/assets';
+import { art2dUrl } from '../board/assets';
 import { playerHex } from '../ui/colors';
 
 const R = 64;
@@ -109,14 +109,14 @@ export function HomeMap({ label }: { label: string }) {
           <circle cx={CX} cy={CY} r="244" />
         </clipPath>
         <radialGradient id="hm-water" cx="48%" cy="40%" r="68%">
-          <stop offset="0" stopColor="#4F93BC" />
-          <stop offset="1" stopColor="#356F96" />
+          <stop offset="0" stopColor="#3E86B2" />
+          <stop offset="1" stopColor="#245E89" />
         </radialGradient>
         <pattern id="hm-waves" width="86" height="62" patternUnits="userSpaceOnUse">
           <path
             d="M-12 16 Q10 8 32 16 T76 16"
             fill="none"
-            stroke="#8FC3DB"
+            stroke="#7FC3DB"
             strokeWidth="2"
             strokeLinecap="round"
             opacity=".32"
@@ -124,7 +124,7 @@ export function HomeMap({ label }: { label: string }) {
           <path
             d="M-12 48 Q10 40 32 48 T76 48"
             fill="none"
-            stroke="#2C5F84"
+            stroke="#1D4F74"
             strokeWidth="2"
             strokeLinecap="round"
             opacity=".32"
@@ -210,17 +210,21 @@ export function HomeMap({ label }: { label: string }) {
               key={`beach${i}`}
               d={HEX_PATH}
               transform={`translate(${CX + h.dx} ${CY + h.dy}) scale(1.065)`}
-              fill="#D9C79E"
+              fill="#E6D2A0"
             />
           ))}
           {ISLAND.map((h, i) => (
+            // Painted Tripo tiles, a little smaller than their cell so the sand shows
+            // between them, like the game board.
             <image
               key={`tile${i}`}
-              href={assetUrl('terrain', h.terrain)}
+              href={art2dUrl('terrain', h.terrain)}
               x={CX + h.dx - IMG_W / 2}
               y={CY + h.dy - IMG_H / 2}
               width={IMG_W}
               height={IMG_H}
+              preserveAspectRatio="none"
+              transform={`translate(${CX + h.dx} ${CY + h.dy}) scale(0.95) translate(${-(CX + h.dx)} ${-(CY + h.dy)})`}
             />
           ))}
 

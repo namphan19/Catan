@@ -1,4 +1,4 @@
-import { assetUrl, useAssets } from '../board/assets';
+import { art2dUrl, useAssets } from '../board/assets';
 import { RESOURCE_COLORS } from './colors';
 
 /**
@@ -6,7 +6,8 @@ import { RESOURCE_COLORS } from './colors';
  * The colour is only decoration: every use pairs the icon with a text label.
  */
 export function ResourceIcon({ res, size = 20 }: { res: string; size?: number }) {
-  const path = assetUrl('icon', res);
+  // Painted goods icon (Tripo, art2d/icon); a coloured diamond until it has loaded.
+  const path = art2dUrl('icon', res);
   const ok = useAssets([path])[path];
   const color = RESOURCE_COLORS[res] ?? 'var(--ink-soft)';
   if (ok) {

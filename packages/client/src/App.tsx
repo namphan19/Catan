@@ -75,7 +75,9 @@ function GameApp() {
       return;
     }
     if (actors.length === 0) {
-      setActor(null);
+      // Nobody can act (the game is over): keep the table on the last viewer, or the winner's seat,
+      // so the winner dialog shows instead of falling back to the home screen.
+      if (!actor) setActor(state.winner ?? state.turn.current);
     } else if (!actor || !actors.includes(actor)) {
       setActor(actors[0]);
     }

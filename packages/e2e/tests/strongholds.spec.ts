@@ -5,10 +5,6 @@ import * as path from 'node:path';
 import { test, expect } from '@playwright/test';
 import { VI, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
 
-test.beforeEach(({}, testInfo) => {
-  test.skip(testInfo.project.name === '3d', 'expansion games use the 2D board');
-});
-
 test('a new expansion game: option, setup with a city, panel and raid track', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   const errors = captureErrors(page);

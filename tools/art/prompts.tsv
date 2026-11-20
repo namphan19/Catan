@@ -1,0 +1,40 @@
+# name	kind	size	prompt   (kind: terrain | piece = white tintable | piecec = own colours | card)
+t-forest	terrain	1024x1024	Subject: a dense temperate pine and oak forest, rounded tree canopies of varied deep greens, a small winding dirt trail, a few fallen logs, a tiny woodcutter's stack of timber.
+t-meadow	terrain	1024x1024	Subject: lush rolling bright green pasture with a small flock of fluffy white sheep grazing, a little blue pond, short wooden fence segments, a few wildflowers. Fresh light spring green dominates.
+t-field	terrain	1024x1024	Subject: ripe golden wheat fields laid out in parallel strips of slightly different golden tones, a few bound sheaves standing, a narrow farm path. Warm golden yellow dominates.
+t-claypit	terrain	1024x1024	Subject: terraced red-orange clay hills with an open clay pit, neat stacks of fired red bricks drying in rows, a small round brick kiln. Terracotta red-orange dominates.
+t-quarry	terrain	1024x1024	Subject: rugged grey rocky mountains with snow-dusted peaks seen from above, scree slopes, a small mine entrance with a cart track and glints of dark blue-grey ore. Cool slate grey dominates.
+t-waste	terrain	1024x1024	Subject: an empty sandy desert with soft wind-rippled dunes, patches of cracked dry earth, a few dry shrubs and scattered pale rocks. Pale warm sand colour dominates.
+t-sea	terrain	1024x1024	Subject: open sea water only, deep teal blue with gentle evenly spread painted swells and small soft light glints, uniform texture with no focal point, no land, no boats, no foam lines.
+p-settlement	piece	1024x1024	Subject: a small house: a simple block with a pitched roof (a pentagon-shaped prism).
+p-city	piece	1024x1024	Subject: a wider low block building joined to a taller square tower block with a flat top, one simple solid shape.
+p-warden	piece	1024x1024	Subject: a simple pawn figure: rounded head on a tapered body on a round disc base, with a plain round shield disc on its front.
+p-caravan	piece	1024x1024	Subject: a simple toy wagon: a rectangular block with an arched rounded cover on top and two plain disc wheels.
+p-blocker	piecec	1024x1024	Subject: a simple tall hooded pawn figure, a smooth tapered cone-like body with a rounded hood, solid dark charcoal grey.
+p-rampart	piecec	1024x1024	Subject: a short straight low wall block with three plain square crenellations on top, plain smooth grey stone colour, running from left to right.
+p-capital	piecec	1024x1024	Subject: a simple slender tower: a cylinder with a cone roof topped by a small ball, smooth polished gold.
+p-toppled	piecec	1024x1024	Subject: three plain wooden blocks tumbled in a small heap, dark charred grey-brown colour.
+c-timber	card	1024x1536	Subject: a neat stack of freshly cut timber logs at the edge of a pine forest, an axe resting in a stump.
+c-clay	card	1024x1536	Subject: a stack of red fired bricks beside a small glowing brick kiln, a clay pit behind.
+c-fiber	card	1024x1536	Subject: a fluffy white sheep standing beside a basket of raw wool fleece on a green hill.
+c-grain	card	1024x1536	Subject: a bound golden wheat sheaf standing in a sunny wheat field.
+c-stone	card	1024x1536	Subject: a heap of dark blue-grey ore rocks with metallic glints and a pickaxe, at a mountain mine entrance.
+c-linen	card	1024x1536	Subject: folded bolts of woven cloth in soft colours stacked beside a wooden loom.
+c-books	card	1024x1536	Subject: a stack of leather-bound books with a rolled scroll and a quill pen on a wooden desk by candlelight.
+c-silver	card	1024x1536	Subject: a small open wooden chest overflowing with shining silver coins.
+d-guard	card	1024x1536	Subject: a brave guard in a helmet and blue cloak with a tall spear and a round shield, standing watch on a hill.
+d-harvest	card	1024x1536	Subject: an overflowing farm cart piled with logs, bricks, wool, wheat sheaves and ore, a bountiful harvest.
+d-claim	card	1024x1536	Subject: a shrewd merchant in a fine robe holding up a brass balance scale, sacks of goods behind him in a market stall.
+d-freeRoads	card	1024x1536	Subject: two road builders laying cobblestones on a new country road winding into the hills.
+d-relic	card	1024x1536	Subject: an ancient golden chalice relic glowing softly on a stone pedestal in a small chapel.
+d-back	card	1024x1536	Subject: a symmetric ornamental pattern of a stylized compass rose over interlocking hexagons, deep navy blue and gold, decorative card back design.
+i-timber	icon	1024x1024	Subject: two short stacked logs, warm medium brown bark with pale round cut ends.
+i-clay	icon	1024x1024	Subject: two stacked rectangular bricks, terracotta red-orange.
+i-fiber	icon	1024x1024	Subject: one fluffy round ball of cream-white wool.
+i-grain	icon	1024x1024	Subject: a small bound bundle of wheat stalks with ears on top, golden yellow, tied with a band.
+i-stone	icon	1024x1024	Subject: one chunky faceted ore rock, dark slate blue-grey with lighter facets.
+i-linen	icon	1024x1024	Subject: one rolled bolt of cloth, soft sky blue fabric.
+i-books	icon	1024x1024	Subject: one closed thick book with a plain brown leather cover and cream page edges.
+i-silver	icon	1024x1024	Subject: a small stack of three shiny silver coins, plain faces.
+t-harbor	terrain	1024x1024	Subject: calm shallow turquoise harbour water over pale sand, lighter and clearer than the open sea, soft ripples and light glints, a few smooth pebbles at one side, no boats, no structures.
+i-any	icon	1024x1024	Subject: one small closed plain wooden crate, warm light brown, simple planks suggested by two shallow grooves.

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 168">
+  <defs>
+    <linearGradient id="csky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#B7CFD8"/>
+      <stop offset="1" stop-color="#E4D7AE"/>
+    </linearGradient>
+    <linearGradient id="cloth" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#9C3F32"/>
+      <stop offset="1" stop-color="#64241E"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#F0D47A"/>
+      <stop offset=".55" stop-color="#C9A227"/>
+      <stop offset="1" stop-color="#8F6E1C"/>
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="114" height="162" rx="9" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="3"/>
+  <rect x="8.5" y="8.5" width="103" height="151" rx="5" fill="none" stroke="#C9A227" stroke-width="1.3" opacity=".8"/>
+  <path d="M11 17 Q11 12 16 12 H104 Q109 12 109 17 V34 H11 Z" fill="#2F4F73" stroke="#3B2F2F" stroke-width="1.6"/>
+  <path d="M14 15 H106" stroke="#D9A64A" stroke-width="1" opacity=".8"/>
+  <g transform="translate(60 23)" fill="#F3E9D2">
+    <path d="M-8 6 V-2 L-5 -7 L-2 -2 V6 Z M-1 6 V-6 L2 -10 L5 -6 V6 Z M6 6 V-1 L9 -5 L12 -1 V6 Z"/>
+    <path d="M-10 6 H14 V9 H-10 Z"/>
+  </g>
+  <rect x="11" y="38" width="98" height="112" fill="url(#csky)" stroke="#3B2F2F" stroke-width="1.3"/>
+  <!-- draped cloth -->
+  <path d="M11 122 Q34 112 60 120 Q86 128 109 116 V150 H11 Z" fill="url(#cloth)"/>
+  <path d="M11 122 Q34 112 60 120 Q86 128 109 116" fill="none" stroke="#E8C55A" stroke-width="2" opacity=".65"/>
+  <path d="M22 126 Q24 138 20 148 M46 122 Q48 136 44 148 M74 124 Q76 138 72 148 M98 120 Q100 134 96 146" stroke="#4A1A15" stroke-width="1.4" fill="none" opacity=".5"/>
+  <!-- crown on a cushion -->
+  <g transform="translate(60 96)">
+    <ellipse cx="0" cy="20" rx="31" ry="7" fill="#3B2F2F" opacity=".28"/>
+    <path d="M-26 12 Q0 2 26 12 L22 20 Q0 14 -22 20 Z" fill="#8E3B2C" stroke="#3B2F2F" stroke-width="1.4"/>
+    <path d="M-22 11 L-25 -10 L-12 -1 L0 -16 L12 -1 L25 -10 L22 11 Q0 17 -22 11 Z" fill="url(#gold)" stroke="#3B2F2F" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M-22 6 Q0 12 22 6" fill="none" stroke="#FFF1B8" stroke-width="1.2" opacity=".6"/>
+    <circle cx="-25" cy="-11" r="2.2" fill="#E8C55A" stroke="#3B2F2F" stroke-width=".8"/>
+    <circle cx="0" cy="-17" r="2.4" fill="#E8C55A" stroke="#3B2F2F" stroke-width=".8"/>
+    <circle cx="25" cy="-11" r="2.2" fill="#E8C55A" stroke="#3B2F2F" stroke-width=".8"/>
+    <circle cx="0" cy="2" r="2.8" fill="#8E3B2C" stroke="#3B2F2F" stroke-width=".8"/>
+  </g>
+  <!-- coins -->
+  <g transform="translate(40 134)">
+    <ellipse cx="0" cy="6" rx="10" ry="4" fill="#8F6E1C" stroke="#3B2F2F" stroke-width="1.1"/>
+    <ellipse cx="0" cy="3" rx="10" ry="4" fill="#C9A227" stroke="#3B2F2F" stroke-width="1.1"/>
+    <ellipse cx="0" cy="0" rx="10" ry="4" fill="#E8C55A" stroke="#3B2F2F" stroke-width="1.1"/>
+    <path d="M-4 0 H4" stroke="#8F6E1C" stroke-width="1"/>
+  </g>
+  <g transform="translate(82 136) scale(.9)">
+    <ellipse cx="0" cy="6" rx="9" ry="3.6" fill="#8F6E1C" stroke="#3B2F2F" stroke-width="1.1"/>
+    <ellipse cx="0" cy="3" rx="9" ry="3.6" fill="#C9A227" stroke="#3B2F2F" stroke-width="1.1"/>
+    <ellipse cx="0" cy="0" rx="9" ry="3.6" fill="#E8C55A" stroke="#3B2F2F" stroke-width="1.1"/>
+  </g>
+  <!-- scroll and seal -->
+  <g transform="translate(66 132) rotate(-6)">
+    <path d="M-14 -8 H16 Q20 -8 20 -4 Q20 0 16 0 H-14 Q-18 0 -18 -4 Q-18 -8 -14 -8 Z" fill="#F1E3C0" stroke="#3B2F2F" stroke-width="1.2"/>
+    <path d="M-10 -4 H12" stroke="#8B6A3C" stroke-width=".9" opacity=".6"/>
+    <circle cx="19" cy="-4" r="3" fill="#8E3B2C" stroke="#3B2F2F" stroke-width=".8"/>
+  </g>
+  <!-- flag poles -->
+  <g stroke="#5B4126" stroke-width="2" stroke-linecap="round">
+    <path d="M28 130 V46 M92 128 V50"/>
+  </g>
+  <path d="M28 48 L44 52 L28 58 Z" fill="#8E3B2C" stroke="#3B2F2F" stroke-width="1"/>
+  <path d="M92 52 L108 56 L92 62 Z" fill="#8E3B2C" stroke="#3B2F2F" stroke-width="1"/>
+  <rect x="11" y="38" width="98" height="112" fill="none" stroke="#3B2F2F" stroke-width="1.3"/>
+  <path d="M30 156 H90" stroke="#8B6A3C" stroke-width="1.2" opacity=".5"/>
+  <circle cx="60" cy="158" r="2.2" fill="#C9A227" stroke="#3B2F2F" stroke-width=".8"/>
+</svg>

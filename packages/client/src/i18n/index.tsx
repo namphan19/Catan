@@ -64,7 +64,7 @@ export function terrainKey(tr: string): string {
     : tr;
 }
 
-/** Human list "Gỗ, Lúa" from a bag. */
+/** Human list "Gỗ, Lúa mì" from a bag. */
 export function bagText(
   bag: Record<string, number>,
   t: (k: string, p?: Record<string, string | number>) => string,

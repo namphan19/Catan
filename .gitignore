@@ -1,18 +1,17 @@
-team/workflow.json
-team/dispatch.log
-team/logs/*
-!team/logs/.gitkeep
+archive/agent-team/team/workflow.json
+archive/agent-team/team/dispatch.log
+archive/agent-team/team/logs/*
+!archive/agent-team/team/logs/.gitkeep
 data/raw/
 __pycache__/
 node_modules/
 .venv/
 .env
-team/autoheal.json
-team/jobs/
+archive/agent-team/team/autoheal.json
+archive/agent-team/team/jobs/
 .pytest_cache/
 
-# commercial rulebooks: never commit
-docs/*.pdf
+# rulebook PDFs in docs/ are committed on purpose (PO decision)
 dist/
 coverage/
 data/rooms/

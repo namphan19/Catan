@@ -30,7 +30,7 @@ function pieceKey(kind: string): string {
   return 'piece_road';
 }
 
-/** "2× Gỗ, 1× Lúa" with a small icon per resource (used in log lines and toasts). */
+/** "2× Gỗ, 1× Lúa mì" with a small icon per resource (used in log lines and toasts). */
 export function bagNode(bag: Record<string, number> | undefined, t: TFn): ReactNode {
   const entries = Object.entries(bag ?? {}).filter(([, n]) => (n || 0) > 0);
   if (entries.length === 0) return t('toast_none');
@@ -57,7 +57,7 @@ export interface LogOutcome {
   gains?: Record<PlayerId, Record<string, number>>;
 }
 
-/** "Nam: 1× Gỗ · Bot 2: 2× Len" (who received what), or null when nobody got anything. */
+/** "Nam: 1× Gỗ · Bot 2: 2× Lông cừu" (who received what), or null when nobody got anything. */
 export function gainsNode(gains: LogOutcome['gains'], t: TFn, name: NameFn): ReactNode {
   const entries = Object.entries(gains ?? {}).filter(([, bag]) => bagTotal(bag) > 0);
   if (!entries.length) return null;

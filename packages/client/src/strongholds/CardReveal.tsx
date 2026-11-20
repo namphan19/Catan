@@ -1,0 +1,53 @@
+// Shows an advance card another player just played, face up over the board: name, deck and
+// what it does (playtest feedback: "Trưng thu", "Của hồi môn"... meant nothing to the others).
+// Display only; fed by the `played` events GameTable receives. One card at a time, queued.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { CARD_TRACK, type PlayerId } from '@hexgame/engine';
+import { Button } from '../ui/Button';
+import { trackName, type NameFn, type TFn } from './labels';
+
+export interface Reveal {
+  id: number;
+  player: PlayerId;
+  card: string;
+}
+
+/** How long a revealed card stays up on its own. */
+export const REVEAL_MS = 6000;
+
+/** Queue of cards to reveal; `push` adds one, `close` drops the one on screen. */
+export function useReveals(): { current: Reveal | null; push: (player: PlayerId, card: string) => void; close: () => void } {
+  const [queue, setQueue] = useState<Reveal[]>([]);
+  const nextId = useRef(1);
+  const push = useCallback((player: PlayerId, card: string) => {
+    const id = nextId.current++;
+    setQueue((q) => [...q, { id, player, card }]);
+  }, []);
+  const close = useCallback(() => setQueue((q) => q.slice(1)), []);
+  const current = queue[0] ?? null;
+  useEffect(() => {
+    if (!current) return;
+    const timer = window.setTimeout(() => setQueue((q) => (q[0]?.id === current.id ? q.slice(1) : q)), REVEAL_MS);
+    return () => window.clearTimeout(timer);
+  }, [current]);
+  return { current, push, close };
+}
+
+export function CardReveal({ reveal, onClose, t, name }: { reveal: Reveal; onClose: () => void; t: TFn; name: NameFn }) {
+  const track = CARD_TRACK[reveal.card];
+  return (
+    <div className="sh-reveal" role="status" aria-live="polite" data-card={reveal.card}>
+      {/* A click anywhere on the card closes it (the button's click bubbles up to here: one close). */}
+      <div className={`sh-reveal-card sh-reveal-${track ?? 'none'}`} key={reveal.id} onClick={onClose}>
+        <div className="sh-reveal-who">{t('shreveal_title', { name: name(reveal.player) })}</div>
+        {track && <div className="sh-reveal-deck">{t('shreveal_deck', { track: trackName(t, track) })}</div>}
+        <div className="sh-reveal-name">{t(reveal.card)}</div>
+        <p className="sh-reveal-fx">{t(`cardfx_${reveal.card}`)}</p>
+        <Button variant="ghost" className="sh-reveal-close">
+          {t('shreveal_close')}
+        </Button>
+        <span className="sh-reveal-timer" style={{ animationDuration: `${REVEAL_MS}ms` }} />
+      </div>
+    </div>
+  );
+}

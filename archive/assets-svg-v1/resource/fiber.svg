@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 168">
+  <defs>
+    <clipPath id="art">
+      <rect x="13" y="13" width="94" height="119" rx="5"/>
+    </clipPath>
+    <linearGradient id="grasscard" x1="0" y1="0" x2="0.2" y2="1">
+      <stop offset="0" stop-color="#B8DC7C"/>
+      <stop offset=".5" stop-color="#93C55C"/>
+      <stop offset="1" stop-color="#6EA544"/>
+    </linearGradient>
+    <radialGradient id="sunny" cx="32%" cy="14%" r="82%">
+      <stop offset="0" stop-color="#F7F7C0" stop-opacity=".75"/>
+      <stop offset=".55" stop-color="#DFEE96" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#5C8C3B" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- card frame -->
+  <rect x="3" y="3" width="114" height="162" rx="10" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="3"/>
+  <rect x="9" y="9" width="102" height="150" rx="6" fill="#FBF5E4" stroke="#B08C55" stroke-width="1.2"/>
+
+  <!-- illustration -->
+  <g clip-path="url(#art)">
+    <rect x="13" y="13" width="94" height="119" fill="url(#grasscard)"/>
+    <rect x="13" y="13" width="94" height="119" fill="url(#sunny)"/>
+    <!-- rolling pasture -->
+    <path d="M13 62 Q36 48 62 58 Q88 68 107 52 V92 H13 Z" fill="#A8D06A" opacity=".75"/>
+    <path d="M13 80 Q40 68 66 76 Q90 84 107 72 V110 H13 Z" fill="#8FBE58" opacity=".8"/>
+    <path d="M13 102 Q38 90 64 98 Q88 106 107 94 V132 H13 Z" fill="#7BAF4C"/>
+    <g fill="none" stroke="#5F8F3C" stroke-width="1.2" opacity=".45" stroke-linecap="round">
+      <path d="M18 76 q22 -8 44 -2 q18 5 38 -3 M18 96 q24 -7 48 -1 q18 4 34 -4"/>
+    </g>
+    <!-- small distant sheep -->
+    <g transform="translate(84 60) scale(.55)" opacity=".85">
+      <ellipse cx="0" cy="0" rx="9" ry="6" fill="#F6EFD9" stroke="#5B4A3A" stroke-width="1.2"/>
+      <ellipse cx="-8" cy="-2" rx="3" ry="3.4" fill="#5B4A3A"/>
+      <path d="M-3 5 v4 M4 5 v4" stroke="#5B4A3A" stroke-width="1.4"/>
+    </g>
+    <g transform="translate(33 68) scale(.45) rotate(-8)" opacity=".8">
+      <ellipse cx="0" cy="0" rx="9" ry="6" fill="#F6EFD9" stroke="#5B4A3A" stroke-width="1.2"/>
+      <ellipse cx="-8" cy="-2" rx="3" ry="3.4" fill="#5B4A3A"/>
+      <path d="M-3 5 v4 M4 5 v4" stroke="#5B4A3A" stroke-width="1.4"/>
+    </g>
+    <!-- main sheep -->
+    <g transform="translate(60 96)">
+      <ellipse cx="0" cy="27" rx="28" ry="5" fill="#3B2F2F" opacity=".2"/>
+      <!-- legs -->
+      <path d="M-15 12 V27 M-7 14 V27 M9 14 V27 M17 12 V27" stroke="#5B4A3A" stroke-width="3.4" stroke-linecap="round"/>
+      <path d="M-15 27 h-3 M-7 27 h-3 M9 27 h-3 M17 27 h3" stroke="#3B2F2F" stroke-width="2" stroke-linecap="round"/>
+      <!-- fluffy body -->
+      <g fill="#F8F2DC" stroke="#5B4A3A" stroke-width="1.4">
+        <circle cx="-16" cy="-2" r="11"/>
+        <circle cx="-6" cy="-10" r="12"/>
+        <circle cx="7" cy="-11" r="12"/>
+        <circle cx="18" cy="-3" r="11"/>
+        <circle cx="12" cy="8" r="10"/>
+        <circle cx="-3" cy="10" r="11"/>
+        <circle cx="-16" cy="8" r="9"/>
+        <circle cx="1" cy="-1" r="12"/>
+      </g>
+      <!-- fleece curls -->
+      <g fill="none" stroke="#D9CFB2" stroke-width="1.1" opacity=".8">
+        <path d="M-10 -4 q3 -3 6 0 M2 -7 q3 -3 6 0 M-2 4 q3 -3 6 0 M10 1 q3 -2 5 0"/>
+      </g>
+      <!-- head and ears -->
+      <path d="M22 -9 Q31 -12 33 -4 Q34 4 26 5 Q20 4 19 -2 Q19 -7 22 -9 Z" fill="#6B5745" stroke="#3B2F2F" stroke-width="1.5"/>
+      <path d="M21 -9 Q16 -14 13 -10 Q16 -6 20 -6" fill="#8A7258" stroke="#3B2F2F" stroke-width="1.2"/>
+      <path d="M25 -12 Q30 -17 34 -13 Q31 -8 27 -8" fill="#8A7258" stroke="#3B2F2F" stroke-width="1.2"/>
+      <circle cx="27" cy="-3" r="1.2" fill="#F3E9D2"/>
+      <circle cx="27.3" cy="-3" r=".55" fill="#1B1512"/>
+      <path d="M30 1 q2 1 3 0" fill="none" stroke="#3B2F2F" stroke-width="1" stroke-linecap="round"/>
+      <!-- wool tuft on top -->
+      <circle cx="27" cy="-12" r="4.5" fill="#F8F2DC" stroke="#5B4A3A" stroke-width="1.2"/>
+      <!-- tail -->
+      <circle cx="-27" cy="2" r="5.5" fill="#F8F2DC" stroke="#5B4A3A" stroke-width="1.2"/>
+    </g>
+    <!-- flowers and grass in front -->
+    <g fill="#F6F1DA">
+      <circle cx="24" cy="122" r="1.8"/><circle cx="28" cy="119" r="1.4"/><circle cx="21" cy="118" r="1.3"/>
+      <circle cx="94" cy="119" r="1.8"/><circle cx="98" cy="116" r="1.4"/>
+    </g>
+    <g fill="#D9A64A">
+      <circle cx="26" cy="125" r="1.5"/><circle cx="96" cy="122" r="1.5"/>
+    </g>
+    <g fill="none" stroke="#578A3A" stroke-width="1.4" stroke-linecap="round">
+      <path d="M24 123 q1 4 0 7 M94 120 q1 4 0 7 M42 127 q1 4 0 6 M76 127 q1 4 0 6"/>
+    </g>
+    <!-- vignette -->
+    <path d="M13 13 H107 V132 H13 Z" fill="none" stroke="#3E5D27" stroke-width="10" opacity=".11"/>
+  </g>
+  <rect x="13" y="13" width="94" height="119" rx="5" fill="none" stroke="#3B2F2F" stroke-width="1.6"/>
+
+  <!-- corner medallions -->
+  <g>
+    <circle cx="18.5" cy="18.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="101.5" cy="18.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="18.5" cy="126.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <circle cx="101.5" cy="126.5" r="7.5" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.3"/>
+    <g stroke="#3B2F2F" stroke-width=".7">
+      <g transform="translate(18.5 18.5) scale(.85)">
+        <ellipse cx="0" cy="0" rx="4.2" ry="3" fill="#F8F2DC"/>
+        <ellipse cx="-3.6" cy="-1" rx="1.4" ry="1.6" fill="#6B5745"/>
+        <path d="M-1.4 2.4 v2 M1.6 2.4 v2" stroke="#5B4A3A" stroke-width=".9"/>
+      </g>
+      <g transform="translate(101.5 18.5) scale(.85)">
+        <ellipse cx="0" cy="0" rx="4.2" ry="3" fill="#F8F2DC"/>
+        <ellipse cx="-3.6" cy="-1" rx="1.4" ry="1.6" fill="#6B5745"/>
+      </g>
+      <g transform="translate(18.5 126.5) scale(.85)">
+        <ellipse cx="0" cy="0" rx="4.2" ry="3" fill="#F8F2DC"/>
+        <ellipse cx="-3.6" cy="-1" rx="1.4" ry="1.6" fill="#6B5745"/>
+      </g>
+      <g transform="translate(101.5 126.5) scale(.85)">
+        <ellipse cx="0" cy="0" rx="4.2" ry="3" fill="#F8F2DC"/>
+        <ellipse cx="-3.6" cy="-1" rx="1.4" ry="1.6" fill="#6B5745"/>
+      </g>
+    </g>
+  </g>
+
+  <!-- nameplate -->
+  <path d="M13 136 H107 V151 Q107 155 103 155 H17 Q13 155 13 151 Z" fill="#F3E9D2" stroke="#3B2F2F" stroke-width="1.4"/>
+  <path d="M17 139 H103" stroke="#C9A227" stroke-width="1" opacity=".9"/>
+  <circle cx="60" cy="160" r="1.8" fill="#C9A227" stroke="#8B6A3C" stroke-width=".6"/>
+</svg>

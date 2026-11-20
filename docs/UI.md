@@ -1,14 +1,32 @@
 # Boschtan - UI / UX spec (lead)
 
-Web only (desktop browser first, tablet usable). Self-hosted by the PO for colleagues; online play is the
-target (server = M2), hot-seat stays for testing. No bots. Original medieval art - never copy or trace the
-art, tile frames, card layouts or logos of any commercial game.
+Web only (desktop browser first, tablet usable). Self-hosted by the PO for family and colleagues (private
+use, not for commercial release); online play is the target (server = M2), hot-seat stays for testing. No bots.
 
-## Art direction: "hand-drawn medieval map"
-- Parchment and ink, woodcut / illuminated-manuscript feel, flat shapes with a 2 px ink outline,
-  light hatching for depth, no photo textures, no gradients heavier than 2 stops.
+## Art direction: close to the original CATAN look
+- Goal: the board, tiles, number discs, harbors, pieces, cards and dice should look like the official
+  CATAN base game (CN3081 rulebook and physical set), so that players recognise the game at a glance.
+- Reference material: `docs/art-reference/` (rulebook renders, `groups/` cut-outs, `external-soc/` photos of a
+  physical set). Use these as the primary reference for colour, proportion, layout and iconography.
+- Terrain hexes: painted, textured top faces with soft shading, as in the physical set (hills red-orange,
+  forest dark green, pasture light green, fields yellow, mountains grey, desert sand), not flat shapes.
+- Sea frame: painted blue water with light foam and a sand-coloured coast, matching the official sea frame.
+- Cards: same card proportions, bordered frame, title banner and illustration area as the official cards.
+- Number discs: cream disc with the number and dot count; 6 and 8 in red.
+- Pieces: glossy plastic-like colours matching the official set (roads, settlements, cities, robber).
+- Gradients and textures may be used where the official art uses them; keep them flat enough for SVG.
 - Must stay readable at 48 px (tokens, icons) - test every asset at small size.
 - Fonts (OFL, bundled locally, no CDN): headings "Cinzel", body "EB Garamond"; fallback Georgia, serif.
+
+## Terminology (rulebook names, 2026-11-18)
+Visible names follow the base-game rulebooks; internal ids stay neutral so the engine is untouched.
+- Resources: **Wood / Brick / Wool / Wheat / Ore** → Gỗ / Gạch / Lông cừu / Lúa mì / Quặng.
+- Terrains: **Forest / Hills / Pasture / Fields / Mountains / Desert** → Rừng / Đồi / Đồng cỏ / Cánh đồng / Núi / Sa mạc
+  (internal ids remain forest / claypit / meadow / field / quarry / waste).
+- Development cards: **Knight / Road Building / Year of Plenty / Monopoly / Victory Point**
+  → Hiệp sĩ / Xây đường / Năm sung túc / Độc quyền / Điểm chiến thắng (internal ids guard / freeRoads / harvest / claim / relic).
+- **Robber**, **Longest Road**, **Largest Army** → Kẻ cướp, Đường dài nhất, Đạo quân hùng mạnh nhất.
+- Harbour ratios: **3:1** generic, **2:1** for one named resource.
 
 ## Design tokens (CSS custom properties, file packages/client/src/ui/tokens.css)
 | token | value | use |
@@ -17,13 +35,13 @@ art, tile frames, card layouts or logos of any commercial game.
 | --parchment-dark | #E4D3AE | panels |
 | --ink | #3B2F2F | text, outlines |
 | --ink-soft | #6B5B4E | secondary text |
-| --sea | #3E7CA6 | sea / frame |
+| --sea | #2D6E9B | sea / frame |
 | --gold | #C9A227 | highlights, awards |
 | --danger | #A23B2A | errors, 6/8 tokens |
-| --forest #2F5D3A, --claypit #B5562B, --meadow #8DB255, --field #E0B84C, --quarry #8A8D91, --waste #D9C79E | terrains |
-Player colours (colour-blind safe, always paired with a pattern/emblem):
-p1 #E69F00 (orange, sun), p2 #56B4E9 (sky, wave), p3 #009E73 (green, leaf), p4 #CC79A7 (reddish purple, star; was yellow #F0E442, too close to p1 on the board),
-p5 #0072B2 (blue, shield), p6 #D55E00 (vermillion, flame).
+| --forest #3F7448, --claypit #B85C34, --meadow #8DBE55, --field #D9B754, --quarry #878C94, --waste #DCC28B | terrains |
+Player colours (classic board-game set). PO decision 2026-11-18: board pieces no longer carry the owner's emblem (the board is clear enough by colour); emblems stay in the player strip and log:
+p1 #C0392B (red, sun), p2 #2E6DA4 (blue, wave), p3 #E9E0CC (ivory, leaf), p4 #D9822B (orange, star),
+p5 #3E8E4E (green, shield), p6 #7A4B2A (brown, flame).
 
 ## Asset contract (artist writes, frontend reads) - packages/client/public/assets/
 Every SVG: viewBox given below, no external refs, no embedded raster, player-coloured parts use
@@ -37,7 +55,9 @@ Every SVG: viewBox given below, no external refs, no embedded raster, player-col
   beyond the dock. Nothing of a harbor sits on the coast edge, so roads and settlements stay readable.
 - piece/{road,settlement,city}.svg   road 0 0 60 14, settlement 0 0 40 40, city 0 0 52 44 (currentColor)
 - piece/blocker.svg   0 0 40 56
-- resource/{timber,clay,fiber,grain,stone}.svg   0 0 64 64 (card art) ; icon/{same}.svg 0 0 24 24
+- resource/{timber,clay,fiber,grain,stone}.svg   0 0 120 168 (full resource card: frame, corner motifs,
+  illustration, blank nameplate the UI labels) ; icon/{same}.svg 0 0 24 24
+- resource/{books,linen,silver}.svg   0 0 120 168 (the expansion's commodity cards, same template)
 - card/{back,guard,freeRoads,harvest,claim,relic}.svg   0 0 120 168
 - dice/{1..6}.svg 0 0 48 48 ; award/{longestRoute,largestForce}.svg 0 0 64 64
 - emblem/{sun,wave,leaf,star,shield,flame}.svg 0 0 24 24 (player patterns)

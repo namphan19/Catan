@@ -1,11 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 14">
-  <path d="M2.5 3.5 H57.5 V10.5 H2.5 Z" fill="currentColor" stroke="#3B2F2F" stroke-width="1.8" stroke-linejoin="round"/>
-  <path d="M3 4.2 H57" stroke="#F3E9D2" stroke-width="1.2" opacity=".35"/>
-  <path d="M11 4 V10 M20 4 V10 M29 4 V10 M38 4 V10 M47 4 V10" stroke="#3B2F2F" stroke-width="1.2" opacity=".38"/>
-  <path d="M4 3.5 h8 v7 h-8 Z M22 3.5 h8 v7 h-8 Z M40 3.5 h8 v7 h-8 Z" fill="#3B2F2F" opacity=".1"/>
-  <path d="M2.5 10.5 H57.5" stroke="#3B2F2F" stroke-width="2" stroke-linecap="round"/>
-  <path d="M4 12 H56" stroke="#3B2F2F" stroke-width="1.2" opacity=".35" stroke-linecap="round"/>
-  <g fill="#C9A227" opacity=".8">
-    <circle cx="6" cy="7" r=".8"/><circle cx="54" cy="7" r=".8"/>
-  </g>
+  <ellipse cx="30" cy="12.1" rx="27" ry="1.5" fill="#1B1512" opacity=".2"/>
+  <rect x="2" y="2.6" width="56" height="8.6" rx="3.4" fill="currentColor" stroke="#3B2F2F" stroke-width="1.5"/>
+  <path d="M5 10.2 H55 Q56.6 10.2 56.6 8.8 V9.4 Q56.6 11.2 54.8 11.2 H5.2 Q3.4 11.2 3.4 9.4 V8.8 Q3.4 10.2 5 10.2 Z" fill="#1B1512" opacity=".28"/>
+  <rect x="4.4" y="3.7" width="51.2" height="1.7" rx=".85" fill="#FFFFFF" opacity=".32"/>
+  <path d="M20 3.6 V10.4 M40 3.6 V10.4" stroke="#3B2F2F" stroke-width="1" opacity=".3"/>
+  <path d="M4 6.8 H56" stroke="#FFFFFF" stroke-width=".8" opacity=".16"/>
+  <circle cx="5.8" cy="6.9" r="1.1" fill="#1B1512" opacity=".2"/>
+  <circle cx="54.2" cy="6.9" r="1.1" fill="#1B1512" opacity=".2"/>
 </svg>

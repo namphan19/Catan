@@ -1,0 +1,102 @@
+[
+ {
+  "file": "probe-setup-1-settlement.png",
+  "title": "setup-1-settlement"
+ },
+ {
+  "file": "probe-setup-1-road.png",
+  "title": "setup-1-road"
+ },
+ {
+  "file": "probe-setup-2-settlement.png",
+  "title": "setup-2-settlement"
+ },
+ {
+  "file": "probe-setup-2-road.png",
+  "title": "setup-2-road"
+ },
+ {
+  "file": "probe-preRoll.png",
+  "title": "preRoll"
+ },
+ {
+  "file": "probe-main-after-roll.png",
+  "title": "main-after-roll"
+ },
+ {
+  "file": "probe-moveBlocker.png",
+  "title": "moveBlocker"
+ },
+ {
+  "file": "probe-steal.png",
+  "title": "steal"
+ },
+ {
+  "file": "probe-main-can-buy.png",
+  "title": "main-can-buy"
+ },
+ {
+  "file": "probe-trade-open.png",
+  "title": "trade-open"
+ },
+ {
+  "file": "probe-main-rich.png",
+  "title": "main-rich"
+ },
+ {
+  "file": "probe-main-can-settle.png",
+  "title": "main-can-settle"
+ },
+ {
+  "file": "probe-discard.png",
+  "title": "discard"
+ },
+ {
+  "file": "probe-card-harvest.png",
+  "title": "card-harvest"
+ },
+ {
+  "file": "probe-card-guard.png",
+  "title": "card-guard"
+ },
+ {
+  "file": "probe-card-claim.png",
+  "title": "card-claim"
+ },
+ {
+  "file": "probe-card-freeRoads.png",
+  "title": "card-freeRoads"
+ },
+ {
+  "file": "probe-main-can-city.png",
+  "title": "main-can-city"
+ },
+ {
+  "file": "probe-trade-accepted.png",
+  "title": "trade-accepted"
+ },
+ {
+  "file": "probe-freeRoads.png",
+  "title": "freeRoads"
+ },
+ {
+  "file": "probe-main-harbor-trade.png",
+  "title": "main-harbor-trade"
+ },
+ {
+  "file": "probe-award-longestRoute.png",
+  "title": "award-longestRoute"
+ },
+ {
+  "file": "probe-award-largestForce.png",
+  "title": "award-largestForce"
+ },
+ {
+  "file": "probe-before-win.png",
+  "title": "before-win"
+ },
+ {
+  "file": "probe-over.png",
+  "title": "over"
+ }
+]
