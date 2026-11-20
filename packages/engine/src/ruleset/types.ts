@@ -85,6 +85,8 @@ export interface Hooks {
   blockerAllowed(ctx: Ctx, prev: boolean, hex: HexId): boolean;
   /** Can the player place at least one free road-like piece now (road building / free road windows)? */
   freeRouteAvailable(ctx: Ctx, prev: boolean, player: PlayerId): boolean;
+  /** Is this award (e.g. 'longestRoute') in play (base: yes)? */
+  awardActive(ctx: Ctx, prev: boolean, award: string): boolean;
   /** Production still owed per player as a later choice (e.g. a resource of choice), not yet in hand. */
   pendingGains(ctx: Ctx, prev: Record<PlayerId, number>): Record<PlayerId, number>;
 }

@@ -4,7 +4,7 @@ import type { Action, EdgeId, ExtAction, HexId, Phase, PlayerId, RuleError, Vert
 import type { ActionDef, ApplyCtx, Ctx } from '../../ruleset/types';
 import { bagAdd, bagSub, bagTotal } from '../../bag';
 import {
-  actors, blockerAllowed, err, expect, freeRouteAvailable, hasPlayer, player, setPhase, updateLongestRoute, vp,
+  actors, blockerAllowed, err, expect, freeRouteAvailable, hasPlayer, isLandHex, player, setPhase, updateLongestRoute, vp,
 } from '../base/helpers';
 import { SH, isCommodity, type Track } from './config';
 import { settle } from './flow';
@@ -13,7 +13,7 @@ import {
   promoteError, rampartError, returnCard, stealRandom, transfer, upgradeError, wardenPiece,
 } from './ops';
 import {
-  citiesOf, emitSh, hexById, occupants, sh, turnOrderFrom, wardensOf,
+  citiesOf, emitSh, hexById, occupants, ownRoute, sh, turnOrderFrom, wardensOf,
 } from './state';
 import { ACTION_PHASES } from './wardens';
 
@@ -235,7 +235,8 @@ export const CARDS: Record<string, CardDef> = {
     check(ctx, a) {
       const { state, graph } = ctx;
       const vs = typeof a.hex === 'string' ? graph.hexVertices[a.hex] : undefined;
-      return vs && vs.some((v) => state.pieces.buildings[v]?.owner === a.player)
+      // The caravan stands on land (sea maps: never on a sea hex).
+      return vs && vs.some((v) => state.pieces.buildings[v]?.owner === a.player) && isLandHex(ctx, a.hex as string)
         ? null
         : err('BAD_HEX', 'The caravan goes on a hex next to one of your buildings.');
     },
@@ -248,7 +249,7 @@ export const CARDS: Record<string, CardDef> = {
     options(ctx, id) {
       const { state, graph } = ctx;
       return graph.hexes
-        .filter((h) => graph.hexVertices[h].some((v) => state.pieces.buildings[v]?.owner === id))
+        .filter((h) => graph.hexVertices[h].some((v) => state.pieces.buildings[v]?.owner === id) && isLandHex(ctx, h))
         .map((hex) => ({ hex }));
     },
   },
@@ -335,7 +336,7 @@ export const CARDS: Record<string, CardDef> = {
     check(ctx, a) {
       const { state, graph } = ctx;
       const o = typeof a.v === 'string' ? occupants(state)[a.v] : undefined;
-      const onMyRoad = !!o && graph.vertexEdges[a.v as VertexId].some((e) => state.pieces.roads[e] === a.player);
+      const onMyRoad = !!o && graph.vertexEdges[a.v as VertexId].some((e) => ownRoute(state, e, a.player));
       return o && o.kind === 'warden' && o.owner !== a.player && onMyRoad
         ? null
         : err('BAD_TARGET', "Choose an opponent's warden on one of your roads.");

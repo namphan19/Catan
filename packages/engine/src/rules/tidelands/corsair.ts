@@ -3,6 +3,7 @@
 import type { Action, ExtAction, HexId, PlayerId } from '../../types';
 import type { ActionDef, Ctx } from '../../ruleset/types';
 import { err, expect, handSize, resumePhase, setPhase } from '../base/helpers';
+import { silkOf, tradesWithVillage } from './silk';
 import { emitTl, isSea, tl } from './state';
 
 /** Players (seat order) other than the thief with a cog on the hex and at least one card. */
@@ -13,7 +14,8 @@ export function corsairVictims(ctx: Ctx, hex: HexId, thief: PlayerId): PlayerId[
     const o = state.pieces.ships?.[e];
     if (o && o !== thief) owners.add(o);
   }
-  return state.players.filter((p) => owners.has(p.id) && handSize(p) > 0).map((p) => p.id);
+  const silk = silkOf(state)?.silk;
+  return state.players.filter((p) => owners.has(p.id) && (handSize(p) > 0 || (silk?.[p.id] ?? 0) > 0)).map((p) => p.id);
 }
 
 export const moveCorsair: ActionDef = {
@@ -27,6 +29,8 @@ export const moveCorsair: ActionDef = {
     if (typeof a.hex !== 'string' || !graph.hexVertices[a.hex] || !isSea(state, a.hex))
       return err('BAD_HEX', 'The corsair sails on sea hexes.');
     if (a.hex === s.corsair) return err('SAME_HEX', 'The corsair must move to a different hex.');
+    if (s.silk && !tradesWithVillage(state, a.player))
+      return err('NO_TRADE', 'Only a player trading with a village may move the corsair.');
     return null;
   },
   apply(ctx, action) {
@@ -38,12 +42,14 @@ export const moveCorsair: ActionDef = {
     tl(state).corsair = hex;
     emitTl(ctx, { type: 'corsairMoved', player: a.player, hex });
     const from = corsairVictims(ctx, hex, a.player);
+    tl(state).corsairSteal = from.length > 0;
     if (from.length) setPhase(ctx, { k: 'steal', from, resume, ...(actor ? { actor } : {}) });
     else setPhase(ctx, resumePhase(state, resume));
   },
   legal(ctx, id) {
     const { state, graph } = ctx;
     if (expect(state, { t: 'tl:moveCorsair', player: id }, ['moveBlocker']) || !tl(state).corsair) return [];
+    if (tl(state).silk && !tradesWithVillage(state, id)) return [];
     return graph.hexes
       .filter((h) => h !== tl(state).corsair && isSea(state, h))
       .map((hex) => ({ t: 'tl:moveCorsair', player: id, hex }) as Action);

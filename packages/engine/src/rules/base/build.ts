@@ -4,7 +4,8 @@ import type { ActionDef, ApplyCtx, Ctx } from '../../ruleset/types';
 import { edgeTaken, legalRoadSpots, legalSettlementSpots, roadConnects, satisfiesDistanceRule, touchesOwnRoute } from '../../board/graph';
 import { bagAdd, bagHas, bagSub } from '../../bag';
 import {
-  cost, err, expect, freeRouteAvailable, player, resumePhase, setPhase, setupOrder, startTurn, updateLongestRoute,
+  cost, err, expect, freeRouteAvailable, lastSetupRound, player, resumePhase, setPhase, setupOrder, startTurn,
+  updateLongestRoute,
 } from './helpers';
 
 type A<T extends string> = Extract<Action, { t: T }>;
@@ -49,8 +50,8 @@ export const placeSettlement: ActionDef = {
     p.supply.settlement -= 1;
     ctx.emit({ e: 'placed', player: a.player, kind: 'settlement', at: a.v, free });
     if (ph.k === 'setup') {
-      // Second setup round: one resource per adjacent producing hex (if the bank has it).
-      if (ph.idx >= state.players.length) {
+      // Last setup round: one resource per adjacent producing hex (if the bank has it).
+      if (lastSetupRound(state, ph.idx)) {
         const gains: Bag = {};
         for (const h of graph.vertexHexes[a.v]) {
           const hex = state.board.hexes.find((x) => x.id === h);

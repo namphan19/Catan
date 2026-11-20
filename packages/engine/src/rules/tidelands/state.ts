@@ -10,6 +10,46 @@ export interface MistStack {
   numbers: number[];
 }
 
+/** Castaways scenario: rewards lying on sea edges. */
+export interface CastawaysState {
+  /** Edge -> what lies there (taken by the first cog that ends on it). */
+  rewards: Record<EdgeId, 'vp' | 'card' | 'harbor'>;
+  /** Harbor kind of each harbor reward. */
+  harborKinds: Record<EdgeId, string>;
+  /** Face-down cards for the card rewards (hidden; drawn from the top of the deck at setup). */
+  reserved: string[];
+  /** VP tokens taken. */
+  vpTokens: Record<PlayerId, number>;
+  /** Harbors taken but not placed yet. */
+  held: Record<PlayerId, string[]>;
+  /** Phase to resume after a harbor placement window. */
+  resume: Phase | null;
+}
+
+/** Silk scenario: weavers' villages, their silk and who trades with them. */
+export interface SilkState {
+  villages: Record<HexId, { silk: number; traders: PlayerId[] }>;
+  /** General supply of silk. */
+  supply: number;
+  silk: Record<PlayerId, number>;
+  /** Empty villages that end the game at the end of a turn. */
+  endAt: number;
+  /** The game ended by empty villages (the most VP wins). */
+  final: boolean;
+}
+
+/** Great Works scenario: wonders, who claimed them and how far each player built. */
+export interface WorksState {
+  /** Wonders in this game. */
+  wonders: string[];
+  /** Wonder -> player who claimed it. */
+  claims: Record<string, PlayerId>;
+  /** Levels built per player (0-4). */
+  levels: Record<PlayerId, number>;
+  /** Marked intersections: wonder sites ('wall', 'bridge', 'beacon') and setup bans ('x'). */
+  markers: Array<{ v: VertexId; kind: string }>;
+}
+
 export interface TlState {
   scenario: string;
   /** Hex of the corsair (a sea hex), or null when the scenario has none. */
@@ -26,6 +66,11 @@ export interface TlState {
   gold: { owed: Record<PlayerId, number>; resume: Phase } | null;
   /** Face-down stacks of undiscovered hexes (hidden). */
   mist: MistStack[];
+  /** Set while a steal phase was opened by the corsair (silk: silk may be taken instead). */
+  corsairSteal: boolean;
+  castaways?: CastawaysState;
+  silk?: SilkState;
+  works?: WorksState;
 }
 
 export const tl = (state: GameState): TlState => state.ext[TL_ID] as TlState;

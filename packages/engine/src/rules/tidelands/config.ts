@@ -8,6 +8,8 @@ export const TL_ID = 'tidelands';
 export const SEA = 'sea';
 export const GOLD = 'goldmine';
 export const MIST = 'mist';
+/** A weavers' village on a small islet (silk scenario): land that produces silk, never resources. */
+export const VILLAGE = 'village';
 
 export const TL = {
   costs: { ship: { timber: 1, fiber: 1 } } as Record<string, Bag>,
@@ -26,4 +28,5 @@ export const TERRAIN_LETTER: Record<string, string> = {
   Q: 'quarry',
   W: 'waste',
   A: GOLD,
+  V: VILLAGE,
 };

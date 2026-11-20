@@ -1,12 +1,15 @@
-// Scenario rules that hook into the shared actions: discovering mist hexes, cogs that may not move,
-// where settlements may stand.
+// Scenario rules that hook into the shared actions: discovering mist hexes, rewards on edges, trade with
+// weavers' villages, cogs that may not move, where settlements may stand.
 import type { EdgeId, PlayerId, VertexId } from '../../types';
 import type { ApplyCtx, Ctx } from '../../ruleset/types';
 import { bagAdd, bagSub } from '../../bag';
 import { player } from '../base/helpers';
-import { GOLD, MIST, SEA } from './config';
+import { castawaysSettleBan, takeReward } from './castaways';
+import { GOLD, MIST, SEA, VILLAGE } from './config';
 import { oweGold } from './gold';
-import { emitTl, hexIndex, tl } from './state';
+import { openTrade, silkLocked } from './silk';
+import { worksSetupBan } from './works';
+import { emitTl, hexIndex, isLand, scenario, tl } from './state';
 
 /** Reveal the mist hexes around both ends of a new or moved road / cog. */
 function discover(ctx: ApplyCtx, id: PlayerId, e: EdgeId): void {
@@ -41,16 +44,26 @@ function discover(ctx: ApplyCtx, id: PlayerId, e: EdgeId): void {
 }
 
 /** Run after a road or cog was placed or moved onto edge e by player id. */
-export function afterRoutePlaced(ctx: ApplyCtx, id: PlayerId, e: EdgeId, _kind: 'road' | 'ship'): void {
+export function afterRoutePlaced(ctx: ApplyCtx, id: PlayerId, e: EdgeId, kind: 'road' | 'ship'): void {
   discover(ctx, id, e);
+  if (kind === 'ship') takeReward(ctx, id, e);
+  openTrade(ctx, id, e);
 }
 
 /** Cogs that may never move in this scenario (beyond the general rules). */
-export function shipLocked(_ctx: Ctx, _e: EdgeId): boolean {
-  return false;
+export function shipLocked(ctx: Ctx, e: EdgeId): boolean {
+  return silkLocked(ctx, e);
 }
 
 /** Scenario limits on where a settlement may stand (null = fine). */
-export function settlementBan(_ctx: Ctx, _id: PlayerId, _v: VertexId): string | null {
+export function settlementBan(ctx: Ctx, _id: PlayerId, v: VertexId): string | null {
+  const sp = scenario(ctx.state).special;
+  if (sp === 'castaways') return castawaysSettleBan(ctx, v);
+  if (sp === 'works') return worksSetupBan(ctx, v);
+  if (sp === 'silk') {
+    const idx = hexIndex(ctx.state);
+    const ok = ctx.graph.vertexHexes[v].some((h) => isLand(ctx.state, h) && idx[h].terrain !== VILLAGE);
+    return ok ? null : 'No settlements on the weavers’ islets.';
+  }
   return null;
 }

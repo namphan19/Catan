@@ -124,6 +124,9 @@ export interface GameInit {
   firstPlayer?: PlayerId;
   /** Ruleset options chosen at game creation (e.g. `{ scenario: 'firstLandfall' }`). Plain JSON. */
   options?: Record<string, unknown>;
+  /** Rounds of starting placements (default 2: forward, then back). Later rounds go forward again;
+   *  the settlement of the last round yields the starting resources. */
+  setupRounds?: number;
 }
 
 export interface TurnState {

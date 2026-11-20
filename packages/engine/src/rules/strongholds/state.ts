@@ -4,6 +4,7 @@ import type {
 } from '../../types';
 import type { ApplyCtx, Ctx } from '../../ruleset/types';
 import { SH_ID, type EventFace, type Track } from './config';
+import { isLandVertex } from '../base/helpers';
 
 /** A choice a player still has to make. The queue is resolved head first. */
 export type Pending =
@@ -100,18 +101,23 @@ export function actingPlayer(state: GameState): PlayerId {
 export const hexById = (state: GameState, id: HexId): Hex | undefined =>
   state.board.hexes.find((h) => h.id === id);
 
-/** Empty intersections (no building, no occupant) touching one of the player's roads. */
+/** The edge holds one of the player's roads, or (with sea maps) one of their cogs: wardens use both. */
+export const ownRoute = (state: GameState, e: string, id: PlayerId): boolean =>
+  state.pieces.roads[e] === id || state.pieces.ships?.[e] === id;
+
+/** Empty land intersections (no building, no occupant) touching one of the player's roads or cogs. */
 export function wardenSpots(ctx: Ctx, id: PlayerId): VertexId[] {
   const { state, graph } = ctx;
   const occ = occupants(state);
   return graph.vertices.filter(
     (v) =>
-      !state.pieces.buildings[v] && !occ[v] && graph.vertexEdges[v].some((e) => state.pieces.roads[e] === id),
+      !state.pieces.buildings[v] && !occ[v] && graph.vertexEdges[v].some((e) => ownRoute(state, e, id)) &&
+      isLandVertex(ctx, v),
   );
 }
 
 /**
- * Intersections reachable from `from` along the owner's roads. The walk may pass the owner's own
+ * Intersections reachable from `from` along the owner's roads (and cogs). The walk may pass the owner's own
  * pieces but stops at (and includes) an intersection holding another player's building or occupant.
  */
 export function reach(ctx: Ctx, owner: PlayerId, from: VertexId): VertexId[] {
@@ -129,7 +135,7 @@ export function reach(ctx: Ctx, owner: PlayerId, from: VertexId): VertexId[] {
   while (queue.length) {
     const v = queue.shift() as VertexId;
     for (const e of graph.vertexEdges[v]) {
-      if (state.pieces.roads[e] !== owner) continue;
+      if (!ownRoute(state, e, owner)) continue;
       const [a, b] = graph.edgeEnds[e];
       const u = a === v ? b : a;
       if (seen.has(u)) continue;
@@ -141,10 +147,10 @@ export function reach(ctx: Ctx, owner: PlayerId, from: VertexId): VertexId[] {
   return out;
 }
 
-/** Empty intersections a warden standing on `from` can move to. */
+/** Empty land intersections a warden standing on `from` can move to. */
 export function moveTargets(ctx: Ctx, owner: PlayerId, from: VertexId): VertexId[] {
   const occ = occupants(ctx.state);
-  return reach(ctx, owner, from).filter((v) => !ctx.state.pieces.buildings[v] && !occ[v]);
+  return reach(ctx, owner, from).filter((v) => !ctx.state.pieces.buildings[v] && !occ[v] && isLandVertex(ctx, v));
 }
 
 /** Emit an expansion event; `secret` is only delivered to `visibleTo`. */

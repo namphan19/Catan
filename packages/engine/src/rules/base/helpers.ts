@@ -27,8 +27,15 @@ export function setupOrder(state: GameState): PlayerId[] {
   const s = seatOrder(state);
   const k = s.indexOf(state.turn.current);
   const rot = k < 0 ? s : [...s.slice(k), ...s.slice(0, k)];
-  return [...rot, ...[...rot].reverse()];
+  const out = [...rot, ...[...rot].reverse()];
+  // Extra rounds (scenario option) go forward from the first player again.
+  for (let r = 2; r < (state.init.setupRounds ?? 2); r++) out.push(...rot);
+  return out;
 }
+
+/** The setup placement at `idx` belongs to the last round (its settlement yields starting resources). */
+export const lastSetupRound = (state: GameState, idx: number): boolean =>
+  idx >= ((state.init.setupRounds ?? 2) - 1) * state.players.length;
 
 /** 5-6 players, paired mode (5-6 p.3): player 2 is the third seat to the left of player 1. */
 export function pairedPlayer(state: GameState): PlayerId {
@@ -132,6 +139,7 @@ export function blockerAllowed(ctx: Ctx, hex: string): boolean {
 /** Recompute the longest-route award after any road or settlement placement. */
 export function updateLongestRoute(ctx: ApplyCtx): void {
   const { state, graph } = ctx;
+  if (!ctx.rules.call('awardActive', ctx, true, 'longestRoute')) return;
   const { min } = ctx.rules.config.awards.longestRoute;
   const len: Record<PlayerId, number> = {};
   for (const p of state.players) len[p.id] = longestRoute(graph, state.pieces, p.id);

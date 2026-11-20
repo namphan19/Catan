@@ -4,15 +4,19 @@
 import type { Action, GameState, Phase, PlayerId, RuleError, VertexId } from '../../types';
 import type { ActionDef, ApplyCtx, Ctx, Ruleset, RulesConfig } from '../../ruleset/types';
 import { legalRoadSpots } from '../../board/graph';
-import { err, player } from '../base/helpers';
-import { GOLD, MIST, SEA, TL, TL_ID } from './config';
+import { err, lastSetupRound, player } from '../base/helpers';
+import { GOLD, MIST, SEA, TL, TL_ID, VILLAGE } from './config';
+import { cw, initCastaways, placeHarbor } from './castaways';
 import { corsairStart, generateMapBoard, mapById, mistStacks } from './maps';
 import { moveCorsair } from './corsair';
+import { emptyVillages, initSilk, produceSilk, silkFinalWinner, silkOf, stealSilk } from './silk';
+import { buildWonder, claimWonder, initWorks, worksWinner } from './works';
+import { randInt } from '../../rng';
 import { goldAround, goldClaims, goldWindowAfter, oweGold, takeGold } from './gold';
 import { SCENARIOS, scenarioOf, seatKey } from './scenarios';
 import { buildShip, moveShip, shipSpots } from './ships';
 import { afterRoutePlaced, settlementBan } from './special';
-import { isLand, isLandCorner, isLandEdge, regionsAt, scenario, tl, type TlState } from './state';
+import { hexIndex, isLand, isLandCorner, isLandEdge, isSea, regionsAt, scenario, tl, type TlState } from './state';
 
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
@@ -42,8 +46,13 @@ function guarded(prevDef: ActionDef | undefined, t: string, check: Check, after?
 const homeRegions = (state: GameState): string | null => mapById(state.board.layout).def.home ?? null;
 
 function viewOf(state: GameState) {
-  const { mist, ...pub } = tl(state);
-  return { ...pub, mistLeft: mist.reduce((n, m) => n + m.hexes.length, 0) };
+  const { mist, castaways, ...pub } = tl(state);
+  const out: Record<string, unknown> = { ...pub, mistLeft: mist.reduce((n, m) => n + m.hexes.length, 0) };
+  if (castaways) {
+    const { reserved, ...rest } = castaways;
+    out.castaways = { ...rest, reservedLeft: reserved.length };
+  }
+  return out as Omit<TlState, 'mist'> & { mistLeft: number };
 }
 
 export type TidelandsView = ReturnType<typeof viewOf>;
@@ -76,6 +85,7 @@ export const tidelandsRuleset: Ruleset = {
     if (withSh && !sc.strongholds) throw new Error(`scenario ${sc.id} cannot be played with strongholds`);
     init.layout = sc.maps[seatKey(init.playerCount)];
     if (!given.vpToWin) init.vpToWin = sc.vp + (withSh ? TL.strongholdsExtraVP : 0);
+    if (sc.setupRounds) init.setupRounds = sc.setupRounds;
   },
 
   makeBoard(rng, init, config) {
@@ -89,7 +99,22 @@ export const tidelandsRuleset: Ruleset = {
   hooks: {
     landHex: (ctx, prev, hex) => prev && isLand(ctx.state, hex),
     landVertex: (ctx, prev, v) => prev && isLandCorner(ctx, v),
-    blockerAllowed: (ctx, prev, hex) => prev && isLand(ctx.state, hex),
+    blockerAllowed(ctx, prev, hex) {
+      if (!prev || !isLand(ctx.state, hex)) return false;
+      const sp = scenario(ctx.state).special;
+      const h = hexIndex(ctx.state)[hex];
+      if (sp === 'castaways') return h.token !== undefined;
+      if (sp === 'silk') return h.terrain !== VILLAGE;
+      return true;
+    },
+    awardActive: (ctx, prev, award) => prev && !(award === 'longestRoute' && scenario(ctx.state).noLongestRoute),
+
+    checkWinner(ctx, prev) {
+      // Great Works replaces the VP race: only a finished (or the highest, with 10+ VP) wonder wins.
+      if (tl(ctx.state).works) return worksWinner(ctx);
+      if (prev) return prev;
+      return silkOf(ctx.state)?.final ? silkFinalWinner(ctx) : undefined;
+    },
 
     freeRouteAvailable(ctx, _prev, id) {
       const { state, graph } = ctx;
@@ -109,12 +134,17 @@ export const tidelandsRuleset: Ruleset = {
     // Gold mines: a resource of choice per settlement, two per city, chosen before the turn goes on.
     phaseAfterRoll(ctx, prev, sum) {
       if (sum === ctx.rules.config.blockerNumber) return prev;
+      produceSilk(ctx, sum);
       return goldWindowAfter(ctx, goldClaims(ctx, sum), prev);
     },
 
     victoryPoints(ctx, prev, id) {
       const sc = scenario(ctx.state);
-      return prev + (tl(ctx.state).landfall[id]?.length ?? 0) * sc.landfall;
+      const s = tl(ctx.state);
+      let total = prev + (s.landfall[id]?.length ?? 0) * sc.landfall;
+      if (s.castaways) total += s.castaways.vpTokens[id] ?? 0;
+      if (s.silk) total += Math.floor((s.silk.silk[id] ?? 0) / 2);
+      return total;
     },
   },
 
@@ -145,7 +175,7 @@ export const tidelandsRuleset: Ruleset = {
           // Starting settlements make their regions home; the second one also yields gold-mine picks.
           const home = (s.home[a.player] ??= []);
           for (const r of regionsAt(ctx, a.v)) if (!home.includes(r)) home.push(r);
-          if (before.idx >= ctx.state.players.length) oweGold(ctx, a.player, goldAround(ctx, a.v));
+          if (lastSetupRound(ctx.state, before.idx)) oweGold(ctx, a.player, goldAround(ctx, a.v));
         },
       ),
 
@@ -171,9 +201,27 @@ export const tidelandsRuleset: Ruleset = {
         validate: (ctx, a) => prev.validate(ctx, a),
         legal: (ctx, id) => prev.legal(ctx, id),
         apply(ctx, a) {
-          const s = tl(ctx.state);
+          const { state } = ctx;
+          const s = tl(state);
           s.fresh = [];
           s.moved = false;
+          const turn = state.turn.n;
+          prev.apply(ctx, a);
+          // Silk: the game ends at the end of a turn on which enough villages are empty.
+          const silk = s.silk;
+          if (silk && state.turn.n !== turn && emptyVillages(silk) >= silk.endAt) silk.final = true;
+        },
+      };
+    },
+
+    // A steal ends the corsair's silk option.
+    steal(prevDef) {
+      const prev = need(prevDef, 'steal');
+      return {
+        validate: (ctx, a) => prev.validate(ctx, a),
+        legal: (ctx, id) => prev.legal(ctx, id),
+        apply(ctx, a) {
+          tl(ctx.state).corsairSteal = false;
           prev.apply(ctx, a);
         },
       };
@@ -183,6 +231,10 @@ export const tidelandsRuleset: Ruleset = {
     'tl:moveShip': () => moveShip,
     'tl:moveCorsair': () => moveCorsair,
     'tl:gold': () => takeGold,
+    'tl:placeHarbor': () => placeHarbor,
+    'tl:stealSilk': () => stealSilk,
+    'tl:claimWonder': () => claimWonder,
+    'tl:buildWonder': () => buildWonder,
   },
 
   init(ctx) {
@@ -198,7 +250,16 @@ export const tidelandsRuleset: Ruleset = {
       landfall: Object.fromEntries(ids.map((id) => [id, [] as string[]])),
       gold: null,
       mist: mistStacks(state.rng, state.board.layout),
+      corsairSteal: false,
     };
+    // Random maps draw the corsair's starting sea hex.
+    if (!s.corsair && mapById(state.board.layout).def.scatter) {
+      const seas = state.board.hexes.filter((h) => isSea(state, h.id));
+      s.corsair = seas[randInt(state.rng, seas.length)].id;
+    }
+    if (sc.special === 'castaways') s.castaways = initCastaways(state, state.rng);
+    if (sc.special === 'silk') s.silk = initSilk(state);
+    if (sc.special === 'works') s.works = initWorks(state);
     state.ext[TL_ID] = s;
     state.pieces.ships = {};
   },

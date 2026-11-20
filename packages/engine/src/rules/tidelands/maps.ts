@@ -8,6 +8,8 @@
 //   Xr[n]    land: X = terrain letter (F forest, C claypit, M meadow, G field, Q quarry, W waste,
 //            A gold mine, * random from the region's pool), r = region letter, n = fixed number
 //   ?r       mist: undiscovered hex of region r (terrain and number come from the region's mist stacks)
+//   r0..r5   sea with a reward (castaways scenario) on the edge towards the neighbour in HEX_DIRS[d]
+//   V        (as a terrain letter) a weavers' village on an islet (silk scenario), always with a number
 //   .        no hex (outside the frame)
 // Regions are islands or areas of the map (landfall bonus, setup areas). Pools give the random terrains
 // and numbers per group of regions.
@@ -28,6 +30,16 @@ export interface PoolDef {
   numbers: number[];
   /** Mist pool: the cells are `?` and the stacks are drawn during play. */
   mist?: boolean;
+  /** Land without number tokens (it never produces). */
+  unnumbered?: boolean;
+}
+
+/** A marked intersection, given as a cell of the picture and one of its corners (0 N, 1 NE, 2 SE, 3 S, 4 SW, 5 NW). */
+export interface MarkerDef {
+  col: number;
+  row: number;
+  corner: number;
+  kind: string;
 }
 
 export interface MapDef {
@@ -49,6 +61,12 @@ export interface MapDef {
   neutral?: string;
   /** Random map: every cell is `*u`, the pool includes sea; islands, harbors and the corsair are drawn. */
   scatter?: boolean;
+  /** Rewards on the r-cells (castaways): counts per kind ('vp', 'card', 'harbor'); shuffled at setup. */
+  rewards?: Record<string, number>;
+  /** Harbor kinds handed out as rewards. */
+  rewardHarbors?: string[];
+  /** Marked intersections (wonder sites, no-build marks). */
+  markers?: MarkerDef[];
 }
 
 export interface Cell {
@@ -63,6 +81,7 @@ export interface Cell {
   region?: string;
   token?: number;
   harborDir?: number;
+  rewardDir?: number;
   corsair?: boolean;
 }
 
@@ -72,7 +91,7 @@ export interface ParsedMap {
   byPos: Record<string, Cell>;
 }
 
-const LAND_RE = /^([FCMGQWA*])([a-z])(\d+)?$/;
+const LAND_RE = /^([FCMGQWAV*])([a-z])(\d+)?$/;
 
 /** Parse a map picture into cells with centred axial coordinates. */
 export function parseMap(def: MapDef): ParsedMap {
@@ -87,6 +106,7 @@ export function parseMap(def: MapDef): ParsedMap {
         if (tok === '~') raw.push({ ...base, kind: 'sea' });
         else if (tok === '@') raw.push({ ...base, kind: 'sea', corsair: true });
         else if (/^h[0-5]$/.test(tok)) raw.push({ ...base, kind: 'sea', harborDir: Number(tok[1]) });
+        else if (/^r[0-5]$/.test(tok)) raw.push({ ...base, kind: 'sea', rewardDir: Number(tok[1]) });
         else if (/^\?[a-z]$/.test(tok)) raw.push({ ...base, kind: 'mist', region: tok[1] });
         else {
           const m = LAND_RE.exec(tok);
@@ -144,11 +164,18 @@ function checkMap(pm: ParsedMap): void {
   };
   const byId = Object.fromEntries(cells.map((c) => [c.id, c]));
   for (const c of cells) {
-    if (c.harborDir === undefined) continue;
-    const d = HEX_DIRS[c.harborDir];
+    const dir = c.harborDir ?? c.rewardDir;
+    if (dir === undefined) continue;
+    const d = HEX_DIRS[dir];
     const n = byId[hexId(c.q + d.q, c.r + d.r)];
-    if (!n || n.kind !== 'land') fail(`harbor at row ${c.row} col ${c.col} does not face land`);
+    if (!n || n.kind !== 'land') fail(`harbor or reward at row ${c.row} col ${c.col} does not face land`);
   }
+  const rewardCount = Object.values(def.rewards ?? {}).reduce((s, n) => s + n, 0);
+  if (cells.filter((c) => c.rewardDir !== undefined).length !== rewardCount) fail('reward cells and rewards differ');
+  if ((def.rewards?.harbor ?? 0) !== (def.rewardHarbors?.length ?? 0)) fail('reward harbors and harbor kinds differ');
+  for (const m of def.markers ?? []) if (!pm.byPos[`${m.col},${m.row}`]) fail(`marker at row ${m.row} col ${m.col} is off the map`);
+  for (const c of cells)
+    if (c.letter === 'V' && c.token === undefined) fail(`village at row ${c.row} col ${c.col} needs a number`);
   if (!def.scatter && cells.filter((c) => c.harborDir !== undefined).length !== def.harbors.length)
     fail('harbor cells and harbor kinds differ');
   // Harbors keep at least one edge between them (no shared corner).
@@ -190,6 +217,7 @@ function checkMap(pm: ParsedMap): void {
       if (producing !== p.numbers.length) fail(`mist pool ${p.regions}: ${p.numbers.length} numbers for ${producing} land hexes`);
       continue;
     }
+    if (p.unnumbered && p.numbers.length) fail(`pool ${p.regions}: unnumbered pool with numbers`);
     const stars = mine.filter((c) => c.kind === 'land' && c.letter === '*').length;
     if (stars !== terrainCount) fail(`pool ${p.regions}: ${terrainCount} terrains for ${stars} random cells`);
     const fixed: Record<string, number> = {};
@@ -200,7 +228,7 @@ function checkMap(pm: ParsedMap): void {
       Object.entries(all)
         .filter(([t]) => isProducing(t))
         .reduce((s, [, n]) => s + n, 0) - mine.filter((c) => c.kind === 'land' && c.token !== undefined).length;
-    if (needNumbers !== p.numbers.length) fail(`pool ${p.regions}: ${p.numbers.length} numbers for ${needNumbers} hexes`);
+    if (!p.unnumbered && needNumbers !== p.numbers.length) fail(`pool ${p.regions}: ${p.numbers.length} numbers for ${needNumbers} hexes`);
   }
   for (const c of cells)
     if (c.region && !def.pools.some((p) => p.regions.includes(c.region!)) && (c.letter === '*' || c.kind === 'mist'))
@@ -228,7 +256,7 @@ export function generateMapBoard(rng: RngState, mapId: string, opts: { hot: numb
   }
   // Numbers: reshuffle until the placement rules hold.
   const slotsOf = landPools.map((p) =>
-    cells
+    p.unnumbered ? [] : cells
       .filter((c) => c.kind === 'land' && p.regions.includes(c.region!) && c.token === undefined)
       .map((c) => byId[c.id])
       .filter((h) => isProducing(h.terrain)),
@@ -389,4 +417,25 @@ export function cellAt(mapId: string, col: number, row: number): HexId {
   const c = mapById(mapId).byPos[`${col},${row}`];
   if (!c) throw new Error(`${mapId}: no cell at col ${col} row ${row}`);
   return c.id;
+}
+
+/** Edges of the reward cells (castaways), in map order. */
+export function rewardEdges(mapId: string): string[] {
+  const g = getGraph(mapId);
+  return mapById(mapId)
+    .cells.filter((c) => c.rewardDir !== undefined)
+    .map((c) => {
+      const d = HEX_DIRS[c.rewardDir!];
+      const land = hexId(c.q + d.q, c.r + d.r);
+      return g.hexEdges[c.id].find((e) => g.hexEdges[land].includes(e))!;
+    });
+}
+
+/** Marked intersections of a map as vertex ids. */
+export function mapMarkers(mapId: string): Array<{ v: string; kind: string }> {
+  const pm = mapById(mapId);
+  return (pm.def.markers ?? []).map((m) => {
+    const c = pm.byPos[`${m.col},${m.row}`];
+    return { v: hexCorners(c.q, c.r)[m.corner], kind: m.kind };
+  });
 }

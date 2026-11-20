@@ -17,6 +17,12 @@ export interface Scenario {
   strongholds: boolean;
   /** Undiscovered hexes are revealed when a road or cog reaches them. */
   mist?: boolean;
+  /** Scenario with its own rules module. */
+  special?: 'castaways' | 'silk' | 'works' | 'coves';
+  /** Rounds of starting placements (default 2). */
+  setupRounds?: number;
+  /** The longest-route award is not used. */
+  noLongestRoute?: boolean;
 }
 
 export const seatKey = (players: number): SeatKey => (players >= 5 ? '56' : players === 4 ? '4' : '3');
@@ -298,6 +304,164 @@ const wastes: Scenario = {
   }),
 };
 
+// ---- 5. The Castaways: islets of a lost people ring the home island; rewards lie on their shores -------
+const castaways: Scenario = {
+  id: 'castaways',
+  vp: 13,
+  landfall: 0,
+  strongholds: false,
+  special: 'castaways',
+  maps: maps('castaways', {
+    '3': {
+      rows: [
+        '*t  *t  r4  ~   ~   ~   ~   r1  *t',
+        '  r5  r5  ~   *a  *a  *a  *a  r1  *t',
+        'r2  ~   *a  *a  *a  *a  *a  ~   r0',
+        '  *t  r4  *a  *a  *a  *a  *a  r1  *t',
+        '*t  r4  ~   *a  *a  *a  *a  r1  *t',
+        '  r5  r3  ~   ~   ~   ~   r2  r3  r5',
+        '*t  *t  r4  ~   @   ~   r1  *t  *t',
+      ],
+      pools: [
+        { regions: 'a', terrains: { goldmine: 2, claypit: 3, forest: 3, meadow: 3, field: 4, quarry: 3 }, numbers: [2, 3, 3, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12] },
+        { regions: 't', unnumbered: true, terrains: { waste: 3, claypit: 2, forest: 2, meadow: 2, field: 1, quarry: 2 }, numbers: [] },
+      ],
+      harbors: [],
+      rewards: { vp: 8, card: 4, harbor: 6 },
+      rewardHarbors: harbors(1),
+      home: 'a',
+    },
+    '4': '3',
+    '56': {
+      rows: [
+        '*t  *t  r4  ~   r1  *t  *t  r4  r1  *t  *t',
+        '  r5  r5  ~   ~   r0  r5  r5  ~   ~   r5  r5',
+        'r2  ~   ~   *a  *a  *a  *a  *a  ~   ~   r2',
+        '  *t  r4  *a  *a  *a  *a  *a  *a  ~   r1  *t',
+        '*t  r4  *a  *a  *a  *a  *a  *a  *a  r1  *t',
+        '  r5  ~   *a  *a  *a  *a  *a  *a  ~   ~   r5',
+        'r2  r3  ~   *a  *a  *a  *a  *a  ~   ~   r2',
+        '  *t  r4  ~   ~   ~   @   ~   ~   ~   r1  *t',
+      ],
+      pools: [
+        { regions: 'a', terrains: { goldmine: 3, claypit: 5, forest: 5, meadow: 5, field: 6, quarry: 5 }, numbers: [2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 8, 8, 8, 9, 9, 9, 10, 10, 10, 11, 11, 11, 12] },
+        { regions: 't', unnumbered: true, terrains: { waste: 4, claypit: 2, forest: 2, meadow: 2, field: 1, quarry: 1 }, numbers: [] },
+      ],
+      harbors: [],
+      rewards: { vp: 10, card: 6, harbor: 8 },
+      rewardHarbors: harbors(3),
+      home: 'a',
+    },
+  }),
+};
+
+// ---- 6. Silk of the Isles: weavers on small islets trade silk with whoever reaches them -------------
+const silk: Scenario = {
+  id: 'silk',
+  vp: 14,
+  landfall: 0,
+  strongholds: false,
+  special: 'silk',
+  setupRounds: 3,
+  noLongestRoute: true,
+  maps: maps('silk', {
+    '3': {
+      rows: [
+        'h2  ~   ~   ~   Vi3 Vi11 ~   ~   ~   ~   ~',
+        '  *a  *a  *a  h4  ~   ~   ~   ~   ~   ~   h3',
+        '*a  *a  *a  ~   ~   @   Vi4 Vi10 h2  *b  *b',
+        '  *a  *a  *a  h4  ~   ~   ~   ~   *b  *b  *b',
+        '*a  *a  h4  ~   Vi5 Vi9 ~   h1  *b  *b  *b',
+        '  h5  ~   ~   ~   ~   ~   ~   ~   *b  *b  *b',
+        '~   ~   ~   ~   ~   ~   Vi2 Vi12 ~   h0  ~',
+      ],
+      pools: [
+        { regions: 'ab', terrains: { waste: 2, claypit: 3, forest: 4, meadow: 4, field: 5, quarry: 4 }, numbers: [2, 3, 3, 4, 4, 5, 5, 6, 6, 6, 8, 8, 8, 9, 9, 10, 10, 11, 11, 12] },
+      ],
+      harbors: harbors(4),
+      blocker: 'twelve',
+    },
+    '4': '3',
+    '56': {
+      rows: [
+        'h2  ~   h2  ~   ~   ~   ~   ~   ~   ~   ~   ~   ~',
+        '  *a  *a  *a  ~   Vi2 Vi8 ~   Vi3 Vi11 ~   h3  ~   h3',
+        '*a  *a  *a  h4  ~   ~   ~   ~   ~   ~   *b  *b  *b',
+        '  *a  *a  *a  ~   Vi4 Vi10 ~   Vi5 Vi9 h1  *b  *b  *b',
+        '*a  *a  *a  h4  ~   ~   @   ~   ~   ~   *b  *b  *b',
+        '  *a  *a  *a  ~   Vi6 Vi12 ~   Vi3 Vi11 h1  *b  *b  *b',
+        '~   h0  ~   ~   ~   ~   ~   ~   ~   h1  *b  *b  *b',
+        '  ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   ~   h5  ~',
+      ],
+      pools: [
+        { regions: 'ab', terrains: { waste: 4, claypit: 4, forest: 6, meadow: 5, field: 6, quarry: 5 }, numbers: [2, 2, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 8, 8, 8, 9, 9, 9, 10, 10, 10, 11, 11, 12, 12] },
+      ],
+      harbors: harbors(5, true),
+      blocker: 'twelve',
+    },
+  }),
+};
+
+// ---- 8. The Great Works: race to raise a wonder on the home island ---------------------------------
+const W = (col: number, row: number, corner: number, kind: string) => ({ col, row, corner, kind });
+const works: Scenario = {
+  id: 'greatWorks',
+  vp: 10,
+  landfall: 1,
+  strongholds: false,
+  special: 'works',
+  maps: maps('greatWorks', {
+    '3': {
+      rows: [
+        '~   ~   h2  ~   ~   h2  ~   h2  ~',
+        '  *b  ~   *a  *a  *a  *a  h4  *c  *c',
+        '*b  ~   *a  *a  *a  *a  Wa  ~   *c',
+        '  *b  ~   *a  *a  *a  Wa  Wa  ~   ~',
+        '~   h1  *a  *a  *a  *a  *a  h4  *d',
+        '  h1  *a  *a  *a  ~   ~   ~   h1  *d',
+        '~   ~   ~   h0  ~   ~   ~   ~   ~',
+      ],
+      pools: [
+        { regions: 'a', terrains: { claypit: 4, forest: 4, meadow: 4, field: 4, quarry: 3 }, numbers: [2, 3, 3, 4, 4, 4, 5, 5, 6, 6, 8, 8, 9, 9, 10, 10, 11, 11, 12] },
+        { regions: 'bcd', terrains: { goldmine: 2, claypit: 1, forest: 1, meadow: 1, field: 1, quarry: 2 }, numbers: [2, 3, 5, 6, 8, 9, 10, 11] },
+      ],
+      harbors: harbors(4),
+      home: 'a',
+      markers: [
+        W(6, 2, 5, 'wall'), W(6, 2, 4, 'wall'), W(5, 3, 5, 'wall'), W(5, 3, 4, 'wall'), W(6, 3, 4, 'wall'),
+        W(0, 2, 1, 'bridge'), W(2, 2, 5, 'bridge'),
+        W(0, 2, 0, 'x'), W(0, 2, 2, 'x'), W(2, 2, 0, 'x'), W(2, 2, 4, 'x'),
+      ],
+    },
+    '4': '3',
+    '56': {
+      rows: [
+        '~   ~   ~   h2  ~   h2  ~   ~   ~   h2  ~',
+        '  *b  ~   ~   *a  *a  *a  *a  h4  ~   *c  *c',
+        '*b  ~   *a  *a  *a  *a  *a  Wa  ~   ~   *c',
+        '  *b  ~   *a  *a  *a  *a  *a  Wa  Wa  ~   h5',
+        'h0  ~   ~   *a  *a  *a  *a  *a  Wa  h1  *d',
+        '  ~   h1  *a  *a  *a  *a  *a  h4  ~   *d  *d',
+        '~   ~   ~   h0  ~   ~   h0  ~   ~   ~   ~',
+        '  ~   *e  *e  ~   ~   ~   ~   ~   ~   ~   ~',
+      ],
+      pools: [
+        { regions: 'a', terrains: { claypit: 5, forest: 5, meadow: 5, field: 5, quarry: 4 }, numbers: [2, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 8, 8, 8, 9, 9, 9, 10, 10, 10, 11, 11, 12] },
+        { regions: 'bcde', terrains: { goldmine: 3, claypit: 1, forest: 2, meadow: 2, field: 1, quarry: 2 }, numbers: [2, 3, 4, 5, 6, 8, 9, 10, 11, 11, 12] },
+      ],
+      harbors: harbors(5, true),
+      home: 'a',
+      markers: [
+        W(7, 2, 5, 'wall'), W(7, 2, 4, 'wall'), W(7, 3, 5, 'wall'), W(7, 3, 4, 'wall'), W(8, 4, 4, 'wall'),
+        W(0, 2, 1, 'bridge'), W(2, 2, 5, 'bridge'),
+        W(0, 2, 0, 'x'), W(0, 2, 2, 'x'), W(2, 2, 0, 'x'), W(2, 2, 4, 'x'),
+        W(6, 5, 3, 'beacon'), W(3, 1, 0, 'beacon'),
+        W(6, 5, 2, 'x'), W(6, 5, 4, 'x'), W(3, 1, 1, 'x'), W(3, 1, 5, 'x'),
+      ],
+    },
+  }),
+};
+
 // ---- 9. Uncharted Waters: a random map; your starting islands are home ----------------------------
 const scatterRows = (w: number, h: number): string[] =>
   Array.from({ length: h }, (_, r) => (r % 2 ? '  ' : '') + Array<string>(w).fill('*u').join('  '));
@@ -334,6 +498,9 @@ export const SCENARIOS: Record<string, Scenario> = {
   [isles.id]: isles,
   [mists.id]: mists,
   [wastes.id]: wastes,
+  [castaways.id]: castaways,
+  [silk.id]: silk,
+  [works.id]: works,
   [uncharted.id]: uncharted,
 };
 
