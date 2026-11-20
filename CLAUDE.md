@@ -1,9 +1,12 @@
 # Boschtan - notes for Claude
 
-Hex board game (base game + "Strongholds" expansion), pnpm monorepo: `packages/engine` (rules),
+Hex board game (base game + "Strongholds" and "Tidelands" (sea) expansions, playable together), pnpm monorepo: `packages/engine` (rules),
 `packages/server` (rooms, WebSocket), `packages/client` (React, 2D SVG board), `packages/e2e` (Playwright).
 The user is the PO. The old agent-team workflow (opencode agents, dashboard, autoheal) and the 3D board
 are retired and kept only in `archive/` (see `archive/README.md`); do not restore them unless asked.
+
+Expansion rules in our own words: `docs/RULES_STRONGHOLDS.md`, `docs/RULES_TIDELANDS.md` (sea scenarios and maps
+in `packages/engine/src/rules/tidelands/scenarios.ts`); art still needed for Tidelands: `docs/ART_TIDELANDS.md`.
 
 ## Network access (no proxy)
 

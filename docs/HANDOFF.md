@@ -91,3 +91,20 @@ Run: `pnpm install` / `pnpm test` / `pnpm typecheck` / `pnpm build` / `pnpm star
   expansion games (legal-move enumeration), fine for humans.
 - The PO changed the working mode on 2026-11-16: no opencode agent team, the lead does the work itself.
 - Uncommitted on purpose: team/*.conf, team/tasks/*, tools/*.py (runtime state / edits of another session).
+
+## 8. Update 2026-11-20: M5 "Tidelands" sea expansion (branch `claude/stoic-brahmagupta-kw3c3y`)
+- PO request: continue the seafaring expansion from the two new rulebooks (docs/CN3083*, CN3084*), own names,
+  playable alone or together with Strongholds; engine first, then bot arenas, then UI with existing assets and
+  placeholders for new art (list for the design team: docs/ART_TIDELANDS.md).
+- Rules in our own words + T-decisions: docs/RULES_TIDELANDS.md. Engine: `packages/engine/src/rules/tidelands/`;
+  generic extension points listed at the end of docs/API.md. Maps are drawn as text pictures in
+  `scenarios.ts` (legend in `maps.ts`), checked at load time, printable with `tsx fuzz/tlMaps.ts [scenario]`.
+- Scenarios: firstLandfall, scatteredIsles, islesOfMist, beyondTheWastes, castaways, silk, corsairCoves,
+  greatWorks, uncharted (3, 4 and 5-6 player maps). With Strongholds: the five basic ones (VP target +3).
+- Verification: 262 engine tests (28 tidelands + sim lockstep), 78 server tests, 38 e2e (16 tidelands);
+  fuzzer and arena runs over every scenario and the combination: no invariant failures, 0 invalid bot actions
+  (numbers in docs/PLAN.md section 7).
+- Run locally: `fuzz 12 0 tidelands`, `fuzz 9 0 both`, `arena 16 hard,random,random,random tidelands`;
+  e2e on a machine whose Chromium does not match Playwright: `PW_CHROMIUM_PATH=/path/to/chrome`.
+- Open: PO playtest; PO to confirm T8 (strongholds combination details), T10 (silk map counts), T11 (corsair
+  coves geometry); final art; the expert bot uses the heuristic in expansion games (no search yet).

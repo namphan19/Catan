@@ -14,6 +14,7 @@ Later: an original "advanced" expansion ruleset that plugs into the same engine 
 | M2 | authoritative WebSocket server (rooms, reconnect, redacted views only) - self-hosted by the PO for colleagues | todo (next after rules) |
 | M3 | expansion ruleset `strongholds` as a separate module (hooks only): engine, server option, 2D + 3D client UI | built 2026-11-16 (see docs/RULES_STRONGHOLDS.md); 3D pieces added 2026-11-16; open: playtest |
 | UI | real web UI + original medieval art (docs/UI.md) | in progress |
+| M5 | expansion ruleset `tidelands` (sea maps, cogs, corsair, gold, 9 scenarios incl. 5-6 maps) alone or with strongholds: engine, bots, arena, server option, 2D client UI with placeholder art (docs/RULES_TIDELANDS.md, docs/ART_TIDELANDS.md) | built 2026-11-20; open: PO playtest, final art |
 | M4 | bots, goal: challenge strong human players. Steps: 1 heuristic bot + server bot seats + self-play arena; 2 fast bot engine (mutable state, checked against the real engine); 3 ISMCTS search on a worker with a time budget; 4 smart trading + weight tuning by self-play; 5 strongholds-aware bot | steps 1-3 built 2026-11-17 |
 
 PO 2026-11-13: web only, no bots, medieval style (own art), online play for colleagues.
@@ -92,3 +93,17 @@ cover only appears between humans. The trade dialog opened for an offer now clos
 e2e: tests/local-bots.spec.ts. The hosted server on :8080 was restarted on this build (no rooms were open).
 As built: names are neutral placeholders (timber/clay/fiber/grain/stone, guard/freeRoads/harvest/claim/relic,
 blocker, longestRoute/largestForce) until the PO picks a theme.
+
+2026-11-20, M5 Tidelands (sea expansion), branch `claude/stoic-brahmagupta-kw3c3y`: engine module `rules/tidelands/`
+(config, maps + map picture parser, scenarios, state, ships, corsair, gold, special, castaways, silk, works,
+coves, index) using new generic extension points (docs/API.md last section). Nine scenarios with own maps for
+3, 4 and 5-6 players. Tests: 28 tidelands vitest + sim lockstep for 6 scenarios and the strongholds
+combination (262 engine tests in total), fuzzer modes `tidelands[:scenario]` and `both[:scenario]`
+(`pnpm --filter @hexgame/engine fuzz 12 0 tidelands`), arena modes the same (`... arena 16 hard,random,random,random tidelands`).
+Bots: sea-aware heuristic (bot/sea.ts): cog routes to new coasts / rewards / villages, gold picks, corsair,
+harbors, wonders, lines to forts. Arena results (0 invalid bot actions in every run): hard vs 3 random 25/27
+(92.6%) over all 9 scenarios; hard,normal,easy,hard 62.5/25/12.5%; 5 players hard 55.6% (fair 40%);
+6 players hard 83.3% (fair 50%); strongholds + tidelands hard vs 3 random 9/10. Fuzzer: all scenarios and
+the combination without invariant failures. Server: room option `tidelands: <scenario>` (+ `expansion`).
+Client: scenario picker (home + online), sea maps, cogs, corsair, rewards, villages, wonder sites, forts,
+side panel, gold / road-or-cog dialogs; e2e `tests/tidelands.spec.ts` (16 tests desktop + tablet).
