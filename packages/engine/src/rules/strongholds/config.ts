@@ -32,7 +32,8 @@ export const SH = {
   caravanVP: 1,
   shieldVP: 1,
   vpToWin: 13,
-  commodityBank: { standard: 12, large: 18 } as Record<string, number>,
+  /** Commodity cards per type: 12, or 18 with 5-6 players (any board, incl. scenario maps). */
+  commodityBank: { small: 12, large: 18 },
   supply: { warden1: 2, warden2: 2, warden3: 2, rampart: 3 } as Record<string, number>,
   costs: {
     warden: { fiber: 1, stone: 1 },

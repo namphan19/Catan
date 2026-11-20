@@ -174,7 +174,8 @@ export const strongholdsRuleset: Ruleset = {
     };
     state.ext[SH_ID] = s;
     state.pieces.occupants = {};
-    for (const c of SH.commodities) state.bank.hand[c] = SH.commodityBank[state.board.layout];
+    const bank = state.players.length >= 5 ? SH.commodityBank.large : SH.commodityBank.small;
+    for (const c of SH.commodities) state.bank.hand[c] = bank;
     // The blocker waits beside the board until the first raid.
     state.board.blocker = '';
   },

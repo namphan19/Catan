@@ -6,7 +6,8 @@ export type VertexId = string; // "v:q,r,N" | "v:q,r,S"
 export type EdgeId = string; // "e:q,r,NE" | "e:q,r,NW" | "e:q,r,W"
 export type ResourceId = string; // defined by the ruleset config, e.g. "timber"
 export type CardId = string; // defined by the ruleset config, e.g. "guard"
-export type LayoutId = 'standard' | 'large';
+/** 'standard' / 'large' (base) or an id registered with registerLayout (e.g. scenario maps). */
+export type LayoutId = 'standard' | 'large' | (string & {});
 
 /** A multiset of resources. Missing keys mean 0. */
 export type Bag = Record<ResourceId, number>;
@@ -19,6 +20,8 @@ export interface Hex {
   r: number;
   terrain: string;
   token?: number;
+  /** Map area (island / region letter) on scenario maps; absent on the base layouts. */
+  region?: string;
 }
 
 export interface Harbor {
@@ -56,6 +59,9 @@ export interface Pieces {
   roads: Record<EdgeId, PlayerId>;
   /** Only present in games whose rulesets use occupants. */
   occupants?: Record<VertexId, Occupant>;
+  /** Ships on sea edges (only in games whose rulesets use them). An edge holds a road or a ship,
+   *  never both. Ships and roads join into one route only at an own building. */
+  ships?: Record<EdgeId, PlayerId>;
 }
 
 export interface PlayerState {
@@ -116,6 +122,8 @@ export interface GameInit {
   largeTableMode: 'paired' | 'extraBuild';
   /** First player (start of the setup snake and of turn 1); random per seed unless forced. */
   firstPlayer?: PlayerId;
+  /** Ruleset options chosen at game creation (e.g. `{ scenario: 'firstLandfall' }`). Plain JSON. */
+  options?: Record<string, unknown>;
 }
 
 export interface TurnState {

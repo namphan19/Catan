@@ -4,7 +4,8 @@
 //  - actions[t](prev)        -> add a new action type or wrap/replace an existing one
 //  - init(ctx)               -> initialise namespaced state in state.ext at game creation
 import type {
-  Action, Bag, CardId, GameEvent, GameState, LayoutId, Phase, PlayerId, ResourceId, RuleError,
+  Action, Bag, Board, CardId, GameEvent, GameInit, GameState, HexId, LayoutId, Phase, PlayerId, ResourceId,
+  RngState, RuleError, VertexId,
 } from '../types';
 import type { Graph } from '../board/graph';
 
@@ -76,6 +77,16 @@ export interface Hooks {
   discardLimit(ctx: Ctx, prev: number, player: PlayerId): number;
   /** Bank trade rate for giving `resource` (prev: base rate incl. harbors). */
   tradeRate(ctx: Ctx, prev: number, player: PlayerId, resource: ResourceId): number;
+  /** Is this board hex land (base: every hex; sea maps say no for sea and undiscovered hexes)? */
+  landHex(ctx: Ctx, prev: boolean, hex: HexId): boolean;
+  /** Is this intersection on land, i.e. may pieces stand on it (base: every vertex)? */
+  landVertex(ctx: Ctx, prev: boolean, v: VertexId): boolean;
+  /** May the blocker be put on this hex (base: any board hex)? */
+  blockerAllowed(ctx: Ctx, prev: boolean, hex: HexId): boolean;
+  /** Can the player place at least one free road-like piece now (road building / free road windows)? */
+  freeRouteAvailable(ctx: Ctx, prev: boolean, player: PlayerId): boolean;
+  /** Production still owed per player as a later choice (e.g. a resource of choice), not yet in hand. */
+  pendingGains(ctx: Ctx, prev: Record<PlayerId, number>): Record<PlayerId, number>;
 }
 
 export type HookName = keyof Hooks;
@@ -101,6 +112,12 @@ export interface Ruleset {
   hooks?: { [K in HookName]?: Hooks[K] };
   actions?: Record<string, (prev: ActionDef | undefined) => ActionDef>;
   init?(ctx: ApplyCtx): void;
+  /** Adjust the game setup before the board is made (layout, VP target from `init.options`).
+   *  `given` says which values the caller fixed explicitly (those must not change). */
+  prepare?(init: GameInit, config: RulesConfig, given: { vpToWin: boolean; layout: boolean }): void;
+  /** Make the board instead of the random base layout (e.g. a scenario map). The last ruleset that
+   *  returns a board wins; it may only draw randomness from `rng`. */
+  makeBoard?(rng: RngState, init: GameInit, config: RulesConfig): Board | undefined;
   /** Redacted, JSON-serializable view of this ruleset's `state.ext` data for one viewer
    *  (null = spectator). Ends up in `PlayerView.ext[<ruleset id>]`. */
   view?(ctx: Ctx, viewer: PlayerId | null): unknown;
@@ -114,6 +131,8 @@ export interface Rules {
   actions: Record<string, ActionDef>;
   call<K extends HookName>(name: K, ctx: Ctx, seed: HookPrev<K>, ...args: HookArgs<K>): HookPrev<K>;
   init(ctx: ApplyCtx): void;
+  prepare(init: GameInit, given: { vpToWin: boolean; layout: boolean }): void;
+  makeBoard(rng: RngState, init: GameInit): Board | undefined;
   views(ctx: Ctx, viewer: PlayerId | null): Record<string, unknown>;
   redactAction(action: Action, viewer: PlayerId | null): Action;
 }

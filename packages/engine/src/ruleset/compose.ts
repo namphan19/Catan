@@ -32,6 +32,14 @@ export function composeRules(list: Ruleset[]): Rules {
     init(ctx: ApplyCtx) {
       for (const r of list) r.init?.(ctx);
     },
+    prepare(init, given) {
+      for (const r of list) r.prepare?.(init, config as RulesConfig, given);
+    },
+    makeBoard(rng, init) {
+      let board;
+      for (const r of list) board = r.makeBoard?.(rng, init, config as RulesConfig) ?? board;
+      return board;
+    },
     views(ctx: Ctx, viewer) {
       const out: Record<string, unknown> = {};
       for (const r of list) if (r.view) out[r.id] = r.view(ctx, viewer);

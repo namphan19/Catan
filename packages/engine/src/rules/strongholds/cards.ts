@@ -2,9 +2,10 @@
 // A played card goes back under its deck. Any number of cards may be played in an action phase.
 import type { Action, EdgeId, ExtAction, HexId, Phase, PlayerId, RuleError, VertexId } from '../../types';
 import type { ActionDef, ApplyCtx, Ctx } from '../../ruleset/types';
-import { legalRoadSpots } from '../../board/graph';
 import { bagAdd, bagSub, bagTotal } from '../../bag';
-import { actors, err, expect, hasPlayer, player, setPhase, updateLongestRoute, vp } from '../base/helpers';
+import {
+  actors, blockerAllowed, err, expect, freeRouteAvailable, hasPlayer, player, setPhase, updateLongestRoute, vp,
+} from '../base/helpers';
 import { SH, isCommodity, type Track } from './config';
 import { settle } from './flow';
 import {
@@ -76,9 +77,11 @@ function collect(ctx: ApplyCtx, id: PlayerId, resource: string, max: number): vo
 }
 
 function freeRoads(ctx: ApplyCtx, id: PlayerId, count: number): void {
-  const { state, graph } = ctx;
-  const left = Math.min(count, player(state, id).supply.road ?? 0);
-  if (left <= 0 || legalRoadSpots(graph, state.pieces, id).length === 0) return;
+  const { state } = ctx;
+  const sup = player(state, id).supply;
+  // Ships (tidelands) count as road-like pieces for free placements too.
+  const left = Math.min(count, (sup.road ?? 0) + (sup.ship ?? 0));
+  if (left <= 0 || !freeRouteAvailable(ctx, id)) return;
   setPhase(ctx, state.phase.k === 'paired' ? { k: 'freeRoads', left, actor: id } : { k: 'freeRoads', left });
 }
 
@@ -173,9 +176,7 @@ export const CARDS: Record<string, CardDef> = {
   /** Two roads at no cost. */
   pavers: {
     check(ctx, a) {
-      const { state, graph } = ctx;
-      const can = (player(state, a.player).supply.road ?? 0) > 0 && legalRoadSpots(graph, state.pieces, a.player).length > 0;
-      return can ? null : err('NO_ROAD_SPOT', 'You have nowhere to build a road.');
+      return freeRouteAvailable(ctx, a.player) ? null : err('NO_ROAD_SPOT', 'You have nowhere to build a road.');
     },
     run: (ctx, a) => freeRoads(ctx, a.player, 2),
     options: () => NONE,
@@ -358,7 +359,8 @@ export const CARDS: Record<string, CardDef> = {
     check(ctx, a) {
       const { state, graph } = ctx;
       if (!sh(state).blockerActive) return err('NO_BLOCKER', 'The blocker is not on the board yet.');
-      return typeof a.hex === 'string' && graph.hexVertices[a.hex] && a.hex !== state.board.blocker
+      return typeof a.hex === 'string' && graph.hexVertices[a.hex] && a.hex !== state.board.blocker &&
+        blockerAllowed(ctx, a.hex)
         ? null
         : err('BAD_HEX', 'Move the blocker to a different hex.');
     },
@@ -370,7 +372,7 @@ export const CARDS: Record<string, CardDef> = {
       const owners = new Set(graph.hexVertices[hex].map((v) => state.pieces.buildings[v]?.owner));
       for (const o of others(ctx, a.player)) if (owners.has(o)) stealRandom(ctx, o, a.player);
     },
-    options: (ctx) => ctx.graph.hexes.map((hex) => ({ hex })),
+    options: (ctx) => ctx.graph.hexes.filter((hex) => blockerAllowed(ctx, hex)).map((hex) => ({ hex })),
   },
   /** Another player removes one of their wardens; you may place one of yours of at most that rank. */
   turncoat: {

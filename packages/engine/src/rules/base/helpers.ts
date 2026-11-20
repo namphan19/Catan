@@ -1,7 +1,7 @@
 // Shared helpers for base rule modules.
 import type { Action, Bag, GameState, Phase, PlayerId, PlayerState, Resume, RuleError } from '../../types';
 import type { ApplyCtx, Ctx } from '../../ruleset/types';
-import { longestRoute } from '../../board/graph';
+import { legalRoadSpots, longestRoute } from '../../board/graph';
 import { bagTotal } from '../../bag';
 
 export const err = (code: string, message: string): RuleError => ({ code, message });
@@ -109,6 +109,24 @@ export function cost(ctx: Ctx, item: string): Bag {
 
 export function vp(ctx: Ctx, id: PlayerId, opts: { public: boolean } = { public: false }): number {
   return ctx.rules.call('victoryPoints', ctx, 0, id, opts);
+}
+
+/** Whether the player can place a free road-like piece now (base: a road; extensions add ships). */
+export function freeRouteAvailable(ctx: Ctx, id: PlayerId): boolean {
+  const { state, graph } = ctx;
+  const base = (player(state, id).supply.road ?? 0) > 0 && legalRoadSpots(graph, state.pieces, id).length > 0;
+  return ctx.rules.call('freeRouteAvailable', ctx, base, id);
+}
+
+/** Is the hex land (rulesets with sea maps say no for sea hexes)? */
+export const isLandHex = (ctx: Ctx, hex: string): boolean => ctx.rules.call('landHex', ctx, true, hex);
+
+/** Is the intersection on land (may pieces such as buildings or wardens stand there)? */
+export const isLandVertex = (ctx: Ctx, v: string): boolean => ctx.rules.call('landVertex', ctx, true, v);
+
+/** May the blocker stand on this hex (a board hex the rulesets allow)? */
+export function blockerAllowed(ctx: Ctx, hex: string): boolean {
+  return !!ctx.graph.hexVertices[hex] && ctx.rules.call('blockerAllowed', ctx, true, hex);
 }
 
 /** Recompute the longest-route award after any road or settlement placement. */

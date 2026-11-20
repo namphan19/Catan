@@ -5,13 +5,18 @@ import type { ApplyCtx, Ctx, Rules, Ruleset } from './ruleset/types';
 import { composeRules } from './ruleset/compose';
 import { baseRuleset } from './rules/base';
 import { strongholdsRuleset } from './rules/strongholds';
+import { tidelandsRuleset } from './rules/tidelands';
 import { getGraph } from './board/graph';
 import { generateBoard } from './board/generate';
 import { randInt, seedRng, shuffle } from './rng';
 import { emptyBag } from './bag';
 import { vp } from './rules/base/helpers';
 
-const REGISTRY: Record<string, Ruleset> = { base: baseRuleset, [strongholdsRuleset.id]: strongholdsRuleset };
+const REGISTRY: Record<string, Ruleset> = {
+  base: baseRuleset,
+  [strongholdsRuleset.id]: strongholdsRuleset,
+  [tidelandsRuleset.id]: tidelandsRuleset,
+};
 const rulesCache: Record<string, Rules> = {};
 
 /** Register an extension ruleset (e.g. a later "advanced" module). Call once at startup. */
@@ -57,6 +62,8 @@ export interface CreateGameOptions {
   largeTableMode?: 'paired' | 'extraBuild';
   /** Force the first player; default: uniform over the seats from the game RNG (per seed). */
   firstPlayer?: PlayerId;
+  /** Ruleset options, e.g. `{ scenario: 'firstLandfall' }` for the tidelands expansion. Plain JSON. */
+  options?: Record<string, unknown>;
 }
 
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
@@ -84,14 +91,19 @@ export function createGame(opts: CreateGameOptions): GameState {
     extraBuild: opts.extraBuild ?? playerCount >= 5,
     largeTableMode,
   };
-  const spec = cfg.layouts[layout];
+  if (opts.options !== undefined) init.options = clone(opts.options);
+  rules.prepare(init, { vpToWin: opts.vpToWin !== undefined, layout: opts.layout !== undefined });
+  const spec = cfg.layouts[init.layout];
+  if (!spec) throw new Error(`no layout spec for ${init.layout}`);
   const rng = seedRng(seed);
-  const board = generateBoard(rng, layout, spec, {
-    producing: (t) => !!cfg.terrainResource[t],
-    hotNumbers: cfg.hotNumbers,
-    genericRate: cfg.genericHarborRate,
-    specificRate: cfg.specificHarborRate,
-  });
+  const board =
+    rules.makeBoard(rng, init) ??
+    generateBoard(rng, init.layout, spec, {
+      producing: (t) => !!cfg.terrainResource[t],
+      hotNumbers: cfg.hotNumbers,
+      genericRate: cfg.genericHarborRate,
+      specificRate: cfg.specificHarborRate,
+    });
   const deck = shuffle(
     rng,
     Object.entries(spec.deck).flatMap(([c, n]) => Array<string>(n).fill(c)),
@@ -197,6 +209,7 @@ export function replay(init: GameInit, actions: Action[]): GameState {
     extraBuild: init.extraBuild,
     largeTableMode: init.largeTableMode,
     firstPlayer: init.firstPlayer,
+    options: init.options,
   });
   for (const a of actions) s = applyAction(s, a).state;
   return s;

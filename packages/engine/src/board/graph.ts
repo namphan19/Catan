@@ -21,7 +21,7 @@ export interface Graph {
   coast: EdgeId[];
 }
 
-const cache: Partial<Record<LayoutId, Graph>> = {};
+const cache: Record<string, Graph> = {};
 
 export function getGraph(layout: LayoutId): Graph {
   return (cache[layout] ??= buildGraph(layout));
@@ -99,14 +99,23 @@ export function satisfiesDistanceRule(g: Graph, pieces: Pieces, v: VertexId): bo
   return g.vertexNeighbors[v].every((n) => !pieces.buildings[n]);
 }
 
-/** Legal settlement vertices. In setup no road connection is needed. */
+/** An edge holds a road or a ship (never both). */
+export const edgeTaken = (pieces: Pieces, e: EdgeId): boolean => !!pieces.roads[e] || !!pieces.ships?.[e];
+
+/** The vertex touches one of the player's roads or ships. */
+export function touchesOwnRoute(g: Graph, pieces: Pieces, player: PlayerId, v: VertexId): boolean {
+  return g.vertexEdges[v].some((x) => pieces.roads[x] === player || pieces.ships?.[x] === player);
+}
+
+/** Legal settlement vertices. In setup no road connection is needed; later a road or ship must lead there. */
 export function legalSettlementSpots(
   g: Graph, pieces: Pieces, player: PlayerId, opts: { setup: boolean },
 ): VertexId[] {
   if (opts.setup) return g.vertices.filter((v) => satisfiesDistanceRule(g, pieces, v));
-  // Only vertices at the end of one of the player's roads can qualify (kept in board order).
+  // Only vertices at the end of one of the player's roads or ships can qualify (kept in board order).
   const near = new Set<VertexId>();
   for (const e in pieces.roads) if (pieces.roads[e] === player) for (const v of g.edgeEnds[e]) near.add(v);
+  if (pieces.ships) for (const e in pieces.ships) if (pieces.ships[e] === player) for (const v of g.edgeEnds[e]) near.add(v);
   if (!near.size) return [];
   return g.vertices.filter((v) => near.has(v) && satisfiesDistanceRule(g, pieces, v));
 }
@@ -127,7 +136,7 @@ export function roadConnects(g: Graph, pieces: Pieces, player: PlayerId, e: Edge
 export function legalRoadSpots(
   g: Graph, pieces: Pieces, player: PlayerId, opts: { fromVertex?: VertexId } = {},
 ): EdgeId[] {
-  if (opts.fromVertex) return g.vertexEdges[opts.fromVertex].filter((e) => !pieces.roads[e]);
+  if (opts.fromVertex) return g.vertexEdges[opts.fromVertex].filter((e) => !edgeTaken(pieces, e));
   // Only edges touching a vertex of the player's network can connect (kept in board order).
   const near = new Set<EdgeId>();
   const touch = (v: VertexId) => {
@@ -136,15 +145,33 @@ export function legalRoadSpots(
   for (const e in pieces.roads) if (pieces.roads[e] === player) g.edgeEnds[e].forEach(touch);
   for (const v in pieces.buildings) if (pieces.buildings[v].owner === player) touch(v);
   if (!near.size) return [];
-  return g.edges.filter((e) => near.has(e) && !pieces.roads[e] && roadConnects(g, pieces, player, e));
+  return g.edges.filter((e) => near.has(e) && !edgeTaken(pieces, e) && roadConnects(g, pieces, player, e));
+}
+
+/** A ship on edge e would connect to the player's ships or buildings (never to a road alone).
+ *  `ignore` leaves one ship out (the ship that is being moved). */
+export function shipConnects(g: Graph, pieces: Pieces, player: PlayerId, e: EdgeId, ignore?: EdgeId): boolean {
+  return g.edgeEnds[e].some((v) => {
+    const b = pieces.buildings[v];
+    if (b && b.owner === player) return true;
+    if (b && b.owner !== player) return false; // cannot sail past an opponent building
+    const o = pieces.occupants?.[v];
+    if (o && o.owner !== player) return false;
+    return g.vertexEdges[v].some((x) => x !== e && x !== ignore && pieces.ships?.[x] === player);
+  });
 }
 
 /**
  * Length of the player's longest continuous route: the longest trail (no edge used twice) of the
- * player's roads. A trail may end at, but not pass through, a vertex with an opponent building.
+ * player's roads and ships. A trail may end at, but not pass through, a vertex with an opponent
+ * building or occupant. Roads and ships join into one trail only at a vertex with an own building.
  */
 export function longestRoute(g: Graph, pieces: Pieces, player: PlayerId): number {
+  const ships = pieces.ships;
+  const kind = (e: EdgeId): 0 | 1 | 2 =>
+    pieces.roads[e] === player ? 1 : ships && ships[e] === player ? 2 : 0;
   const mine = Object.keys(pieces.roads).filter((e) => pieces.roads[e] === player);
+  if (ships) for (const e in ships) if (ships[e] === player) mine.push(e);
   if (mine.length === 0) return 0;
   const used = new Set<EdgeId>();
   const blocked = (v: VertexId) => {
@@ -154,19 +181,22 @@ export function longestRoute(g: Graph, pieces: Pieces, player: PlayerId): number
     return !!o && o.owner !== player;
   };
   let best = 0;
-  const dfs = (v: VertexId, len: number) => {
+  const dfs = (v: VertexId, len: number, via: 0 | 1 | 2) => {
     if (len > best) best = len;
     if (len > 0 && blocked(v)) return;
+    const own = pieces.buildings[v]?.owner === player;
     for (const e of g.vertexEdges[v]) {
-      if (used.has(e) || pieces.roads[e] !== player) continue;
+      if (used.has(e)) continue;
+      const k = kind(e);
+      if (!k || (via && k !== via && !own)) continue;
       used.add(e);
       const [a, b] = g.edgeEnds[e];
-      dfs(a === v ? b : a, len + 1);
+      dfs(a === v ? b : a, len + 1, k);
       used.delete(e);
     }
   };
   const starts = new Set<VertexId>();
   for (const e of mine) g.edgeEnds[e].forEach((v) => starts.add(v));
-  for (const v of starts) dfs(v, 0);
+  for (const v of starts) dfs(v, 0, 0);
   return best;
 }

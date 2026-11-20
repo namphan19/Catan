@@ -1,10 +1,10 @@
 // placeSettlement / placeRoad / buildCity, including the free placements of setup and freeRoads.
-import type { Action, Bag, PlayerId } from '../../types';
+import type { Action, Bag, Phase, PlayerId } from '../../types';
 import type { ActionDef, ApplyCtx, Ctx } from '../../ruleset/types';
-import { legalRoadSpots, legalSettlementSpots, roadConnects, satisfiesDistanceRule } from '../../board/graph';
+import { edgeTaken, legalRoadSpots, legalSettlementSpots, roadConnects, satisfiesDistanceRule, touchesOwnRoute } from '../../board/graph';
 import { bagAdd, bagHas, bagSub } from '../../bag';
 import {
-  cost, err, expect, player, resumePhase, setPhase, setupOrder, startTurn, updateLongestRoute,
+  cost, err, expect, freeRouteAvailable, player, resumePhase, setPhase, setupOrder, startTurn, updateLongestRoute,
 } from './helpers';
 
 type A<T extends string> = Extract<Action, { t: T }>;
@@ -34,7 +34,7 @@ export const placeSettlement: ActionDef = {
     if (!satisfiesDistanceRule(graph, state.pieces, a.v))
       return err('DISTANCE_RULE', 'Vertex is occupied or adjacent to a building.');
     if (state.phase.k === 'setup') return null;
-    if (!graph.vertexEdges[a.v].some((x) => state.pieces.roads[x] === a.player))
+    if (!touchesOwnRoute(graph, state.pieces, a.player, a.v))
       return err('NOT_CONNECTED', 'A settlement must touch one of your roads.');
     return canAfford(ctx, a.player, 'settlement');
   },
@@ -78,6 +78,26 @@ export const placeSettlement: ActionDef = {
   },
 };
 
+/**
+ * Phase step after a road-like piece (road, or an extension's ship) was placed in `ph`: the setup
+ * snake moves on, a free-roads window counts down. Other phases are left as they are.
+ */
+export function advanceAfterRoute(ctx: ApplyCtx, ph: Phase, id: PlayerId): void {
+  const { state } = ctx;
+  if (ph.k === 'setup') {
+    const idx = ph.idx + 1;
+    // D1: while setup runs, `turn.current` is the first player; turn 1 starts with them too.
+    if (idx >= setupOrder(state).length) startTurn(ctx, state.turn.current);
+    else state.phase = { k: 'setup', idx, step: 'settlement' };
+  } else if (ph.k === 'freeRoads') {
+    const left = ph.left - 1;
+    const more = left > 0 && freeRouteAvailable(ctx, id);
+    // An `actor` marks a freeRoads window opened by the paired player: resume to that phase.
+    if (more) state.phase = ph.actor ? { k: 'freeRoads', left, actor: ph.actor } : { k: 'freeRoads', left };
+    else setPhase(ctx, ph.actor ? resumePhase(state, 'paired') : { k: 'main' });
+  }
+}
+
 export const placeRoad: ActionDef = {
   validate(ctx, action) {
     const a = action as A<'placeRoad'>;
@@ -87,7 +107,7 @@ export const placeRoad: ActionDef = {
     if (e) return e;
     if (ph.k === 'setup' && ph.step !== 'road') return err('WRONG_STEP', 'Place a settlement first.');
     if (!graph.edgeEnds[a.e]) return err('BAD_EDGE', `Unknown edge ${String(a.e)}.`);
-    if (state.pieces.roads[a.e]) return err('OCCUPIED', 'There is already a road on this edge.');
+    if (edgeTaken(state.pieces, a.e)) return err('OCCUPIED', 'There is already a road on this edge.');
     if ((player(state, a.player).supply.road ?? 0) <= 0) return err('NO_PIECES', 'No roads left in supply.');
     if (ph.k === 'setup') {
       return ph.at && graph.edgeEnds[a.e].includes(ph.at)
@@ -111,19 +131,7 @@ export const placeRoad: ActionDef = {
     p.supply.road -= 1;
     ctx.emit({ e: 'placed', player: a.player, kind: 'road', at: a.e, free });
     updateLongestRoute(ctx);
-    if (ph.k === 'setup') {
-      const idx = ph.idx + 1;
-      // D1: while setup runs, `turn.current` is the first player; turn 1 starts with them too.
-      if (idx >= setupOrder(state).length) startTurn(ctx, state.turn.current);
-      else state.phase = { k: 'setup', idx, step: 'settlement' };
-    } else if (ph.k === 'freeRoads') {
-      const left = ph.left - 1;
-      const more =
-        left > 0 && p.supply.road > 0 && legalRoadSpots(graph, state.pieces, a.player).length > 0;
-      // An `actor` marks a freeRoads window opened by the paired player: resume to that phase.
-      if (more) state.phase = ph.actor ? { k: 'freeRoads', left, actor: ph.actor } : { k: 'freeRoads', left };
-      else setPhase(ctx, ph.actor ? resumePhase(state, 'paired') : { k: 'main' });
-    }
+    advanceAfterRoute(ctx, ph, a.player);
   },
   legal(ctx, id) {
     const { state, graph } = ctx;
