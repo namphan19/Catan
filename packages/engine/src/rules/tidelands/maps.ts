@@ -67,6 +67,13 @@ export interface MapDef {
   rewardHarbors?: string[];
   /** Marked intersections (wonder sites, no-build marks). */
   markers?: MarkerDef[];
+  /** Corsair coves: per seat (seat order) the starting settlement, the landing and the fort,
+   *  each a cell and corner [col, row, corner]. Smaller tables use the first seats. */
+  seats?: Array<{ start: [number, number, number]; landing: [number, number, number]; fort: [number, number, number] }>;
+  /** Corsair coves: the pirate fleet's loop of sea cells [col, row] in sailing order. */
+  fleet?: Array<[number, number]>;
+  /** Cells of the loop where the fleet never attacks. */
+  calm?: Array<[number, number]>;
 }
 
 export interface Cell {
@@ -438,4 +445,29 @@ export function mapMarkers(mapId: string): Array<{ v: string; kind: string }> {
     const c = pm.byPos[`${m.col},${m.row}`];
     return { v: hexCorners(c.q, c.r)[m.corner], kind: m.kind };
   });
+}
+
+const cornerOf = (pm: ParsedMap, [col, row, corner]: [number, number, number]): string => {
+  const c = pm.byPos[`${col},${row}`];
+  if (!c) throw new Error(`${pm.def.id}: no cell at col ${col} row ${row}`);
+  return hexCorners(c.q, c.r)[corner];
+};
+
+/** Corsair coves geometry of a map: seats, the fleet loop and its calm hexes. */
+export function covesGeometry(mapId: string): {
+  seats: Array<{ start: string; landing: string; fort: string }>;
+  loop: HexId[];
+  calm: HexId[];
+} {
+  const pm = mapById(mapId);
+  const cell = ([col, row]: [number, number]) => {
+    const c = pm.byPos[`${col},${row}`];
+    if (!c) throw new Error(`${mapId}: no cell at col ${col} row ${row}`);
+    return c.id;
+  };
+  return {
+    seats: (pm.def.seats ?? []).map((st) => ({ start: cornerOf(pm, st.start), landing: cornerOf(pm, st.landing), fort: cornerOf(pm, st.fort) })),
+    loop: (pm.def.fleet ?? []).map(cell),
+    calm: (pm.def.calm ?? []).map(cell),
+  };
 }

@@ -2,10 +2,10 @@
 // Usage: pnpm --filter @hexgame/engine arena [games=40] [lineup=hard,random,random,random] [strongholds]
 //   lineup: comma-separated seat policies: easy | normal | hard | random (seats rotate every game).
 import {
-  SH_ID, applyAction, createGame, decide, expertDecide, getLegalActions, getPlayerView, randInt, seedRng, validateAction,
+  applyAction, createGame, decide, expertDecide, getLegalActions, getPlayerView, randInt, seedRng, validateAction,
   type Action, type BotLevel, type GameState, type PlayerId, type RngState,
 } from '../src';
-import { checkInvariants } from './randomGame';
+import { checkInvariants, parseMode } from './randomGame';
 
 export type Policy = BotLevel | 'random';
 
@@ -26,6 +26,8 @@ const RANDOM_W: Record<string, number> = {
   offerTrade: 0.3, confirmTrade: 5, cancelTrade: 2, endTurn: 3,
   'sh:improve': 40, 'sh:recruit': 12, 'sh:activate': 10, 'sh:promote': 8, 'sh:rampart': 6, 'sh:play': 3,
   'sh:moveWarden': 0.3, 'sh:displace': 3, 'sh:chase': 2, 'sh:bazaarOffer': 2, 'sh:discardCard': 1,
+  'tl:buildShip': 10, 'tl:moveShip': 1, 'tl:moveCorsair': 1, 'tl:placeHarbor': 20, 'tl:claimWonder': 40,
+  'tl:buildWonder': 40,
 };
 
 function randomPick(rng: RngState, legal: Action[]): Action {
@@ -48,14 +50,15 @@ export interface ArenaGame {
 }
 
 export function playArenaGame(
-  seed: string, seats: Policy[], rulesets: string[] = ['base'], maxActions = 20000,
+  seed: string, seats: Policy[], rulesets: string[] = ['base'], maxActions = 20000, options?: Record<string, unknown>,
 ): ArenaGame {
-  let s: GameState = createGame({ seed, playerCount: seats.length, rulesets });
+  let s: GameState = createGame({ seed, playerCount: seats.length, rulesets, options });
   const ids = s.players.map((p) => p.id);
   const policy: Record<PlayerId, Policy> = Object.fromEntries(ids.map((id, i) => [id, seats[i]]));
   const rng = seedRng(`arena:${seed}`);
   const sum = (b: Record<string, number>) => Object.values(b).reduce((a, n) => a + n, 0);
-  const initial = { resources: sum(s.bank.hand), cards: s.bank.deck.length };
+  const reserved = ((s.ext.tidelands as { castaways?: { reserved: string[] } } | undefined)?.castaways?.reserved.length) ?? 0;
+  const initial = { resources: sum(s.bank.hand), cards: s.bank.deck.length + reserved };
   const out: ArenaGame = { seed, turns: 0, actions: 0, invalid: 0, botMs: 0, botCalls: 0 };
 
   const choose = (id: PlayerId, legal: Action[], timedOut: boolean): Action | null => {
@@ -110,7 +113,7 @@ export function playArenaGame(
 function main(): void {
   const games = Number(process.argv[2] ?? 40);
   const lineup = (process.argv[3] ?? 'hard,random,random,random').split(',') as Policy[];
-  const rulesets = process.argv[4] === SH_ID ? ['base', SH_ID] : ['base'];
+  const mode = process.argv[4];
   const wins: Record<string, number> = {};
   const seatsOf: Record<string, number> = {};
   for (const p of lineup) seatsOf[p] = (seatsOf[p] ?? 0) + 1;
@@ -122,7 +125,9 @@ function main(): void {
     // Rotate seats so no policy always sits first.
     const k = i % lineup.length;
     const seats = [...lineup.slice(k), ...lineup.slice(0, k)];
-    const r = playArenaGame(`arena-${start + i}`, seats, rulesets);
+    const { rulesets, options } = parseMode(mode, start + i);
+    const r = playArenaGame(`arena-${start + i}`, seats, rulesets, 20000, options);
+    if (options?.scenario) console.log(`  arena-${start + i} ${String(options.scenario)}: winner ${r.winnerPolicy} in ${r.turns} turns, invalid ${r.invalid}`);
     const key = r.winnerPolicy ?? 'none';
     wins[key] = (wins[key] ?? 0) + 1;
     turns += r.turns;
@@ -131,7 +136,7 @@ function main(): void {
     calls += r.botCalls;
   }
   const secs = ((Date.now() - t0) / 1000).toFixed(1);
-  console.log(`${games} games, lineup ${lineup.join(',')} (${rulesets.join('+')}), ${secs} s`);
+  console.log(`${games} games, lineup ${lineup.join(',')} (${mode ?? 'base'}), ${secs} s`);
   for (const p of Object.keys(seatsOf)) {
     const w = wins[p] ?? 0;
     const fair = (seatsOf[p] / lineup.length) * 100;

@@ -5,6 +5,7 @@ import { edgeTaken, shipConnects } from '../../board/graph';
 import { advanceAfterRoute, canAfford, pay } from '../base/build';
 import { cost, err, expect, player, updateLongestRoute } from '../base/helpers';
 import { afterRoutePlaced, shipLocked } from './special';
+import { covesOf, covesShipError } from './coves';
 import { corsairEdges, emitTl, isSeaEdge, tl } from './state';
 
 const BUILD_PHASES = ['setup', 'main', 'extraBuild', 'paired', 'freeRoads'] as const;
@@ -25,10 +26,13 @@ export function shipSpotError(ctx: Ctx, id: PlayerId, e: EdgeId, opts: SpotOpts 
   if (!isSeaEdge(ctx, e)) return err('NOT_SEA', 'Cogs sail on edges next to the sea.');
   if (corsairEdges(ctx).includes(e)) return err('CORSAIR', 'The corsair guards that hex.');
   if (opts.setupAt !== undefined) {
+    if (covesOf(state)) return err('NOT_HERE', 'Starting pieces are roads in this scenario.');
     return graph.edgeEnds[e].includes(opts.setupAt)
       ? null
       : err('NOT_CONNECTED', 'The setup cog must touch the settlement just placed.');
   }
+  const line = covesShipError(ctx, id, e);
+  if (line) return err('LINE', line);
   if (!shipConnects(graph, state.pieces, id, e, opts.moving))
     return err('NOT_CONNECTED', 'A cog must connect to one of your cogs or buildings.');
   return null;

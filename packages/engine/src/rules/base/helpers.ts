@@ -162,6 +162,7 @@ export function updateLongestRoute(ctx: ApplyCtx): void {
  *  larger count takes it. The counted card ids come from config (D21), not hardcoded. */
 export function updateLargestForce(ctx: ApplyCtx, id: PlayerId): void {
   const { state } = ctx;
+  if (!ctx.rules.call('awardActive', ctx, true, 'largestForce')) return;
   const { min, cards } = ctx.rules.config.awards.largestForce;
   const count = (p: PlayerId) => {
     const played = player(state, p).played;

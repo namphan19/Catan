@@ -462,6 +462,72 @@ const works: Scenario = {
   }),
 };
 
+// ---- 7. Corsair Coves: break the corsairs' forts on the western islets --------------------------------
+const loop = (rows: number): Array<[number, number]> => [
+  ...Array.from({ length: rows }, (_, r): [number, number] => [3, r]),
+  ...Array.from({ length: rows }, (_, i): [number, number] => [2, rows - 1 - i]),
+];
+const seat = (start: [number, number, number], row: number) => ({
+  start, landing: [1, row, 2] as [number, number, number], fort: [0, row, 2] as [number, number, number],
+});
+const coves: Scenario = {
+  id: 'corsairCoves',
+  vp: 10,
+  landfall: 0,
+  strongholds: false,
+  special: 'coves',
+  noLongestRoute: true,
+  maps: maps('corsairCoves', {
+    '3': {
+      rows: [
+        'Wp  Ap5 ~   ~   ~   h2  ~   h2  ~',
+        '  ~   ~   ~   ~   *a  *a  *a  *a  h4',
+        'Qp  Mp9 ~   ~   *a  *a  *a  *a  ~',
+        '  ~   ~   ~   ~   *a  *a  Wa  *a  h4',
+        'Wp  Qp10 ~   ~   *a  *a  *a  *a  *a',
+        '  ~   ~   ~   ~   *a  *a  *a  *a  h4',
+        'Fp  Gp3 ~   ~   h0  h0  ~   h0  ~',
+        '  ~   ~   ~   ~   ~   ~   ~   ~   ~',
+      ],
+      pools: [
+        { regions: 'a', terrains: { goldmine: 1, claypit: 4, forest: 4, meadow: 4, field: 4, quarry: 3 }, numbers: [2, 3, 4, 4, 4, 5, 5, 6, 6, 6, 8, 8, 8, 9, 9, 10, 10, 11, 11, 12] },
+        { regions: 'p', unnumbered: true, terrains: {}, numbers: [] },
+      ],
+      harbors: harbors(3),
+      home: 'a',
+      fleet: loop(8),
+      seats: [seat([4, 1, 5], 0), seat([4, 2, 4], 2), seat([4, 4, 5], 4), seat([4, 5, 4], 6)],
+    },
+    '4': '3',
+    '56': {
+      rows: [
+        'Wp  Gp3 ~   ~   ~   h2  h2  ~   ~',
+        '  ~   ~   ~   ~   *a  *a  *a  h4  ~',
+        'Wp  Ap4 ~   ~   *a  *a  *a  ~   ~',
+        '  ~   ~   ~   ~   *a  *a  *a  h4  ~',
+        'Wp  Cp5 ~   ~   *a  *a  *a  h4  ~',
+        '  ~   ~   ~   ~   *a  *a  *a  *a  h4',
+        'Qp  Fp9 ~   ~   *a  Wa  *a  h4  ~',
+        '  ~   ~   ~   ~   *a  *a  *a  h4  ~',
+        'Fp  Mp10 ~   ~   *a  *a  Wa  ~   ~',
+        '  ~   ~   ~   ~   *a  *a  *a  h4  ~',
+        'Mp  Qp11 ~   ~   h0  h0  ~   ~   ~',
+      ],
+      pools: [
+        { regions: 'a', terrains: { goldmine: 3, claypit: 3, forest: 5, meadow: 5, field: 4, quarry: 6 }, numbers: [2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 8, 8, 8, 8, 9, 9, 10, 10, 11, 11, 11, 12] },
+        { regions: 'p', unnumbered: true, terrains: {}, numbers: [] },
+      ],
+      harbors: harbors(5, true),
+      home: 'a',
+      fleet: loop(11),
+      calm: [[2, 5]],
+      seats: [
+        seat([4, 1, 5], 0), seat([4, 2, 4], 2), seat([4, 4, 5], 4), seat([4, 5, 4], 6), seat([4, 7, 5], 8), seat([4, 8, 4], 10),
+      ],
+    },
+  }),
+};
+
 // ---- 9. Uncharted Waters: a random map; your starting islands are home ----------------------------
 const scatterRows = (w: number, h: number): string[] =>
   Array.from({ length: h }, (_, r) => (r % 2 ? '  ' : '') + Array<string>(w).fill('*u').join('  '));
@@ -500,6 +566,7 @@ export const SCENARIOS: Record<string, Scenario> = {
   [wastes.id]: wastes,
   [castaways.id]: castaways,
   [silk.id]: silk,
+  [coves.id]: coves,
   [works.id]: works,
   [uncharted.id]: uncharted,
 };

@@ -393,7 +393,7 @@ describe('tidelands: special scenarios', () => {
     expect(x(t).silk!.silk.p1).toBe(1);
     // The docked cog never moves.
     x(t).fresh = [];
-    expect(getLegalActions(t, 'p1').some((m) => m.t === 'tl:moveShip' && (m as { from: string }).from === e)).toBe(false);
+    expect(getLegalActions(t, 'p1').some((m) => m.t === 'tl:moveShip' && (m as unknown as { from: string }).from === e)).toBe(false);
     // Production on the village number.
     const token = t.board.hexes.find((h) => h.id === vh)!.token!;
     const r = JSON.parse(JSON.stringify(t)) as GameState;
@@ -415,7 +415,6 @@ describe('tidelands: special scenarios', () => {
     expect(moved).toBeGreaterThan(0);
     const done = act(end, { t: 'endTurn', player: 'p1' });
     expect(done.winner).toBeDefined();
-    expect(done.longestRoute).toBeUndefined();
     expect(done.awards.longestRoute).toBeNull();
   });
 
@@ -448,8 +447,111 @@ describe('tidelands: special scenarios', () => {
   });
 });
 
+describe('tidelands: corsair coves', () => {
+  it('starts with a settlement and a cog each; starting pieces are roads; no blocker', () => {
+    const s = createGame({ seed: 'cv', playerCount: 4, rulesets: RS, firstPlayer: 'p1', options: { scenario: 'corsairCoves' } });
+    expect(s.board.blocker).toBe('');
+    for (const p of s.players) {
+      expect(Object.values(s.pieces.buildings).filter((b) => b.owner === p.id)).toHaveLength(1);
+      expect(Object.values(s.pieces.ships!).filter((o) => o === p.id)).toHaveLength(1);
+      expect(p.supply.settlement).toBe(3); // one on the board, one held in the fort
+    }
+    expect(s.bank.deck).not.toContain('relic'); // relics play as guards with 4 players
+    const three = createGame({ seed: 'cv', playerCount: 3, rulesets: RS, options: { scenario: 'corsairCoves' } });
+    expect(three.bank.deck).not.toContain('relic');
+    let t = act(s, getLegalActions(s, 'p1').find((a) => a.t === 'placeSettlement')!);
+    expect(getLegalActions(t, 'p1').some((a) => a.t === 'tl:buildShip')).toBe(false);
+    t = act(t, getLegalActions(t, 'p1')[0]);
+    expect(t.phase).toMatchObject({ k: 'setup', idx: 1 });
+  });
+
+  it('the line of cogs grows only at its end, by the shortest way; guards arm it', () => {
+    const s = game('corsairCoves', 4);
+    const cv = x(s).coves!;
+    // The fleet starts next to p1's line; sail it away so the line may grow.
+    cv.fleet = 5;
+    x(s).corsair = cv.loop[5];
+    setHand(s, 'p1', { timber: 3, fiber: 3 });
+    const legal = getLegalActions(s, 'p1').filter((a) => a.t === 'tl:buildShip');
+    expect(legal.length).toBeGreaterThan(0);
+    const g = graphOf(s);
+    const line = cv.lines.p1;
+    let end = cv.seats.p1.start;
+    for (const e of line) end = other(g, e, end);
+    for (const a of legal) expect(g.edgeEnds[(a as unknown as { e: EdgeId }).e]).toContain(end);
+    const t = act(s, legal[0]);
+    expect(x(t).coves!.lines.p1).toHaveLength(2);
+    // Guards arm the first plain cog; they cannot move a blocker here.
+    pl(t, 'p1').cards.push('guard');
+    t.bank.deck.splice(t.bank.deck.indexOf('guard'), 1);
+    expect(code(t, { t: 'playCard', player: 'p1', card: 'guard' })).toBe('USE_ARM');
+    const u = act(t, { t: 'tl:arm', player: 'p1' });
+    expect(x(u).coves!.war.p1).toBe(1);
+    expect(u.awards.largestForce).toBeNull();
+  });
+
+  it('a line at its fort attacks it when the action phase ends; the fort counts only once taken', () => {
+    const s = game('corsairCoves', 4);
+    const cv = x(s).coves!;
+    const g = graphOf(s);
+    // Test shortcut: lay p1's line straight to the fort along the shortest sea path.
+    const seat = cv.seats.p1;
+    const prev: Record<string, string> = {};
+    const queue = [seat.start];
+    const seen = new Set(queue);
+    while (queue.length) {
+      const v = queue.shift()!;
+      for (const e of g.vertexEdges[v]) {
+        if (!seaSide(s, g, e)) continue;
+        const u = other(g, e, v);
+        if (seen.has(u)) continue;
+        seen.add(u);
+        prev[u] = e;
+        queue.push(u);
+      }
+    }
+    const path: EdgeId[] = [];
+    for (let v = seat.fort; v !== seat.start; v = other(g, prev[v], v)) path.unshift(prev[v]);
+    for (const e of cv.lines.p1) {
+      delete s.pieces.ships![e];
+      pl(s, 'p1').supply.ship += 1;
+    }
+    cv.lines.p1 = [];
+    for (const e of path) {
+      if (s.pieces.ships![e]) continue;
+      ship(s, 'p1', e);
+      cv.lines.p1.push(e);
+    }
+    cv.war.p1 = cv.lines.p1.length; // every cog a warship: stronger than any die roll of 6 or less
+    expect(cv.lines.p1.length).toBeGreaterThan(6);
+    let t = s;
+    for (let i = 0; i < 3; i++) {
+      t = act(t, { t: 'endTurn', player: t.turn.current });
+      // skip the other players' turns
+      while (t.turn.current !== 'p1') {
+        t.phase = { k: 'main' };
+        t = act(t, { t: 'endTurn', player: t.turn.current });
+      }
+      t.phase = { k: 'main' };
+    }
+    expect(x(t).coves!.lairs.p1).toBe(0);
+    expect(t.pieces.buildings[seat.fort]).toMatchObject({ owner: 'p1', kind: 'settlement' });
+  });
+
+  it('after a roll the fleet sails the lower die; a 7 lets the roller rob anyone', () => {
+    const s = game('corsairCoves', 4, { k: 'preRoll' });
+    setHand(s, 'p3', { grain: 1 });
+    s.ext.forceDice = [5, 2];
+    const t = act(s, { t: 'roll', player: 'p1' });
+    expect(x(t).coves!.fleet).toBe(2);
+    expect(x(t).corsair).toBe(x(t).coves!.loop[2]);
+    expect(t.phase.k === 'steal' || t.phase.k === 'discard' || t.phase.k === 'ext').toBe(true);
+    if (t.phase.k === 'steal') expect(t.phase.from).toContain('p3');
+  });
+});
+
 describe('tidelands: engine guarantees', () => {
-  for (const scenario of ['firstLandfall', 'islesOfMist', 'castaways', 'silk', 'greatWorks', 'uncharted']) {
+  for (const scenario of ['firstLandfall', 'islesOfMist', 'castaways', 'silk', 'greatWorks', 'corsairCoves', 'uncharted']) {
     it(`random play keeps every invariant and replays exactly (${scenario})`, () => {
       let s = createGame({ seed: `rp-${scenario}`, playerCount: 4, rulesets: ['base', 'tidelands'], options: { scenario } });
       const sum = (b: Record<string, number>) => Object.values(b).reduce((a, n) => a + n, 0);

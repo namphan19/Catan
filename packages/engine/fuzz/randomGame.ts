@@ -10,7 +10,8 @@ const WEIGHTS: Record<string, number> = {
   offerTrade: 0.3, respondTrade: 3, confirmTrade: 5, cancelTrade: 1, endTurn: 3,
   'sh:improve': 40, 'sh:recruit': 12, 'sh:activate': 10, 'sh:promote': 8, 'sh:rampart': 6, 'sh:play': 3,
   'sh:moveWarden': 0.3, 'sh:displace': 3, 'sh:chase': 2, 'sh:bazaarOffer': 2, 'sh:discardCard': 1,
-  'tl:buildShip': 10, 'tl:moveShip': 1, 'tl:moveCorsair': 1, 'tl:placeHarbor': 20, 'tl:stealSilk': 1,
+  'tl:buildShip': 10, 'tl:moveShip': 1, 'tl:moveCorsair': 1, 'tl:placeHarbor': 20, 'tl:stealSilk': 1, 'tl:arm': 30,
+  'tl:claimWonder': 40, 'tl:buildWonder': 40,
 };
 
 export interface FuzzResult {
@@ -30,8 +31,10 @@ const ADVANCE_CARDS = TRACKS.reduce(
 function checkStrongholds(s: GameState, fail: (m: string) => never): void {
   const x = s.ext[SH_ID] as ShState;
   const occ = s.pieces.occupants ?? {};
-  if ((s.phase.k === 'ext') !== x.pending.length > 0) fail('ext phase and pending queue disagree');
-  if (s.phase.k === 'ext' && s.phase.actors?.[0] !== x.pending[0].player) fail('wrong actor for the pending choice');
+  // Another ruleset's window (tidelands gold) is an ext phase too; only ours must match the queue.
+  const ours = s.phase.k === 'ext' && s.phase.id === SH_ID;
+  if (ours !== x.pending.length > 0) fail('ext phase and pending queue disagree');
+  if (ours && s.phase.k === 'ext' && s.phase.actors?.[0] !== x.pending[0].player) fail('wrong actor for the pending choice');
   let cards = TRACKS.reduce((n, t) => n + x.decks[t].length, 0);
   for (const p of s.players) {
     cards += p.cards.length + x.vpCards[p.id].length;
@@ -84,8 +87,12 @@ function checkTidelands(s: GameState, fail: (m: string) => never): void {
   for (const e of Object.keys(s.pieces.roads)) if (!g.edgeHexes[e].some(land)) fail(`road off the land at ${e}`);
   for (const v of Object.keys(s.pieces.buildings)) if (!g.vertexHexes[v].some(land)) fail(`building off the land at ${v}`);
   if (x.corsair && terrain[x.corsair] !== SEA) fail('corsair is not at sea');
-  const inGold = s.phase.k === 'ext' && s.phase.id === TL_ID && (s.phase.data as { kind?: string }).kind === 'gold';
-  if (inGold !== !!x.gold) fail('gold window and gold debts disagree');
+  const isGold = (ph: GameState['phase'] | null | undefined) =>
+    !!ph && ph.k === 'ext' && ph.id === TL_ID && (ph.data as { kind?: string }).kind === 'gold';
+  // The gold window is open, or waits behind a strongholds choice that resumes into it.
+  const sh = s.ext[SH_ID] as ShState | undefined;
+  const waiting = !!sh && s.phase.k === 'ext' && s.phase.id === SH_ID && isGold(sh.resume);
+  if ((isGold(s.phase) || waiting) !== !!x.gold) fail('gold window and gold debts disagree');
   if (x.silk) {
     const total = Object.values(x.silk.silk).reduce((a, b) => a + b, 0) + x.silk.supply +
       Object.values(x.silk.villages).reduce((a, v) => a + v.silk, 0);
@@ -121,7 +128,9 @@ export function checkInvariants(s: GameState, initial: { resources: number; card
     // placed + supply = initial pieces
     const own = Object.values(s.pieces.buildings).filter((b) => b.owner === p.id);
     const cities = own.filter((b) => b.kind === 'city').length;
-    const settlements = own.length - cities;
+    // Corsair coves: a fort not yet taken holds one of the player's settlement pieces.
+    const fort = ((s.ext[TL_ID] as TlState | undefined)?.coves?.lairs[p.id] ?? 0) > 0 ? 1 : 0;
+    const settlements = own.length - cities + fort;
     if (cities + p.supply.city !== baseConfig.supply.city) fail(`${p.id} city count`);
     if (settlements + p.supply.settlement !== baseConfig.supply.settlement) fail(`${p.id} settlement count`);
   }

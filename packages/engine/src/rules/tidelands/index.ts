@@ -4,13 +4,15 @@
 import type { Action, GameState, Phase, PlayerId, RuleError, VertexId } from '../../types';
 import type { ActionDef, ApplyCtx, Ctx, Ruleset, RulesConfig } from '../../ruleset/types';
 import { legalRoadSpots } from '../../board/graph';
-import { err, lastSetupRound, player } from '../base/helpers';
+import { err, lastSetupRound, player, setPhase } from '../base/helpers';
 import { GOLD, MIST, SEA, TL, TL_ID, VILLAGE } from './config';
 import { cw, initCastaways, placeHarbor } from './castaways';
 import { corsairStart, generateMapBoard, mapById, mistStacks } from './maps';
 import { moveCorsair } from './corsair';
 import { emptyVillages, initSilk, produceSilk, silkFinalWinner, silkOf, stealSilk } from './silk';
 import { buildWonder, claimWonder, initWorks, worksWinner } from './works';
+import { armCard, attackFort, covesOf, covesWinner, initCoves, placeCovesStart, reachedFort, robAnyone, sailFleet } from './coves';
+import { resolveRoll } from '../base/turn';
 import { randInt } from '../../rng';
 import { goldAround, goldClaims, goldWindowAfter, oweGold, takeGold } from './gold';
 import { SCENARIOS, scenarioOf, seatKey } from './scenarios';
@@ -40,6 +42,12 @@ function guarded(prevDef: ActionDef | undefined, t: string, check: Check, after?
     },
     legal: (ctx, id) => prev.legal(ctx, id).filter((a) => !check(ctx, a)),
   };
+}
+
+/** The steal phase of a 7 without a blocker (corsair coves), or the action phase if nobody has cards. */
+function robPhase(state: GameState): Phase {
+  const from = robAnyone(state, state.turn.current);
+  return from.length ? { k: 'steal', from, resume: 'main' } : { k: 'main' };
 }
 
 /** Regions where starting settlements must go (null = anywhere). */
@@ -107,11 +115,17 @@ export const tidelandsRuleset: Ruleset = {
       if (sp === 'silk') return h.terrain !== VILLAGE;
       return true;
     },
-    awardActive: (ctx, prev, award) => prev && !(award === 'longestRoute' && scenario(ctx.state).noLongestRoute),
+    awardActive(ctx, prev, award) {
+      if (!prev) return false;
+      if (award === 'longestRoute' && scenario(ctx.state).noLongestRoute) return false;
+      return !(award === 'largestForce' && tl(ctx.state).coves);
+    },
 
     checkWinner(ctx, prev) {
       // Great Works replaces the VP race: only a finished (or the highest, with 10+ VP) wonder wins.
       if (tl(ctx.state).works) return worksWinner(ctx);
+      // Corsair coves: the VP target counts only with your fort taken.
+      if (tl(ctx.state).coves) return covesWinner(ctx);
       if (prev) return prev;
       return silkOf(ctx.state)?.final ? silkFinalWinner(ctx) : undefined;
     },
@@ -133,9 +147,17 @@ export const tidelandsRuleset: Ruleset = {
 
     // Gold mines: a resource of choice per settlement, two per city, chosen before the turn goes on.
     phaseAfterRoll(ctx, prev, sum) {
-      if (sum === ctx.rules.config.blockerNumber) return prev;
-      produceSilk(ctx, sum);
-      return goldWindowAfter(ctx, goldClaims(ctx, sum), prev);
+      const s = tl(ctx.state);
+      const owed: Record<PlayerId, number> = { ...(s.fleetBonus ?? {}) };
+      delete s.fleetBonus;
+      let next = prev;
+      // Corsair coves: no blocker; after the discards the roller robs any player.
+      if (s.coves && prev.k === 'moveBlocker') next = robPhase(ctx.state);
+      if (sum !== ctx.rules.config.blockerNumber) {
+        produceSilk(ctx, sum);
+        for (const [id, n] of Object.entries(goldClaims(ctx, sum))) owed[id] = (owed[id] ?? 0) + n;
+      }
+      return goldWindowAfter(ctx, owed, next);
     },
 
     victoryPoints(ctx, prev, id) {
@@ -203,6 +225,8 @@ export const tidelandsRuleset: Ruleset = {
         apply(ctx, a) {
           const { state } = ctx;
           const s = tl(state);
+          // Corsair coves: a line at its fort attacks it at the end of the action phase.
+          if (s.coves && reachedFort(ctx, a.player)) attackFort(ctx, a.player);
           s.fresh = [];
           s.moved = false;
           const turn = state.turn.n;
@@ -213,6 +237,48 @@ export const tidelandsRuleset: Ruleset = {
         },
       };
     },
+
+    // Corsair coves: the fleet sails after the roll, before production and the 7.
+    roll(prevDef) {
+      const prev = need(prevDef, 'roll');
+      const def: ActionDef = {
+        validate: (ctx, a) => prev.validate(ctx, a),
+        legal: (ctx, id) => prev.legal(ctx, id),
+        apply(ctx, a) {
+          const { state, rules } = ctx;
+          const s = tl(state);
+          if (!s.coves) {
+            prev.apply(ctx, a);
+            return;
+          }
+          const dice = rules.call('rollDice', ctx, []);
+          state.turn.roll = dice;
+          ctx.emit({ e: 'rolled', player: a.player, dice, sum: dice.reduce((x, y) => x + y, 0) });
+          s.fleetBonus = sailFleet(ctx, dice);
+          resolveRoll(ctx);
+        },
+      };
+      return def;
+    },
+
+    // Corsair coves: after the last discard of a 7 the roller robs any player (no blocker).
+    discard(prevDef) {
+      const prev = need(prevDef, 'discard');
+      return {
+        validate: (ctx, a) => prev.validate(ctx, a),
+        legal: (ctx, id) => prev.legal(ctx, id),
+        apply(ctx, a) {
+          prev.apply(ctx, a);
+          if (tl(ctx.state).coves && ctx.state.phase.k === 'moveBlocker') setPhase(ctx, robPhase(ctx.state));
+        },
+      };
+    },
+
+    // Corsair coves: guard cards only arm cogs (tl:arm).
+    playCard: (prev) =>
+      guarded(prev, 'playCard', (ctx, a) =>
+        tl(ctx.state).coves && (a as { card?: string }).card === 'guard' ? err('USE_ARM', 'Guards arm a cog here.') : null,
+      ),
 
     // A steal ends the corsair's silk option.
     steal(prevDef) {
@@ -235,6 +301,7 @@ export const tidelandsRuleset: Ruleset = {
     'tl:stealSilk': () => stealSilk,
     'tl:claimWonder': () => claimWonder,
     'tl:buildWonder': () => buildWonder,
+    'tl:arm': () => armCard,
   },
 
   init(ctx) {
@@ -260,8 +327,10 @@ export const tidelandsRuleset: Ruleset = {
     if (sc.special === 'castaways') s.castaways = initCastaways(state, state.rng);
     if (sc.special === 'silk') s.silk = initSilk(state);
     if (sc.special === 'works') s.works = initWorks(state);
+    if (sc.special === 'coves') s.coves = initCoves(state);
     state.ext[TL_ID] = s;
     state.pieces.ships = {};
+    if (s.coves) placeCovesStart(ctx);
   },
 
   view: (ctx) => viewOf(ctx.state),

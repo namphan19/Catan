@@ -10,6 +10,12 @@ import type { RulesConfig } from '../ruleset/types';
 import { getGraph, longestRoute, satisfiesDistanceRule } from '../board/graph';
 import { getRules } from '../engine';
 import { bagTotal } from '../bag';
+import {
+  corsairScore, isLandT, landVertex, landfallRegions, seaCtx, seaDistance, seaTargets, shipPayoff, shipProgress,
+  type SeaCtx, type SeaTarget,
+} from './sea';
+import { SCENARIOS } from '../rules/tidelands/scenarios';
+import { WONDERS } from '../rules/tidelands/works';
 
 /** 'expert' searches (bot/search.ts); its heuristic fallback plays like 'hard'. */
 export type BotLevel = 'easy' | 'normal' | 'hard' | 'expert';
@@ -54,6 +60,9 @@ interface Ctx {
   /** Expected cards per 36 rolls, per resource, from my buildings. */
   prod: Bag;
   salt: number;
+  /** Sea maps (tidelands): terrain, scenario data and lazily computed cog plans. */
+  sea: SeaCtx | null;
+  plan?: { targets: SeaTarget[]; dists: Array<Record<VertexId, number>> };
 }
 
 // ---------- small helpers ----------
@@ -84,7 +93,7 @@ function missing(hand: Bag, cost: Bag): { m: Bag; n: number } {
 
 const resOf = (c: Ctx, hex: HexId): string | null => c.cfg.terrainResource[c.hexes[hex]?.terrain] ?? null;
 
-function production(c: Omit<Ctx, 'prod'>, id: PlayerId): Bag {
+function production(c: Pick<Ctx, 'view' | 'g' | 'cfg' | 'hexes'>, id: PlayerId): Bag {
   const out: Bag = {};
   for (const [v, b] of Object.entries(c.view.pieces.buildings)) {
     if (b.owner !== id) continue;
@@ -113,8 +122,12 @@ function vertexValue(c: Ctx, v: VertexId): number {
   let sc = 0;
   const kinds = new Set<string>();
   for (const h of c.g.vertexHexes[v]) {
+    const t = c.hexes[h]?.terrain;
+    // A gold mine pays any resource; an undiscovered hex might be anything.
+    if (t === 'goldmine') sc += pips(c.hexes[h].token) * 1.25 * (h === c.view.board.blocker ? 0.5 : 1);
+    if (t === 'mist') sc += 0.8;
     const r = resOf(c, h);
-    if (!r) continue;
+    if (!r || c.hexes[h].token === undefined) continue;
     sc += pips(c.hexes[h].token) * resWeight(c, r) * (h === c.view.board.blocker ? 0.5 : 1);
     kinds.add(r);
   }
@@ -134,15 +147,16 @@ function roadReach(c: Ctx, e: EdgeId): number {
   const pieces = c.view.pieces;
   const linked = (v: VertexId) =>
     pieces.buildings[v]?.owner === c.me || c.g.vertexEdges[v].some((x) => x !== e && pieces.roads[x] === c.me);
+  const onLand = (v: VertexId) => !c.sea || landVertex(c.sea, v);
   const [a, b] = c.g.edgeEnds[e];
   let best = 0;
   for (const [from, to] of [[a, b], [b, a]]) {
     if (!linked(from)) continue;
     const bld = pieces.buildings[to];
     if (bld && bld.owner !== c.me) continue; // a dead end into an opponent
-    if (openSpot(c, to)) best = Math.max(best, vertexValue(c, to));
+    if (openSpot(c, to) && onLand(to)) best = Math.max(best, vertexValue(c, to));
     for (const w of c.g.vertexNeighbors[to])
-      if (w !== from && openSpot(c, w)) best = Math.max(best, vertexValue(c, w) * 0.6);
+      if (w !== from && openSpot(c, w) && onLand(w)) best = Math.max(best, vertexValue(c, w) * 0.6);
   }
   return best;
 }
@@ -158,11 +172,39 @@ function routeLengths(c: Ctx): Record<PlayerId, number> {
   return out;
 }
 
-/** Settlement spots I can build on now (connected, distance rule). */
+/** Settlement spots I can build on now (connected by a road or cog, distance rule, on land). */
 function mySpots(c: Ctx): VertexId[] {
+  const p = c.view.pieces;
   return c.g.vertices.filter(
-    (v) => openSpot(c, v) && c.g.vertexEdges[v].some((e) => c.view.pieces.roads[e] === c.me),
+    (v) =>
+      openSpot(c, v) && c.g.vertexEdges[v].some((e) => p.roads[e] === c.me || p.ships?.[e] === c.me) &&
+      (!c.sea || (landVertex(c.sea, v) && settleOk(c, v))),
   );
+}
+
+/** Scenario limits the bot knows about: numbered land (castaways), no weavers' islets (silk). */
+function settleOk(c: Ctx, v: VertexId): boolean {
+  const hs = c.g.vertexHexes[v];
+  if (c.sea?.sea.castaways) return hs.some((h) => c.hexes[h]?.token !== undefined);
+  if (c.sea?.sea.silk) return hs.some((h) => isLandT(c.hexes[h]?.terrain) && c.hexes[h]?.terrain !== 'village');
+  return true;
+}
+
+/** Targets for my cogs and the sea distance to each (computed once per decision). */
+function seaPlan(c: Ctx): NonNullable<Ctx['plan']> {
+  if (c.plan) return c.plan;
+  const s = c.sea!;
+  const reach = new Set(mySpots(c));
+  const targets = seaTargets(s, (v) => (settleOk(c, v) ? vertexValue(c, v) : 0), reach);
+  c.plan = { targets, dists: targets.map((t) => seaDistance(s, t.at)) };
+  return c.plan;
+}
+
+/** Value of a cog on edge e for me (progress toward a target plus anything it docks at). */
+function shipValue(c: Ctx, e: EdgeId): number {
+  if (!c.sea) return 0;
+  const plan = seaPlan(c);
+  return shipPayoff(c.sea, e) + shipProgress(c.sea, plan.targets, plan.dists, e) * 2.2;
 }
 
 const vpOf = (c: Ctx, p: PublicPlayer): number => (p.id === c.me ? p.vp ?? p.publicVP : p.publicVP);
@@ -172,8 +214,16 @@ const leaderVP = (c: Ctx): number =>
 // ---------- goals ----------
 
 interface Goal {
-  what: 'city' | 'settlement' | 'road' | 'card';
+  what: 'city' | 'settlement' | 'road' | 'card' | 'ship' | 'wonder';
   cost: Bag;
+}
+
+/** The wonder I claimed (great works scenario), if any. */
+function myWonder(c: Ctx): (typeof WONDERS)[number] | null {
+  const w = c.sea?.sea.works;
+  if (!w) return null;
+  const id = Object.keys(w.claims).find((k) => w.claims[k] === c.me);
+  return id ? WONDERS.find((x) => x.id === id) ?? null : null;
 }
 
 /** The build I am saving for: the cheapest useful one, with mild preferences. */
@@ -187,8 +237,19 @@ function chooseGoal(c: Ctx): Goal | null {
   if ((supply.city ?? 0) > 0 && hasSettlement && costs.city) opts.push({ g: { what: 'city', cost: costs.city }, w: -0.3 });
   if ((supply.settlement ?? 0) > 0 && costs.settlement) {
     if (mySpots(c).length) opts.push({ g: { what: 'settlement', cost: costs.settlement }, w: -0.5 });
-    else if ((supply.road ?? 0) > 0 && costs.road) opts.push({ g: { what: 'road', cost: costs.road }, w: 0.5 });
+    else {
+      if ((supply.road ?? 0) > 0 && costs.road) opts.push({ g: { what: 'road', cost: costs.road }, w: 0.5 });
+      // Sea maps: when the land is full, sail for new coasts.
+      if (c.sea && (supply.ship ?? 0) > 0 && costs.ship && seaPlan(c).targets.length)
+        opts.push({ g: { what: 'ship', cost: costs.ship }, w: 0.2 });
+    }
   }
+  // Corsair coves: the line of cogs to the fort is the way to win.
+  const cv = c.sea?.sea.coves;
+  if (cv && (cv.lairs[c.me] ?? 0) > 0 && (supply.ship ?? 0) > 0 && costs.ship)
+    opts.push({ g: { what: 'ship', cost: costs.ship }, w: -0.4 });
+  const wonder = myWonder(c);
+  if (wonder && (c.sea?.sea.works?.levels[c.me] ?? 0) < 4) opts.push({ g: { what: 'wonder', cost: wonder.cost }, w: -1.5 });
   if (c.view.bank.deckCount > 0 && costs.card) opts.push({ g: { what: 'card', cost: costs.card }, w: 1.2 });
   if (!opts.length) return null;
   let best = opts[0];
@@ -297,9 +358,11 @@ function scoreMain(c: Ctx, a: Action, goal: Goal | null, b: Board2): number {
     case 'endTurn':
       return 0;
     case 'buildCity':
-      return (vpNow + 1 >= toWin ? 1000 : 100) + vertexValue(c, a.v) * 1.5;
-    case 'placeSettlement':
-      return (vpNow + 1 >= toWin ? 1000 : 90) + vertexValue(c, a.v);
+      return (vpNow + 1 >= toWin && !c.sea?.sea.works ? 1000 : 100) + vertexValue(c, a.v) * 1.5;
+    case 'placeSettlement': {
+      const bonus = c.sea ? landfallRegions(c.sea, a.v).length * c.sea.landfallVP : 0;
+      return (vpNow + 1 + bonus >= toWin && !c.sea?.sea.works ? 1000 : 90 + bonus * 25) + vertexValue(c, a.v);
+    }
     case 'placeRoad': {
       const holder = c.view.awards.longestRoute;
       const myLen = myRouteWith(c, a.e);
@@ -336,6 +399,43 @@ function scoreMain(c: Ctx, a: Action, goal: Goal | null, b: Board2): number {
       if ((sp[give] ?? 0) < k) return -1; // would eat into the goal
       // Prefer trades that finish the goal now, and giving away the most redundant resource.
       return (n === 1 ? 30 : 12) + (sp[give] - k) * 0.5 - k;
+    }
+    default:
+      return c.sea ? scoreSea(c, a, goal) : scoreExt(a);
+  }
+}
+
+/** Tidelands actions (and the generic extension scores for anything else). */
+function scoreSea(c: Ctx, a: Action, goal: Goal | null): number {
+  const x = a as Action & Record<string, unknown>;
+  switch (a.t) {
+    case 'tl:buildShip': {
+      // Corsair coves: every legal cog extends the one line toward the landing and the fort.
+      if (c.sea?.sea.coves) return 28 + (c.sea.sea.coves.lines[c.me]?.length ?? 0);
+      const v = shipValue(c, x.e as EdgeId);
+      const free = c.view.phase.k === 'freeRoads';
+      if (v <= 0.5) return free ? 0.5 : -2;
+      return (free ? 10 : 6) + v - (goal && goal.what !== 'ship' && !free ? 4 : 0);
+    }
+    case 'tl:moveShip': {
+      // Only worth it when the cog lands clearly closer to a target (or docks at a reward / village).
+      const gain = shipValue(c, x.to as EdgeId) - shipValue(c, x.from as EdgeId);
+      return gain > 3 ? gain : -3;
+    }
+    case 'tl:placeHarbor': {
+      const k = x.kind as string;
+      const [v1, v2] = c.g.edgeEnds[x.e as EdgeId];
+      const at = c.view.pieces.buildings[v1]?.owner === c.me ? v1 : v2;
+      const near = c.g.vertexHexes[at].some((h) => resOf(c, h) === k);
+      return 40 + (k === 'any' ? 2 : (c.prod[k] ?? 0) * 0.8 + (near ? 4 : 0));
+    }
+    case 'tl:arm':
+      return 45;
+    case 'tl:claimWonder':
+      return 200;
+    case 'tl:buildWonder': {
+      const level = c.sea?.sea.works?.levels[c.me] ?? 0;
+      return level >= 3 ? 2000 : 150;
     }
     default:
       return scoreExt(a);
@@ -544,7 +644,16 @@ function makeCtx(view: PlayerView, level: BotLevel): Ctx | null {
     view, me, mine, hand: mine.hand ?? {}, g: getGraph(view.init.layout), cfg,
     lvl: LEVELS[level], hexes, salt: view.log.length,
   };
-  return { ...base, prod: production(base, me) };
+  const sc = view.init.options?.scenario;
+  const landfallVP = typeof sc === 'string' ? SCENARIOS[sc]?.landfall ?? 0 : 0;
+  const sea = seaCtx(view, me, base.g, landfallVP);
+  return { ...base, prod: production(base, me), sea };
+}
+
+/** Gold-mine picks: what my goal still needs, else my weakest resources. */
+function pickGold(c: Ctx, legal: Action[]): Action {
+  const goal = chooseGoal(c);
+  return best(c, legal, (a) => bagValue(c, (a as { bag: Bag }).bag, goal, 1), 'gold');
 }
 
 /**
@@ -588,11 +697,36 @@ export function decide(view: PlayerView, legal: Action[], opts: BotOptions = {})
     const s = only('placeSettlement');
     if (s.length) return best(c, s, (a) => vertexValue(c, (a as { v: VertexId }).v), 'setupS');
     const r = only('placeRoad');
+    const ships = only('tl:buildShip');
+    if (r.length && ships.length && c.sea) {
+      // A starting cog only when the land around offers nothing and the sea leads somewhere good.
+      const br = setupRoad(c, r, ph.at);
+      const bs = best(c, ships, (a) => shipValue(c, (a as { e: EdgeId }).e), 'setupC');
+      return shipValue(c, (bs as { e: EdgeId }).e) > setupRoadScore(c, br, ph.at) * 1.3 + 4 ? bs : br;
+    }
     if (r.length) return setupRoad(c, r, ph.at);
+    if (ships.length) return best(c, ships, (a) => shipValue(c, (a as { e: EdgeId }).e), 'setupC');
   }
   if (ph.k === 'discard') return (ph.owed[me] ?? 0) > 0 ? discard(c, ph.owed[me]) : null;
-  if (ph.k === 'moveBlocker' && only('moveBlocker').length) return moveBlocker(c, only('moveBlocker'));
-  if (ph.k === 'steal' && only('steal').length) return steal(c, only('steal'));
+  if (ph.k === 'moveBlocker') {
+    const corsair = only('tl:moveCorsair');
+    const robber = only('moveBlocker');
+    if (corsair.length && c.sea) {
+      const bc = best(c, corsair, (a) => corsairScore(c.sea!, a), 'corsair');
+      if (!robber.length) return bc;
+      const br = moveBlocker(c, robber);
+      return corsairScore(c.sea, bc) > blockerScore(c, br) ? bc : br;
+    }
+    if (robber.length) return moveBlocker(c, robber);
+  }
+  if (ph.k === 'steal') {
+    const silk = only('tl:stealSilk');
+    if (silk.length) return steal(c, silk);
+    if (only('steal').length) return steal(c, only('steal'));
+  }
+  if (ph.k === 'ext' && only('tl:gold').length) return pickGold(c, only('tl:gold'));
+  if (ph.k === 'ext' && only('tl:placeHarbor').length)
+    return best(c, only('tl:placeHarbor'), (a) => scoreSea(c, a, null), 'harbor');
 
   if (view.trade) {
     // While my own offer is open I only manage it (building would change the hand it relies on).

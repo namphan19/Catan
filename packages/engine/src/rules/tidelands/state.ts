@@ -50,6 +50,22 @@ export interface WorksState {
   markers: Array<{ v: VertexId; kind: string }>;
 }
 
+/** Corsair coves scenario: the pirate fleet, the lines of cogs and the forts. */
+export interface CovesState {
+  /** Index of the fleet on its loop; -1 once every fort is taken (the fleet leaves). */
+  fleet: number;
+  loop: HexId[];
+  calm: HexId[];
+  /** Per player: starting settlement, landing and fort intersections. */
+  seats: Record<PlayerId, { start: VertexId; landing: VertexId; fort: VertexId }>;
+  /** Per player: the line of cogs from the starting settlement, in order. */
+  lines: Record<PlayerId, EdgeId[]>;
+  /** Per player: how many cogs of the line (counted from its start) are warships. */
+  war: Record<PlayerId, number>;
+  /** Lair tokens left under each player's fort (0 = taken). */
+  lairs: Record<PlayerId, number>;
+}
+
 export interface TlState {
   scenario: string;
   /** Hex of the corsair (a sea hex), or null when the scenario has none. */
@@ -71,6 +87,9 @@ export interface TlState {
   castaways?: CastawaysState;
   silk?: SilkState;
   works?: WorksState;
+  coves?: CovesState;
+  /** Corsair coves: resources of choice won against the fleet on this roll (merged into the gold window). */
+  fleetBonus?: Record<PlayerId, number>;
 }
 
 export const tl = (state: GameState): TlState => state.ext[TL_ID] as TlState;
