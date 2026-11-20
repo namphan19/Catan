@@ -17,6 +17,12 @@ export const AFK_BOT_LEVEL: BotLevelName = 'normal';
 export const isBotLevel = (v: unknown): v is BotLevelName =>
   typeof v === 'string' && (BOT_LEVELS as readonly string[]).includes(v);
 
+/** Player portraits (client: /assets/avatar/<id>.webp). One per seat in a room, first come first served. */
+export const AVATARS = ['star', 'leaf', 'wave', 'sun', 'flame', 'shield'] as const;
+export type AvatarId = (typeof AVATARS)[number];
+export const isAvatar = (v: unknown): v is AvatarId =>
+  typeof v === 'string' && (AVATARS as readonly string[]).includes(v);
+
 /** Client -> server. `reqId` is echoed back on error replies. */
 export type ClientMsg =
   | { type: 'hello'; name: string; sessionToken?: string; reqId?: string }
@@ -28,6 +34,8 @@ export type ClientMsg =
   | { type: 'kick'; seat: string; reqId?: string }
   /** Host-only, lobby-only: fill the next free seat with a server-side bot. */
   | { type: 'addBot'; level: BotLevelName; reqId?: string }
+  /** Lobby-only: pick my portrait (null clears it). Refused with AVATAR_TAKEN if another seat has it. */
+  | { type: 'setAvatar'; avatar: AvatarId | null; reqId?: string }
   /** Lobby or game: a chat line to everyone in my room (CHAT_MAX_LEN chars, rate-limited). */
   | { type: 'chat'; text: string; reqId?: string }
   /** Running game only: hand my seat to a stand-in bot (AFK_BOT_LEVEL) while I am away, or take it back. */
@@ -46,7 +54,16 @@ export type ServerMsg =
       options: RoomOptions;
       /** `bot` is set for server-side bot seats (always connected and ready). */
       /** `afk` is set while a stand-in bot plays a human seat (its owner handed it over with setAfk). */
-      seats: { seat: string; name: string; connected: boolean; ready: boolean; bot?: BotLevelName; afk?: boolean }[];
+      /** `avatar`: the seat's portrait; every seat has one once the game has started. */
+      seats: {
+        seat: string;
+        name: string;
+        connected: boolean;
+        ready: boolean;
+        bot?: BotLevelName;
+        afk?: boolean;
+        avatar?: AvatarId;
+      }[];
       you: string | null;
       started: boolean;
     }
@@ -65,6 +82,8 @@ export interface ChatMessage {
   seat: string;
   /** The sender's display name when the line was sent. */
   name: string;
+  /** The sender's portrait when the line was sent (none while they had not picked one). */
+  avatar?: AvatarId;
   text: string;
   /** Server time (epoch ms). */
   at: number;
@@ -252,6 +271,12 @@ export function parseClientMessage(text: string): ParseResult {
         if (!isBotLevel(level))
           return { ok: false, code: 'BAD_MESSAGE', message: 'addBot needs a level: easy, normal or hard.' };
         return { ok: true, msg: { type: 'addBot', level, reqId } };
+      }
+      case 'setAvatar': {
+        const avatar = raw.avatar;
+        if (avatar !== null && !isAvatar(avatar))
+          return { ok: false, code: 'BAD_MESSAGE', message: `setAvatar needs an avatar: ${AVATARS.join(', ')} or null.` };
+        return { ok: true, msg: { type: 'setAvatar', avatar, reqId } };
       }
       case 'chat': {
         const text = raw.text;

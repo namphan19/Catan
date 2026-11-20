@@ -24,7 +24,8 @@ import {
   type PlayerId,
 } from '@hexgame/engine';
 import {
-  AFK_BOT_LEVEL, CODE_RE, parseClientMessage, type BotLevelName, type ChatMessage, type ClientMsg, type RoomOptions, type ServerMsg,
+  AFK_BOT_LEVEL, AVATARS, CODE_RE, parseClientMessage, type AvatarId, type BotLevelName, type ChatMessage, type ClientMsg,
+  type RoomOptions, type ServerMsg,
 } from './protocol';
 import { RoomStore, type PersistedRoom } from './store';
 
@@ -56,6 +57,15 @@ interface RoomPlayer {
   bot?: BotLevelName;
   /** A human seat handed to its stand-in bot (AFK_BOT_LEVEL) until the owner takes it back. */
   afk?: boolean;
+  /** Portrait picked in the lobby (unique per room); seats without one get a free one at start. */
+  avatar?: AvatarId;
+}
+
+/** Give every seat without a portrait a free one, in seat order (game start, restored rooms). */
+function ensureAvatars(players: RoomPlayer[]): void {
+  const taken = new Set(players.map((p) => p.avatar).filter(Boolean));
+  const free = AVATARS.filter((a) => !taken.has(a));
+  for (const p of players) if (!p.avatar) p.avatar = free.shift();
 }
 
 /** Who plays a seat on the server: its bot level, or undefined for a human at the controls. */
@@ -257,7 +267,15 @@ export class Hub {
           ready: true,
           ...(s.bot ? { bot: s.bot } : {}),
           ...(s.afk && !s.bot ? { afk: true } : {}),
+          ...(s.avatar ? { avatar: s.avatar } : {}),
         }));
+        // Drop duplicates a hand-edited file might carry, then fill the gaps.
+        const seen = new Set<AvatarId>();
+        for (const pl of players) {
+          if (pl.avatar && seen.has(pl.avatar)) delete pl.avatar;
+          else if (pl.avatar) seen.add(pl.avatar);
+        }
+        ensureAvatars(players);
         const hostIdx = Math.max(0, players.findIndex((_, i) => seatOf(i) === p.hostSeat));
         const room: Room = {
           code: p.code,
@@ -323,6 +341,9 @@ export class Hub {
         break;
       case 'addBot':
         this.onAddBot(rec, msg);
+        break;
+      case 'setAvatar':
+        this.onSetAvatar(rec, msg);
         break;
       case 'setAfk':
         this.onSetAfk(rec, msg);
@@ -515,6 +536,7 @@ export class Hub {
       ...(opts.vpToWin !== undefined ? { vpToWin: opts.vpToWin } : {}),
       ...(opts.expansion ? { rulesets: ['base', opts.expansion] } : {}),
     });
+    ensureAvatars(room.players);
     room.started = true;
     room.game = { state, actions: [] };
     console.log(`[room] ${room.code} game started (${room.playerCount} players)`);
@@ -556,6 +578,32 @@ export class Hub {
     this.broadcastRoom(room);
   }
 
+  /**
+   * Lobby-only: pick my portrait, first come first served (docs/PROTOCOL.md). A portrait another
+   * seat holds is refused with AVATAR_TAKEN; picking my own again or null (clear) always works.
+   */
+  private onSetAvatar(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'setAvatar' }>): void {
+    const room = rec.roomCode ? this.rooms.get(rec.roomCode) : undefined;
+    const idx = room && rec.token ? room.players.findIndex((p) => hashEquals(p.tokenHash, hashToken(rec.token))) : -1;
+    if (!room || !rec.seat || idx === -1) {
+      this.error(rec.conn, msg.reqId, 'NOT_IN_ROOM', 'You are not in a room.');
+      return;
+    }
+    if (room.started) {
+      this.error(rec.conn, msg.reqId, 'GAME_STARTED', 'Portraits can only be picked in the lobby.');
+      return;
+    }
+    const me = room.players[idx];
+    if (msg.avatar && room.players.some((p, i) => i !== idx && p.avatar === msg.avatar)) {
+      this.error(rec.conn, msg.reqId, 'AVATAR_TAKEN', 'Another player already picked that portrait.');
+      rec.conn.send({ type: 'room', ...this.roomMsg(room, rec) }); // resync a stale picker
+      return;
+    }
+    if (msg.avatar) me.avatar = msg.avatar;
+    else delete me.avatar;
+    this.broadcastRoom(room);
+  }
+
   // ------------------------------------------------------------------ chat
 
   /** Lobby or game: relay a chat line to everyone in the room and keep it in the short history. */
@@ -573,7 +621,15 @@ export class Hub {
       return;
     }
     rec.chatTimes.push(now);
-    const message: ChatMessage = { id: ++room.chatSeq, seat: seatOf(idx), name: room.players[idx].name, text: msg.text, at: now };
+    const sender = room.players[idx];
+    const message: ChatMessage = {
+      id: ++room.chatSeq,
+      seat: seatOf(idx),
+      name: sender.name,
+      ...(sender.avatar ? { avatar: sender.avatar } : {}),
+      text: msg.text,
+      at: now,
+    };
     room.chat.push(message);
     if (room.chat.length > CHAT_HISTORY) room.chat.splice(0, room.chat.length - CHAT_HISTORY);
     for (const r of this.connsInRoom(room)) r.conn.send({ type: 'chat', message });
@@ -907,6 +963,7 @@ export class Hub {
         ready: p.ready,
         ...(p.bot ? { bot: p.bot } : {}),
         ...(p.afk ? { afk: true } : {}),
+        ...(p.avatar ? { avatar: p.avatar } : {}),
       })),
       you: rec.seat,
       started: room.started,
@@ -949,6 +1006,7 @@ export class Hub {
         tokenHash: s.tokenHash,
         ...(s.bot ? { bot: s.bot } : {}),
         ...(s.afk ? { afk: true } : {}),
+        ...(s.avatar ? { avatar: s.avatar } : {}),
       })),
       init: room.game.state.init,
       actions: room.game.actions,

@@ -1,12 +1,13 @@
-// Waiting room: big copyable room code + invite link, seat list with connection dots and
-// ready state, a Ready toggle, and a host-only start button (server re-checks everything).
+// Waiting room: big copyable room code + invite link, a portrait picker (first come first served),
+// seat list with connection dots and ready state, a Ready toggle, and a host-only start button
+// (server re-checks everything).
 import { useEffect, useRef, useState } from 'react';
-import { BOT_LEVELS, type BotLevel, type RoomInfo } from '../net/protocol';
+import { AVATARS, BOT_LEVELS, type AvatarId, type BotLevel, type RoomInfo } from '../net/protocol';
 import { useI18n } from '../i18n';
 import { Button } from '../ui/Button';
 import { Panel } from '../ui/Panel';
-import { seatIndex, SEAT_EMBLEMS } from '../ui/colors';
-import { Emblem } from '../ui/Emblem';
+import { seatIndex } from '../ui/colors';
+import { Avatar } from '../ui/Avatar';
 
 export interface LobbyProps {
   room: RoomInfo;
@@ -17,11 +18,13 @@ export interface LobbyProps {
   onKick?: (seat: string) => void;
   /** Host-only, before start: fill the next free seat with a server-side bot. */
   onAddBot?: (level: BotLevel) => void;
+  /** Pick my portrait; the server refuses one another seat already has (AVATAR_TAKEN). */
+  onAvatar?: (avatar: AvatarId | null) => void;
   onLangToggle: () => void;
   notice?: string | null;
 }
 
-export function Lobby({ room, onReady, onStart, onLeave, onKick, onAddBot, onLangToggle, notice }: LobbyProps) {
+export function Lobby({ room, onReady, onStart, onLeave, onKick, onAddBot, onAvatar, onLangToggle, notice }: LobbyProps) {
   const { t } = useI18n();
   const [botLevel, setBotLevel] = useState<BotLevel>('normal');
   const mine = room.seats.find((s) => s.seat === room.you);
@@ -71,6 +74,40 @@ export function Lobby({ room, onReady, onStart, onLeave, onKick, onAddBot, onLan
         <p className="hint">{t('lobby_codeHint')}</p>
       </Panel>
 
+      {onAvatar && room.you && (
+        <Panel title={t('lobby_avatarTitle')} className="home-panel">
+          <ul className="avatar-picker">
+            {AVATARS.map((a) => {
+              const owner = room.seats.find((s) => s.avatar === a);
+              const mineA = owner?.seat === room.you;
+              const taken = !!owner && !mineA;
+              const label = mineA
+                ? t('lobby_avatarMine')
+                : taken
+                  ? t('lobby_avatarTaken', { name: owner.name })
+                  : t('lobby_avatarFree');
+              return (
+                <li key={a}>
+                  <button
+                    type="button"
+                    className={`avatar-pick${mineA ? ' mine' : ''}${taken ? ' taken' : ''}`}
+                    aria-pressed={mineA}
+                    disabled={taken}
+                    title={label}
+                    aria-label={label}
+                    onClick={() => onAvatar(mineA ? null : a)}
+                  >
+                    <Avatar id={a} seat={owner?.seat ?? room.you!} size={72} />
+                    <span className="avatar-pick-label">{mineA ? t('net_you') : taken ? owner.name : ' '}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="hint">{t('lobby_avatarHint')}</p>
+        </Panel>
+      )}
+
       <Panel title={t('lobby_seats', { n: room.seats.length, m: room.playerCount })} className="home-panel">
         <ul className="lobby-seats">
           {Array.from({ length: room.playerCount }, (_, i) => {
@@ -79,7 +116,7 @@ export function Lobby({ room, onReady, onStart, onLeave, onKick, onAddBot, onLan
             const host = room.hostSeat === seatId;
             return (
               <li key={seatId} className="lobby-seat">
-                <Emblem id={SEAT_EMBLEMS[i]} size={18} />
+                <Avatar id={seat?.avatar} seat={seatId} size={30} />
                 <span className="lobby-seat-name">
                   {seat ? (seat.bot ? `🤖 ${seat.name}` : seat.name) : t('lobby_empty', { n: seatIndex(seatId) })}
                   {seatId === room.you && <span className="seat-you">({t('net_you')})</span>}

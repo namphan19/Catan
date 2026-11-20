@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Action, GameEvent, PlayerView } from '@hexgame/engine';
 import { Connection } from '../net/connection';
-import type { BotLevel, ChatMessage, RoomInfo, RoomOptions, ServerMsg } from '../net/protocol';
+import type { AvatarId, BotLevel, ChatMessage, RoomInfo, RoomOptions, ServerMsg } from '../net/protocol';
 import { AFK_BOT_LEVEL, CODE_RE } from '../net/protocol';
 import { useErrorText } from '../net/errors';
 import { useI18n } from '../i18n';
@@ -249,6 +249,11 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
     connRef.current?.send({ type: 'setAfk', afk });
   }, []);
 
+  /** Lobby: pick my portrait (the server refuses one another seat already has). */
+  const setAvatar = useCallback((avatar: AvatarId | null) => {
+    connRef.current?.send({ type: 'setAvatar', avatar });
+  }, []);
+
   const sendChat = useCallback((text: string) => {
     connRef.current?.send({ type: 'chat', text });
   }, []);
@@ -267,6 +272,14 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
     const map: Record<string, string> = {};
     room?.seats.forEach((s) => {
       map[s.seat] = s.bot ? `🤖 ${s.name}` : s.afk ? `${s.name} 🤖` : s.name;
+    });
+    return map;
+  }, [room]);
+
+  const avatars = useMemo<Record<string, AvatarId | undefined>>(() => {
+    const map: Record<string, AvatarId | undefined> = {};
+    room?.seats.forEach((s) => {
+      map[s.seat] = s.avatar;
     });
     return map;
   }, [room]);
@@ -308,6 +321,7 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
           onLeave={leaveRoom}
           onKick={kickSeat}
           onAddBot={addBot}
+          onAvatar={setAvatar}
           notice={notice}
           onLangToggle={onLangToggle}
         />
@@ -316,7 +330,7 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
         <ChatBubble messages={chat} you={room.you} onSend={sendChat} placement="page" roomCode={room.code} />
       )}
       {screen === 'game' && room && (
-        <NamesProvider names={names}>
+        <NamesProvider names={names} avatars={avatars}>
           <div className="shell">
             {/* The room code and the home button live in the game's single top bar. */}
             {view ? (

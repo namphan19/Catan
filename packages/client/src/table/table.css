@@ -427,14 +427,14 @@
 }
 
 .seats-compact .seat {
-  padding: 1px 8px 2px;
+  padding: 3px 8px 3px 6px;
 }
 
 .seats-compact .seat-stats {
-  margin-top: 0;
   min-height: 22px;
 }
 
+/* Portrait + name on the left (spanning the card); VP top-right; card row and piece row beside. */
 .seat {
   --seat: var(--ink-soft);
   min-width: 0;
@@ -442,7 +442,100 @@
   border-left: 9px solid var(--seat);
   border-radius: 8px;
   background: var(--parchment);
-  padding: 3px 8px 4px;
+  padding: 4px 10px 4px 6px;
+  /* The layout follows the card's own width (players x screen), not the viewport. */
+  container-type: inline-size;
+}
+
+/* Narrow card: VP line on top, card stats and piece stats stacked (3:3) beside the portrait. */
+.seat-grid {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'id head'
+    'id cards'
+    'id assets';
+  column-gap: 14px;
+  align-items: center;
+}
+.seat-id { grid-area: id; }
+.seat-head { grid-area: head; }
+.seat-cards { grid-area: cards; }
+.seat-assets { grid-area: assets; }
+
+/* Very narrow card (6 players on a small screen): tighter gaps and a shorter name so each stat
+   group still fits on its own line. */
+@container (max-width: 239px) {
+  /* .seat prefix: these must beat the base rules further down the file. */
+  .seat .seat-grid { column-gap: 5px; }
+  .seat .seat-id { max-width: 66px; padding-right: 5px; }
+  .seat .seat-vp small { display: none; }
+  .seat .seat-name { font-size: 0.78rem; }
+  .seat .seat-stats { gap: 2px 4px; flex-wrap: nowrap; }
+}
+
+/* Wide card: VP line stays on top (VP in the right corner); portrait | card stats | piece stats
+   share one line below it. */
+@container (min-width: 400px) {
+  .seat-grid {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'id head head'
+      'id cards assets';
+    column-gap: 14px;
+  }
+  .seat-assets {
+    padding-left: 14px;
+    border-left: 1px solid rgba(59, 47, 47, 0.3);
+  }
+  .seat-stats {
+    flex-wrap: nowrap;
+  }
+}
+
+.seat-id {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  gap: 2px;
+  max-width: 104px;
+  min-width: 0;
+  /* Divider between the portrait + name and the stats (PO 2026-11-19). */
+  padding-right: 12px;
+  border-right: 1px solid rgba(59, 47, 47, 0.35);
+}
+
+.seat-avatar {
+  position: relative;
+  display: block;
+}
+
+.seat.acting .avatar {
+  box-shadow: 0 0 0 1px var(--ink), 0 0 0 4px var(--gold);
+}
+
+/* Emblem badge on the portrait's lower right. */
+.seat-emblem {
+  position: absolute;
+  right: -3px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--parchment);
+  border: 1px solid var(--ink);
+}
+
+.seat-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 22px;
 }
 
 .seat.me {
@@ -453,16 +546,11 @@
   box-shadow: 0 0 0 3px var(--gold);
 }
 
-.seat-top {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
 .seat-name {
-  flex: 0 1 auto;
+  max-width: 100%;
   min-width: 0;
+  font-size: 0.86rem;
+  line-height: 1.15;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -513,8 +601,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 2px 9px;
-  margin-top: 2px;
+  gap: 2px 12px;
   min-height: 24px;
 }
 
@@ -542,8 +629,8 @@
 }
 
 .seat-award {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   margin-left: auto;
 }
 

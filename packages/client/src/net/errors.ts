@@ -40,6 +40,7 @@ const KNOWN_CODES = new Set([
   'AFK_ACTIVE',
   'BAD_CHAT',
   'CHAT_RATE',
+  'AVATAR_TAKEN',
   'RATE_LIMIT',
   'INTERNAL',
   // engine validation codes (packages/engine validation + rules)

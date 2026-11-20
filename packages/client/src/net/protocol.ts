@@ -14,6 +14,10 @@ export const BOT_LEVELS: BotLevel[] = ['easy', 'normal', 'hard', 'expert'];
 /** Level of the stand-in bot for an away player (server: AFK_BOT_LEVEL). */
 export const AFK_BOT_LEVEL: BotLevel = 'normal';
 
+/** Player portraits (server: AVATARS); /assets/avatar/<id>.webp. Unique per room. */
+export const AVATARS = ['star', 'leaf', 'wave', 'sun', 'flame', 'shield'] as const;
+export type AvatarId = (typeof AVATARS)[number];
+
 /** Client -> server. */
 export type OutMsg =
   | { type: 'hello'; name: string; sessionToken?: string }
@@ -24,6 +28,8 @@ export type OutMsg =
   | { type: 'startGame' }
   | { type: 'kick'; seat: string }
   | { type: 'addBot'; level: BotLevel }
+  /** Lobby-only: pick my portrait (null clears it); AVATAR_TAKEN if another seat has it. */
+  | { type: 'setAvatar'; avatar: AvatarId | null }
   /** Lobby or game: a chat line to everyone in my room. */
   | { type: 'chat'; text: string }
   /** Running game only: a stand-in bot plays my seat while I am away (afk: true), or I take it back. */
@@ -40,7 +46,7 @@ export type ServerMsg =
       hostSeat: string;
       playerCount: number;
       options: RoomOptions;
-      seats: { seat: string; name: string; connected: boolean; ready: boolean; bot?: BotLevel; afk?: boolean }[];
+      seats: RoomSeat[];
       you: string | null;
       started: boolean;
     }
@@ -60,6 +66,8 @@ export interface ChatMessage {
   seat: string;
   /** The sender's name when the line was sent. */
   name: string;
+  /** The sender's portrait when the line was sent. */
+  avatar?: AvatarId;
   text: string;
   /** Server time (epoch ms). */
   at: number;
@@ -77,6 +85,8 @@ export interface RoomSeat {
   bot?: BotLevel;
   /** A human seat currently played by its stand-in bot (the owner is away). */
   afk?: boolean;
+  /** The seat's portrait; every seat has one once the game has started. */
+  avatar?: AvatarId;
 }
 
 /** The `room` message payload, in a friendlier shape. */

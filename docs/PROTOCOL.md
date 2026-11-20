@@ -30,6 +30,7 @@ redacted data (getPlayerView / getEventsView).
 | startGame | - | host only, all seats filled and ready |
 | kick | seat | host only, lobby only (before start): frees that seat and closes its connection with code KICKED (also removes a bot) |
 | addBot | level: 'easy' \| 'normal' \| 'hard' \| 'expert' | host only, lobby only: fills the next free seat with a server-side bot (always ready; named "Bot", "Bot 2", ...) |
+| setAvatar | avatar: 'star' \| 'leaf' \| 'wave' \| 'sun' \| 'flame' \| 'shield' \| null | lobby only: picks the sender's portrait, first come first served - one another seat holds is refused with AVATAR_TAKEN (plus a fresh `room`); null drops it. At startGame every seat without one (bots too) gets a free portrait in seat order; restored rooms are filled the same way |
 | chat | text: 1-300 chars after trimming, no control characters (BAD_CHAT) | lobby or game: relayed to everyone in the room, the sender too. Max 5 lines per 10 s per connection (CHAT_RATE) |
 | setAfk | afk: boolean | in game (not after the win): `true` hands the sender's seat to a stand-in 'normal' bot while they are away, `false` takes it back. Everyone in the room gets an `afk` notice; while the bot plays, the sender's own actions are refused with AFK_ACTIVE. Repeating the current value only resyncs `room` |
 | action | action: Action (engine format; `player` must equal the sender's seat) | in game |
@@ -39,10 +40,10 @@ redacted data (getPlayerView / getEventsView).
 | type | fields |
 |---|---|
 | welcome | sessionToken, name |
-| room | code, hostSeat, playerCount, options, seats: [{ seat: "p1".., name, connected, ready, bot?: level, afk?: true }], you: seat or null, started |
+| room | code, hostSeat, playerCount, options, seats: [{ seat: "p1".., name, connected, ready, bot?: level, afk?: true, avatar?: id }], you: seat or null, started |
 | state | view: PlayerView (getPlayerView for the receiver), legal: Action[] (getLegalActions for the receiver), seq (log length) |
 | events | events: GameEvent[] (getEventsView for the receiver), seq |
-| chat | message: { id (grows per room), seat, name (at send time), text, at (server epoch ms) } |
+| chat | message: { id (grows per room), seat, name (at send time), avatar? (at send time), text, at (server epoch ms) } |
 | chatHistory | messages: the room's last 50 chat lines, oldest first - sent after `room` on joinRoom (also a reconnect) and requestState. Memory only: lost on a server restart |
 | afk | seat, name, afk: boolean - to everyone in the room when a seat is handed to its stand-in bot or taken back (clients show a popup; the seat's `afk` flag in `room` is the lasting state) |
 | error | reqId?, code, message |

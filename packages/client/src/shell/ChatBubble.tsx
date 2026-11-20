@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useI18n } from '../i18n';
 import { CHAT_MAX_LEN, type ChatMessage } from '../net/protocol';
-import { playerColor } from '../ui/colors';
+import { Avatar } from '../ui/Avatar';
 
 export interface ChatBubbleProps {
   messages: ChatMessage[];
@@ -107,8 +107,8 @@ export function ChatBubble({ messages, you, onSend, placement, roomCode }: ChatB
             {messages.map((m) => (
               <li key={m.id} className={m.seat === you ? 'chat-line mine' : 'chat-line'}>
                 <span className="chat-meta">
-                  {/* Seat colour as a dot: some seat colours (white) are unreadable as text on parchment. */}
-                  <span className="chat-dot" style={{ background: playerColor(m.seat) }} aria-hidden="true" />
+                  {/* Portrait ringed in the seat colour (seat colours like ivory are unreadable as text). */}
+                  <Avatar id={m.avatar} seat={m.seat} size={22} />
                   <b>{m.seat === you ? t('chat_you') : m.name}</b>
                   <time dateTime={new Date(m.at).toISOString()}>{time(m.at)}</time>
                 </span>
