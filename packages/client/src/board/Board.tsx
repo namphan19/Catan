@@ -67,6 +67,14 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
     const names = (ids ?? []).map(hexName);
     return names.length ? `${t(kind)}: ${names.join(', ')}` : t(kind);
   };
+  // Scenario maps hold sea hexes too: a harbor's land side is the non-sea hex.
+  const isLand = useMemo(() => {
+    const terr = new Map(board.hexes.map((h) => [h.id as string, h.terrain] as const));
+    return (h: string) => {
+      const x = terr.get(h);
+      return x !== undefined && x !== 'sea' && x !== 'mist';
+    };
+  }, [board.hexes]);
   const svgRef = useRef<SVGSVGElement>(null);
   const [tf, setTf] = useState<Tf>({ s: 1, tx: 0, ty: 0 });
   const drag = useRef<{ x: number; y: number; tx: number; ty: number; active: boolean } | null>(null);
@@ -217,7 +225,7 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
             <HexTile key={h.id} hex={h} producing={producing?.has(h.id)} />
           ))}
           {board.harbors.map((hb, i) => (
-            <Harbor key={i} harbor={hb} graph={graph} />
+            <Harbor key={i} harbor={hb} graph={graph} isLand={isLand} />
           ))}
           <PiecesLayer pieces={pieces} graph={graph} />
           {board.blocker && <Blocker hexId={board.blocker} />}

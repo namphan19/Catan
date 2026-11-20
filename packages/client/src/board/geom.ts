@@ -69,9 +69,17 @@ export interface HarborGeom {
 /** Dock distance from the coast, as a fraction of the hex radius. */
 export const HARBOR_DOCK = 0.62;
 
-export function harborGeom(graph: Graph, e: EdgeId): HarborGeom {
+/** The land hex of a harbor edge: on scenario maps both sides are board hexes, so the caller says
+ *  which one is land (default: the only / first hex, as on the base island). */
+export type LandTest = (hex: HexId) => boolean;
+const landHexOf = (graph: Graph, e: EdgeId, isLand?: LandTest): HexId | undefined => {
+  const hs = graph.edgeHexes[e] ?? [];
+  return (isLand && hs.find(isLand)) || hs[0];
+};
+
+export function harborGeom(graph: Graph, e: EdgeId, isLand?: LandTest): HarborGeom {
   const g = edgeGeom(graph, e);
-  const land = graph.edgeHexes[e]?.[0];
+  const land = landHexOf(graph, e, isLand);
   const c = land ? hexCenter(land) : { x: 0, y: 0 };
   let nx = g.mid.x - c.x;
   let ny = g.mid.y - c.y;
@@ -97,9 +105,9 @@ export function harborGeom(graph: Graph, e: EdgeId): HarborGeom {
 }
 
 /** 2D harbor tile: centre of the sea hex across the coast edge from its land hex. */
-export function harborTileCentre(graph: Graph, e: EdgeId): Pt {
+export function harborTileCentre(graph: Graph, e: EdgeId, isLand?: LandTest): Pt {
   const g = edgeGeom(graph, e);
-  const land = graph.edgeHexes[e]?.[0];
+  const land = landHexOf(graph, e, isLand);
   const c = land ? hexCenter(land) : g.mid;
   return { x: g.a.x + g.b.x - c.x, y: g.a.y + g.b.y - c.y };
 }

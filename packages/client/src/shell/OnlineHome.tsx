@@ -1,6 +1,7 @@
 // Online home: pick a display name, create a room (3-6 players, 5-6 mode, VP target) or
 // join one by its 5-character code. A share link (?room=CODE) pre-fills the join code.
 import { useState } from 'react';
+import { ScenarioSelect } from './HomeScreen';
 import type { RoomOptions } from '../net/protocol';
 import { isValidCode, normalizeCode } from './OnlineShell';
 import { useI18n } from '../i18n';
@@ -24,6 +25,7 @@ export function OnlineHome({ name, onName, onCreate, onJoin, online, onBack, onL
   const [mode, setMode] = useState<'paired' | 'extraBuild'>('paired');
   const [vp, setVp] = useState('');
   const [expansion, setExpansion] = useState(false);
+  const [scenario, setScenario] = useState('');
   const [code, setCode] = useState<string>(() => {
     const fromLink = new URLSearchParams(location.search).get('room') ?? '';
     return isValidCode(fromLink.toUpperCase()) ? fromLink.toUpperCase() : '';
@@ -36,8 +38,9 @@ export function OnlineHome({ name, onName, onCreate, onJoin, online, onBack, onL
     if (!canSubmit) return;
     const parsedVp = Number.parseInt(vp, 10);
     const options: RoomOptions = {};
-    if (count >= 5) options.largeTableMode = expansion ? 'paired' : mode;
+    if (count >= 5) options.largeTableMode = expansion || scenario ? 'paired' : mode;
     if (expansion) options.expansion = 'strongholds';
+    if (scenario) options.tidelands = scenario;
     if (vp.trim() && Number.isInteger(parsedVp) && parsedVp >= 1 && parsedVp <= 100) options.vpToWin = parsedVp;
     onCreate(count, Object.keys(options).length ? options : undefined);
   };
@@ -100,7 +103,7 @@ export function OnlineHome({ name, onName, onCreate, onJoin, online, onBack, onL
             {t('online_mode')}
             <select
               value={mode}
-              disabled={count < 5 || expansion}
+              disabled={count < 5 || expansion || !!scenario}
               onChange={(e) => setMode(e.target.value === 'extraBuild' ? 'extraBuild' : 'paired')}
             >
               <option value="paired">{t('online_mode_paired')}</option>
@@ -110,6 +113,10 @@ export function OnlineHome({ name, onName, onCreate, onJoin, online, onBack, onL
           <label className="exp-check">
             <input type="checkbox" checked={expansion} onChange={(e) => setExpansion(e.target.checked)} />
             {t('exp_enable')}
+          </label>
+          <label>
+            {t('tl_scenario')}
+            <ScenarioSelect value={scenario} onChange={setScenario} strongholds={expansion} />
           </label>
           <label>
             {t('online_vp')}

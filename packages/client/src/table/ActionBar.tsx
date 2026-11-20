@@ -12,7 +12,7 @@ import { Button } from '../ui/Button';
 import { playerColor } from '../ui/colors';
 import { PieceIcon, UiIcon } from '../ui/Icon';
 
-export type Pending = 'placeSettlement' | 'placeRoad' | 'buildCity' | 'moveBlocker' | null;
+export type Pending = 'placeSettlement' | 'placeRoad' | 'buildCity' | 'moveBlocker' | 'tl:buildShip' | null;
 
 interface ActionBarProps {
   view: PlayerView;

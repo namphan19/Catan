@@ -10,6 +10,10 @@ import { BagDialog, ChoiceDialog } from '../strongholds/ChoiceDialogs';
 import { CardReveal, useReveals } from '../strongholds/CardReveal';
 import { narrow, nextStage } from '../strongholds/chooser';
 import { stagePrompt, valueLabel } from '../strongholds/labels';
+import { TidelandsPanel } from '../tidelands/TidelandsPanel';
+import { SeaExtras } from '../tidelands/SeaExtras';
+import { tlOf } from '../tidelands/view';
+import { getBoardGraph } from '../board/geom';
 import { useI18n, resKey } from '../i18n';
 import { useName } from '../shell/names';
 import { playerColor, playerEmblem } from '../ui/colors';
@@ -65,6 +69,15 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const [producing, setProducing] = useState<ReadonlySet<string> | undefined>(undefined);
   const phaseKey = view.phase.k;
 
+  // ---- Tidelands expansion: sea pieces, gold picks, road-or-cog choice ---------------------------
+  const tl = tlOf(view);
+  const [roadOrCog, setRoadOrCog] = useState<Action[] | null>(null);
+  const golds = useMemo(() => legal.filter((a) => a.t === 'tl:gold'), [legal]);
+  const goldNeed = golds.length ? Object.values((golds[0] as unknown as { bag: Record<string, number> }).bag).reduce((x, y) => x + y, 0) : 0;
+  const bankBase: Record<string, number> = {};
+  for (const r of ['timber', 'clay', 'fiber', 'grain', 'stone']) bankBase[r] = view.bank.hand[r] ?? 0;
+  const silkSteals = useMemo(() => legal.filter((a) => a.t === 'tl:stealSilk'), [legal]);
+
   // ---- Strongholds expansion: a staged chooser that narrows the legal actions ------------------
   const sh = (view.ext?.strongholds ?? null) as StrongholdsView | null;
   const [choice, setChoice] = useState<{ cands: Action[]; title: string; mandatory: boolean } | null>(null);
@@ -73,11 +86,15 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const bagPrompt = promptKind !== null && ['titheTake', 'dowryGive', 'sabotageDiscard'].includes(promptKind);
   useEffect(() => {
     // A new legal list ends any running choice; a prompt addressed to the viewer starts one.
+    const harborWindow = view.phase.k === 'ext' ? legal.filter((a) => a.t === 'tl:placeHarbor') : [];
     setChoice(
       resolves.length > 0 && !bagPrompt
         ? { cands: resolves, title: t('shprompt_' + String(promptKind)), mandatory: true }
-        : null,
+        : harborWindow.length > 0
+          ? { cands: harborWindow, title: t('tl_harborWindow'), mandatory: true }
+          : null,
     );
+    setRoadOrCog(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [legal]);
   const stage = choice ? nextStage(choice.cands) : null;
@@ -207,9 +224,9 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
     lastPhase.current = phaseSig;
     if (ph.k === 'setup') {
       const k = ph.step === 'road' ? 'placeRoad' : 'placeSettlement';
-      setPending(can(k) ? k : null);
-    } else if (ph.k === 'moveBlocker') setPending(can('moveBlocker') ? 'moveBlocker' : null);
-    else if (ph.k === 'freeRoads') setPending(can('placeRoad') ? 'placeRoad' : null);
+      setPending(can(k) || (k === 'placeRoad' && can('tl:buildShip')) ? k : null);
+    } else if (ph.k === 'moveBlocker') setPending(can('moveBlocker') || can('tl:moveCorsair') ? 'moveBlocker' : null);
+    else if (ph.k === 'freeRoads') setPending(can('placeRoad') || can('tl:buildShip') ? 'placeRoad' : null);
     else if (phaseChanged) setPending(null);
     // A voluntary pick (the player pressed "Build road") survives unrelated updates such as a
     // trade answer, and is dropped only once that build is no longer possible.
@@ -279,7 +296,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const stealTargets = legal.filter((a) => a.t === 'steal');
   const autoStolen = useRef('');
   useEffect(() => {
-    if (stealTargets.length !== 1) return;
+    if (stealTargets.length !== 1 || silkSteals.length > 0) return;
     const key = `${view.log?.length ?? 0}:${JSON.stringify(stealTargets[0])}`;
     if (autoStolen.current === key) return;
     autoStolen.current = key;
@@ -311,11 +328,15 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
     }
     if (!pending) return EMPTY_HIGHLIGHTS;
     const hl: Highlights = { vertices: new Set(), edges: new Set(), hexes: new Set() };
+    // Setup and free-road windows take a road or a cog: both kinds of edges light up together.
+    const roadOrShip = pending === 'placeRoad' && (phaseKey === 'setup' || phaseKey === 'freeRoads');
     for (const a of legal) {
       if (a.t === 'placeSettlement' && pending === 'placeSettlement') hl.vertices.add(a.v);
       else if (a.t === 'buildCity' && pending === 'buildCity') hl.vertices.add(a.v);
       else if (a.t === 'placeRoad' && pending === 'placeRoad') hl.edges.add(a.e);
       else if (a.t === 'moveBlocker' && pending === 'moveBlocker') hl.hexes.add(a.hex);
+      else if (a.t === 'tl:moveCorsair' && pending === 'moveBlocker') hl.hexes.add(String((a as { hex?: string }).hex));
+      else if (a.t === 'tl:buildShip' && (pending === 'tl:buildShip' || roadOrShip)) hl.edges.add(String((a as { e?: string }).e));
     }
     return hl;
     // `stage` is derived from `choice` on every render; `choice` is the real dependency.
@@ -360,7 +381,14 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
       <div className="table-main">
         <div className="board-area">
           <Board
-            overlay={sh ? <BoardExtras pieces={view.pieces} sh={sh} /> : undefined}
+            overlay={
+              sh || tl ? (
+                <>
+                  {tl && <SeaExtras graph={getBoardGraph(view.init.layout)} pieces={view.pieces} tl={tl} />}
+                  {sh && <BoardExtras pieces={view.pieces} sh={sh} />}
+                </>
+              ) : undefined
+            }
             layout={view.init.layout}
             board={view.board}
             pieces={view.pieces}
@@ -370,10 +398,18 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
               tryTarget((a) => (a.t === 'placeSettlement' || a.t === 'buildCity') && a.v === v, 'vertex');
             }}
             onEdge={(e) => {
-              if (!pickOnBoard(e)) tryTarget((a) => a.t === 'placeRoad' && a.e === e, 'edge');
+              if (pickOnBoard(e)) return;
+              const roadOk = pending === 'placeRoad';
+              const shipOk = pending === 'tl:buildShip' || (roadOk && (phaseKey === 'setup' || phaseKey === 'freeRoads'));
+              const cands = legal.filter(
+                (a) => (a as { e?: string }).e === e && ((roadOk && a.t === 'placeRoad') || (shipOk && a.t === 'tl:buildShip')),
+              );
+              if (cands.length > 1) setRoadOrCog(cands);
+              else tryTarget((a) => cands.includes(a), 'edge');
             }}
             onHex={(h) => {
-              if (!pickOnBoard(h)) tryTarget((a) => a.t === 'moveBlocker' && a.hex === h, 'hex');
+              if (!pickOnBoard(h))
+                tryTarget((a) => (a.t === 'moveBlocker' || a.t === 'tl:moveCorsair') && (a as { hex?: string }).hex === h, 'hex');
             }}
             onMiss={() => {
               if (choice && !choice.mandatory) setChoice(null);
@@ -398,7 +434,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
           {choice && stage?.board && (
             <div className="sh-pickbar" role="status">
               <span>
-                {choice.title}: {stagePrompt(stage.field, t)}
+                {choice.title}: {choice.cands[0]?.t.startsWith('tl:') ? t('tl_pick_' + stage.field) : stagePrompt(stage.field, t)}
               </span>
               {stage.optional && (
                 <Button variant="primary" onClick={() => pickValue(undefined)}>
@@ -414,6 +450,19 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
           )}
         </div>
         <aside className="sidecol">
+          {tl && (
+            <TidelandsPanel
+              view={view}
+              tl={tl}
+              legal={legal}
+              onPick={(p) => {
+                setChoice(null);
+                setPending(pending === p ? null : (p as 'tl:buildShip'));
+              }}
+              onStart={startChoice}
+              onAction={onAction}
+            />
+          )}
           {sh && <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />}
           <SidePanel view={view} />
         </aside>
@@ -437,7 +486,43 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
       </div>
 
       {mustDiscard && <DiscardDialog view={view} legal={legal} validate={check} onAction={onAction} onClose={() => {}} />}
-      {mustSteal && !mustDiscard && stealTargets.length > 1 && <StealDialog view={view} legal={legal} onAction={onAction} onClose={() => {}} />}
+      {mustSteal && !mustDiscard && stealTargets.length > 1 && silkSteals.length === 0 && (
+        <StealDialog view={view} legal={legal} onAction={onAction} onClose={() => {}} />
+      )}
+      {silkSteals.length > 0 && (
+        <ChoiceDialog
+          title={t('tl_stealTitle')}
+          prompt={t('tl_stealTitle')}
+          options={[...stealTargets, ...silkSteals].map((a, i) => {
+            const target = String((a as { target?: string }).target);
+            return { key: String(i), value: a, label: t(a.t === 'steal' ? 'tl_stealRes' : 'tl_stealSilk', { name: name(target) }) };
+          })}
+          onPick={(a) => onAction(a as Action)}
+        />
+      )}
+      {golds.length > 0 && view.viewer && (
+        <BagDialog
+          key={'gold:' + String(view.log.length)}
+          title={t('tl_goldTitle', { n: goldNeed })}
+          hint={t('tl_goldHint')}
+          hand={bankBase}
+          need={goldNeed}
+          onSubmit={(bag) => onAction({ t: 'tl:gold', player: view.viewer ?? 'p1', bag } as Action)}
+        />
+      )}
+      {roadOrCog && (
+        <ChoiceDialog
+          title={t('tl_roadOrCog')}
+          prompt={t('tl_roadOrCog')}
+          options={roadOrCog.map((a) => ({ key: a.t, value: a, label: t(a.t === 'placeRoad' ? 'tl_road' : 'tl_ship') }))}
+          onPick={(a) => {
+            setRoadOrCog(null);
+            setPending(null);
+            onAction(a as Action);
+          }}
+          onCancel={() => setRoadOrCog(null)}
+        />
+      )}
       {tradeOpen && !mustDiscard && (
         <TradeDialog
           view={view}
@@ -466,7 +551,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
       {choice && stage && !stage.board && (
         <ChoiceDialog
           title={choice.title}
-          prompt={stagePrompt(stage.field, t)}
+          prompt={choice.cands[0]?.t.startsWith('tl:') ? t('tl_pick_' + stage.field) : stagePrompt(stage.field, t)}
           options={stage.values.map((v) => ({ key: String(v), value: v, label: valueLabel(stage.field, v, t, name) }))}
           onPick={pickValue}
           onCancel={choice.mandatory ? undefined : () => setChoice(null)}

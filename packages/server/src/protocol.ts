@@ -1,6 +1,6 @@
 // Protocol contract (docs/PROTOCOL.md): message shapes plus runtime validation of every
 // incoming field. The server never trusts a client field without passing it through here.
-import type { Action } from '@hexgame/engine';
+import { SCENARIOS, type Action } from '@hexgame/engine';
 
 /** Room options accepted from the client; bounded and passed to createGame. */
 export interface RoomOptions {
@@ -8,6 +8,29 @@ export interface RoomOptions {
   vpToWin?: number;
   /** Play with the Strongholds expansion ruleset (5-6 players: paired mode only). */
   expansion?: 'strongholds';
+  /** Play with the Tidelands (sea) expansion: the scenario id. Combines with strongholds where the
+   *  scenario allows it (5-6 players: paired mode only). */
+  tidelands?: string;
+}
+
+/** Engine ruleset list and options for room options (base first). */
+export function gameSetup(o: RoomOptions): { rulesets: string[]; options?: Record<string, unknown> } {
+  const rulesets = ['base'];
+  if (o.expansion) rulesets.push(o.expansion);
+  if (o.tidelands) rulesets.push('tidelands');
+  return { rulesets, ...(o.tidelands ? { options: { scenario: o.tidelands } } : {}) };
+}
+
+/** Why these options cannot make a game (null = fine). Shared by the parser and the room store. */
+export function optionsProblem(o: RoomOptions): string | null {
+  if (o.expansion !== undefined && o.expansion !== 'strongholds') return "options.expansion must be 'strongholds'.";
+  if (o.tidelands !== undefined) {
+    const sc = typeof o.tidelands === 'string' ? SCENARIOS[o.tidelands] : undefined;
+    if (!sc) return 'options.tidelands must be a scenario id.';
+    if (o.expansion && !sc.strongholds) return 'That scenario cannot be combined with strongholds.';
+  }
+  if ((o.expansion || o.tidelands) && o.largeTableMode === 'extraBuild') return 'The expansion needs paired players for 5-6 players.';
+  return null;
 }
 
 export const BOT_LEVELS = ['easy', 'normal', 'hard', 'expert'] as const;
@@ -129,12 +152,11 @@ function parseCreateRoom(msg: Record<string, unknown>, reqId?: string): ClientMs
       clean.vpToWin = vp;
     }
     const expansion = options.expansion;
-    if (expansion !== undefined) {
-      if (expansion !== 'strongholds') throwErr('BAD_MESSAGE', "options.expansion must be 'strongholds'.");
-      if (clean.largeTableMode === 'extraBuild')
-        throwErr('BAD_MESSAGE', 'The expansion needs paired players for 5-6 players.');
-      clean.expansion = expansion;
-    }
+    if (expansion !== undefined) clean.expansion = expansion as 'strongholds';
+    const tide = options.tidelands;
+    if (tide !== undefined) clean.tidelands = tide as string;
+    const problem = optionsProblem(clean);
+    if (problem) throwErr('BAD_MESSAGE', problem);
     out.options = clean;
   }
   return out;

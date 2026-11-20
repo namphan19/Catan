@@ -5,7 +5,7 @@
 // The 3D board keeps its own dock + badge (geom.ts harborGeom / harborBadgeCentre).
 import type { Graph, Harbor as HarborData } from '@hexgame/engine';
 import { art2dUrl, useAssets } from './assets';
-import { edgeGeom, harborTileCentre, SIZE } from './geom';
+import { edgeGeom, harborTileCentre, SIZE, type LandTest } from './geom';
 import { useI18n, resKey } from '../i18n';
 import { RESOURCE_COLORS } from '../ui/colors';
 
@@ -30,12 +30,12 @@ function Jetty({ from, to }: { from: Pt; to: Pt }) {
   );
 }
 
-export function Harbor({ harbor, graph }: { harbor: HarborData; graph: Graph }) {
+export function Harbor({ harbor, graph, isLand }: { harbor: HarborData; graph: Graph; isLand?: LandTest }) {
   const { t } = useI18n();
   const painted = art2dUrl('icon', harbor.kind);
   const icon = useAssets([painted])[painted] ? painted : null;
   const g = edgeGeom(graph, harbor.edge);
-  const c = harborTileCentre(graph, harbor.edge);
+  const c = harborTileCentre(graph, harbor.edge, isLand);
   const label = `${harbor.ratio}:1`;
   const color = harbor.kind === 'any' ? 'var(--sea)' : RESOURCE_COLORS[harbor.kind] ?? 'var(--sea)';
   const title = harbor.kind === 'any' ? t('dlg_rate', { r: harbor.ratio }) : `${t(resKey(harbor.kind))} · ${label}`;

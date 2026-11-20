@@ -4,7 +4,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { Action, GameInit } from '@hexgame/engine';
-import { CODE_RE, isBotLevel, type BotLevelName, type RoomOptions } from './protocol';
+import { CODE_RE, isBotLevel, optionsProblem, type BotLevelName, type RoomOptions } from './protocol';
 
 export interface PersistedSeat {
   name: string;
@@ -106,8 +106,7 @@ function isPersistedOptions(o: RoomOptions): boolean {
   if (o === null || typeof o !== 'object') return false;
   const mode = (o as RoomOptions).largeTableMode;
   if (mode !== undefined && mode !== 'paired' && mode !== 'extraBuild') return false;
-  const exp = (o as RoomOptions).expansion;
-  if (exp !== undefined && exp !== 'strongholds') return false;
+  if (optionsProblem(o as RoomOptions)) return false;
   const vp = (o as RoomOptions).vpToWin;
   return vp === undefined || (typeof vp === 'number' && Number.isInteger(vp) && vp >= 1 && vp <= 100);
 }

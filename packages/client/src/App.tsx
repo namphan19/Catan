@@ -19,7 +19,7 @@ import {
 } from '@hexgame/engine';
 import { I18nProvider, useI18n } from './i18n';
 import { HotseatShell } from './shell/HotseatShell';
-import { HomeScreen } from './shell/HomeScreen';
+import { HomeScreen, type GameSetup } from './shell/HomeScreen';
 import { OnlineShell, forgetStoredRoom } from './shell/OnlineShell';
 
 type Mode = 'menu' | 'hotseat' | 'online';
@@ -175,12 +175,14 @@ function GameApp() {
   }, [mode, state, bots, hasBots]);
 
   const onNew = useCallback(
-    (seed: string, playerNames: string[], expansion = false, seatBots: (BotLevel | null)[] = []) => {
+    (seed: string, playerNames: string[], setup: GameSetup = { strongholds: false, tidelands: null }, seatBots: (BotLevel | null)[] = []) => {
       try {
+        const rulesets = ['base', ...(setup.strongholds ? ['strongholds'] : []), ...(setup.tidelands ? ['tidelands'] : [])];
         const s = createGame({
           seed,
           playerCount: playerNames.length,
-          ...(expansion ? { rulesets: ['base', 'strongholds'] } : {}),
+          ...(rulesets.length > 1 ? { rulesets } : {}),
+          ...(setup.tidelands ? { options: { scenario: setup.tidelands } } : {}),
         });
         const nm: Record<PlayerId, string> = {};
         const bt: Record<PlayerId, BotLevel> = {};

@@ -27,6 +27,11 @@ export function valueLabel(field: string, value: unknown, t: TFn, name: NameFn):
       return `${t(String(value))}: ${t(`cardfx_${String(value)}`)}`;
     case 'rebuild':
       return t('sh_rebuild');
+    // Tidelands: harbor kinds (place harbor) and wonders (claim wonder).
+    case 'kind':
+      return value === 'any' ? '3:1' : `${t(resKey(String(value)))} 2:1`;
+    case 'wonder':
+      return t(`wonder_${String(value)}`);
     case 'skip':
       return t('sh_skip');
     default:

@@ -4,7 +4,7 @@ import type { Action } from '@hexgame/engine';
 
 /** Order in which differing parameters are asked. Each action type uses a subset. */
 export const FIELD_ORDER = [
-  'card', 'kind', 'track', 'deck', 'target', 'resource', 'level', 'dice.0', 'dice.1',
+  'card', 'kind', 'wonder', 'track', 'deck', 'target', 'resource', 'level', 'dice.0', 'dice.1',
   'from', 'to', 'a', 'b', 'v', 'hex', 'e', 'vs.0', 'vs.1', 'rebuild', 'skip',
 ];
 

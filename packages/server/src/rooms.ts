@@ -22,7 +22,7 @@ import {
   type PlayerId,
 } from '@hexgame/engine';
 import {
-  CODE_RE, parseClientMessage, type BotLevelName, type ClientMsg, type RoomOptions, type ServerMsg,
+  CODE_RE, gameSetup, parseClientMessage, type BotLevelName, type ClientMsg, type RoomOptions, type ServerMsg,
 } from './protocol';
 import { RoomStore, type PersistedRoom } from './store';
 
@@ -475,7 +475,7 @@ export class Hub {
       playerCount: room.playerCount,
       ...(opts.largeTableMode !== undefined ? { largeTableMode: opts.largeTableMode } : {}),
       ...(opts.vpToWin !== undefined ? { vpToWin: opts.vpToWin } : {}),
-      ...(opts.expansion ? { rulesets: ['base', opts.expansion] } : {}),
+      ...gameSetup(opts),
     });
     room.started = true;
     room.game = { state, actions: [] };

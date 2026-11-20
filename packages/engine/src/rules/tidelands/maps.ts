@@ -335,7 +335,7 @@ function blockerStart(def: MapDef, hexes: Hex[]): HexId {
   return b.id;
 }
 
-const SCATTER_TRIES = 400;
+const SCATTER_TRIES = 1000;
 const REGION_LETTERS = 'abcdefghijklmnopqrstuvwxyz';
 
 /** A random map (rulebook "new world"): terrains and sea shuffled over the frame, then islands are
@@ -375,8 +375,14 @@ function scatterBoard(rng: RngState, mapId: string, hexes: Hex[], opts: { hot: n
     }
     const landCount = hexes.filter((h) => h.terrain !== SEA).length;
     // Playable shape: at least three islands, none bigger than two thirds of the land, no lone hex.
-    if (islands.length < 3 || islands.some((i) => i.length < 2) || Math.max(...islands.map((i) => i.length)) * 3 > landCount * 2)
-      continue;
+    // Land-heavy frames (5-6 players) rarely manage that: after half the tries two islands with the
+    // biggest under 85% of the land will do.
+    const biggest = Math.max(...islands.map((i) => i.length));
+    const strict = attempt < SCATTER_TRIES / 2;
+    const ok = strict
+      ? islands.length >= 3 && !islands.some((i) => i.length < 2) && biggest * 3 <= landCount * 2
+      : islands.length >= 2 && biggest <= landCount * 0.85;
+    if (!ok) continue;
     const slots = hexes.filter((h) => isProducing(h.terrain));
     const nums = shuffle(rng, [...pool.numbers]);
     slots.forEach((h, k) => (h.token = nums[k]));

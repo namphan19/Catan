@@ -98,6 +98,37 @@ describe('strongholds rooms', () => {
     expect(after.ext?.strongholds).toEqual(before.ext?.strongholds);
   });
 
+  it('creates a tidelands game (alone and with strongholds) and replays it after a restart', async () => {
+    players = await startRoom(url, 4, { tidelands: 'scatteredIsles', expansion: 'strongholds' });
+    const v = lastState(players[0]).view as View & { init: { options?: { scenario?: string } }; ext?: { tidelands?: { scenario?: string } } };
+    expect(v.init.rulesetIds).toEqual(['base', 'strongholds', 'tidelands']);
+    expect(v.init.options?.scenario).toBe('scatteredIsles');
+    expect(v.init.vpToWin).toBe(16);
+    expect(v.ext?.tidelands?.scenario).toBe('scatteredIsles');
+    expect(JSON.stringify(v)).not.toContain('"mist":[');
+    const seq = await playSome(12);
+    const before = JSON.stringify(lastState(players[0]).view);
+    for (const p of players) p.client.close();
+    players = [];
+    await server.close();
+    await start();
+    const files = fs.readdirSync(dataDir).filter((f) => f.endsWith('.json'));
+    expect(files.length).toBe(1);
+    const saved = JSON.parse(fs.readFileSync(path.join(dataDir, files[0]), 'utf8')) as { init: { options?: { scenario?: string } }; actions: unknown[] };
+    expect(saved.init.options?.scenario).toBe('scatteredIsles');
+    expect(saved.actions.length).toBe(seq);
+    expect(before).toContain('scatteredIsles');
+  });
+
+  it('rejects unknown tidelands scenarios and scenarios that do not combine with strongholds', async () => {
+    const p = await connect(url, 'Ann');
+    players = [p];
+    p.client.send({ type: 'createRoom', playerCount: 4, options: { tidelands: 'atlantis' } });
+    expect(((await p.client.next((m) => m.type === 'error')) as { code: string }).code).toBe('BAD_MESSAGE');
+    p.client.send({ type: 'createRoom', playerCount: 4, options: { tidelands: 'silk', expansion: 'strongholds' } });
+    expect(((await p.client.next((m) => m.type === 'error')) as { code: string }).code).toBe('BAD_MESSAGE');
+  });
+
   it('rejects unknown expansions and the legacy extra build mode with the expansion', async () => {
     const p = await connect(url, 'host');
     players = [p];
