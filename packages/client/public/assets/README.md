@@ -53,3 +53,9 @@ Roads are not a sprite: they are drawn as flat vector bars centred on the grid e
 | art2d/terrain/ | `harbor` (443x512) | shallow water for the 2D harbor tiles: each harbor is a whole sea hex next to its coast edge (like a physical tile), with two jetties to the edge corners and a printed medallion [icon over ratio] |
 | art2d/icon/ | goods `timber clay fiber grain stone linen books silver` + `any` (crate, for 3:1) | 128x128, same plain-block style as the pieces, thin ink outline; used by every resource icon in the UI and on harbor tiles |
 | art2d/card/ | resources `timber clay fiber grain stone linen books silver`, development `guard harvest claim freeRoads relic`, `back` | 250x350, parchment frame and blank nameplate (the UI prints the name) |
+
+## avatar/ — player portraits, 192×192 webp
+star, leaf, wave, sun, flame, shield: one per seat in an online room (picked in the lobby, first
+come first served), shown in the player strip, lobby and chat. Each matches the emblem of the
+same name (star pendant, leaf sprig, wave pin, sun badge, flame pendant, shield). Supplied by the
+PO (2026-11-19), cropped to head and shoulders and resized from 1024 px PNGs.

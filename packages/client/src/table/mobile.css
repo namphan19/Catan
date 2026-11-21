@@ -258,12 +258,8 @@
     overflow: visible;
   }
 
-  .sidecol .sidepanel {
-    min-height: 220px;
-  }
-
-  /* Player cards: name + VP on top, hand / cards / guards below (pieces left are in the
-     tooltip on wider screens; on a phone they are dropped). */
+  /* Player cards: portrait + name + VP on top, hand / cards / guards below (pieces left are
+     dropped on a phone). */
   .seat-strip .seats,
   .seat-strip .seats-compact {
     grid-auto-flow: row;
@@ -295,14 +291,52 @@
     box-shadow: 0 0 0 2px var(--gold);
   }
 
-  .seat-top {
-    gap: 3px;
+  /* Portrait card layout (table.css) folded for phones: a small portrait + name and the VP on
+     one line, the card stats under it; the piece row keeps only the awards. The portrait itself
+     tells the seats apart, so the emblem badge is dropped at this size. */
+  .seat .seat-grid {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'id head'
+      'cards cards'
+      'assets assets';
+    column-gap: 3px;
   }
 
-  .seat-top .emblem,
-  .seat-top .emblem svg {
-    width: 14px !important;
-    height: 14px !important;
+  .seat .seat-id {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 3px;
+    max-width: none;
+    padding-right: 0;
+    border-right: 0;
+  }
+
+  .seat .seat-avatar .avatar {
+    width: 20px !important;
+    height: 20px !important;
+    border-width: 1px;
+  }
+
+  .seat.acting .avatar {
+    box-shadow: 0 0 0 1px var(--ink), 0 0 0 2px var(--gold);
+  }
+
+  .seat-emblem {
+    display: none;
+  }
+
+  .seat .seat-assets {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .seat-assets:not(:has(.seat-award)) {
+    display: none;
+  }
+
+  .seat-head {
+    min-height: 0;
   }
 
   .seat-name {
@@ -312,7 +346,6 @@
   .seat-you,
   .seat-acting-tag,
   .seat-vp small,
-  .seat-sep,
   .stat-supply {
     display: none;
   }

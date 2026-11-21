@@ -35,8 +35,16 @@ export function optionsProblem(o: RoomOptions): string | null {
 
 export const BOT_LEVELS = ['easy', 'normal', 'hard', 'expert'] as const;
 export type BotLevelName = (typeof BOT_LEVELS)[number];
+/** The level of the stand-in bot that plays a seat whose owner is away (setAfk). */
+export const AFK_BOT_LEVEL: BotLevelName = 'normal';
 export const isBotLevel = (v: unknown): v is BotLevelName =>
   typeof v === 'string' && (BOT_LEVELS as readonly string[]).includes(v);
+
+/** Player portraits (client: /assets/avatar/<id>.webp). One per seat in a room, first come first served. */
+export const AVATARS = ['star', 'leaf', 'wave', 'sun', 'flame', 'shield'] as const;
+export type AvatarId = (typeof AVATARS)[number];
+export const isAvatar = (v: unknown): v is AvatarId =>
+  typeof v === 'string' && (AVATARS as readonly string[]).includes(v);
 
 /** Client -> server. `reqId` is echoed back on error replies. */
 export type ClientMsg =
@@ -49,6 +57,12 @@ export type ClientMsg =
   | { type: 'kick'; seat: string; reqId?: string }
   /** Host-only, lobby-only: fill the next free seat with a server-side bot. */
   | { type: 'addBot'; level: BotLevelName; reqId?: string }
+  /** Lobby-only: pick my portrait (null clears it). Refused with AVATAR_TAKEN if another seat has it. */
+  | { type: 'setAvatar'; avatar: AvatarId | null; reqId?: string }
+  /** Lobby or game: a chat line to everyone in my room (CHAT_MAX_LEN chars, rate-limited). */
+  | { type: 'chat'; text: string; reqId?: string }
+  /** Running game only: hand my seat to a stand-in bot (AFK_BOT_LEVEL) while I am away, or take it back. */
+  | { type: 'setAfk'; afk: boolean; reqId?: string }
   | { type: 'action'; action: unknown; reqId?: string }
   | { type: 'requestState'; reqId?: string };
 
@@ -62,13 +76,44 @@ export type ServerMsg =
       playerCount: number;
       options: RoomOptions;
       /** `bot` is set for server-side bot seats (always connected and ready). */
-      seats: { seat: string; name: string; connected: boolean; ready: boolean; bot?: BotLevelName }[];
+      /** `afk` is set while a stand-in bot plays a human seat (its owner handed it over with setAfk). */
+      /** `avatar`: the seat's portrait; every seat has one once the game has started. */
+      seats: {
+        seat: string;
+        name: string;
+        connected: boolean;
+        ready: boolean;
+        bot?: BotLevelName;
+        afk?: boolean;
+        avatar?: AvatarId;
+      }[];
       you: string | null;
       started: boolean;
     }
   | { type: 'state'; view: unknown; legal: unknown[]; seq: number }
   | { type: 'events'; events: unknown[]; seq: number }
+  /** A chat line, to everyone in the room (the sender too). `id` grows per room. */
+  | { type: 'chat'; message: ChatMessage }
+  /** The room's recent chat lines (oldest first), sent when a connection enters a room. */
+  | { type: 'chatHistory'; messages: ChatMessage[] }
+  /** To everyone in the room when a seat is handed to its stand-in bot (afk) or taken back. */
+  | { type: 'afk'; seat: string; name: string; afk: boolean }
   | { type: 'error'; reqId?: string; code: string; message: string };
+
+export interface ChatMessage {
+  id: number;
+  seat: string;
+  /** The sender's display name when the line was sent. */
+  name: string;
+  /** The sender's portrait when the line was sent (none while they had not picked one). */
+  avatar?: AvatarId;
+  text: string;
+  /** Server time (epoch ms). */
+  at: number;
+}
+
+/** Longest chat line (after trimming). */
+export const CHAT_MAX_LEN = 300;
 
 export interface ParseOk {
   ok: true;
@@ -248,6 +293,28 @@ export function parseClientMessage(text: string): ParseResult {
         if (!isBotLevel(level))
           return { ok: false, code: 'BAD_MESSAGE', message: 'addBot needs a level: easy, normal or hard.' };
         return { ok: true, msg: { type: 'addBot', level, reqId } };
+      }
+      case 'setAvatar': {
+        const avatar = raw.avatar;
+        if (avatar !== null && !isAvatar(avatar))
+          return { ok: false, code: 'BAD_MESSAGE', message: `setAvatar needs an avatar: ${AVATARS.join(', ')} or null.` };
+        return { ok: true, msg: { type: 'setAvatar', avatar, reqId } };
+      }
+      case 'chat': {
+        const text = raw.text;
+        if (!isStr(text)) return { ok: false, code: 'BAD_MESSAGE', message: 'chat needs a text string.' };
+        const trimmed = text.trim();
+        if (trimmed.length < 1 || trimmed.length > CHAT_MAX_LEN)
+          return { ok: false, code: 'BAD_CHAT', message: `A chat line must be 1 to ${CHAT_MAX_LEN} characters long.` };
+        if (CONTROL.test(trimmed))
+          return { ok: false, code: 'BAD_CHAT', message: 'A chat line must not contain control characters.' };
+        return { ok: true, msg: { type: 'chat', text: trimmed, reqId } };
+      }
+      case 'setAfk': {
+        const afk = raw.afk;
+        if (typeof afk !== 'boolean')
+          return { ok: false, code: 'BAD_MESSAGE', message: 'setAfk needs a boolean afk field.' };
+        return { ok: true, msg: { type: 'setAfk', afk, reqId } };
       }
       case 'action': {
         const action = raw.action;

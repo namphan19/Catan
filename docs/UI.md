@@ -74,20 +74,29 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
 2. Game table (UX2 layout, 2026-11-16; CSS in src/table/table.css): slim top bar (wordmark, turn, "?" quick
    help, 2D/3D, language); status banner = one sentence "what to do now" (gold when it is the viewer's move,
    "Đang chờ <name>…" otherwise); board fills the centre (zoom + pan) with overlays: zoom top-left, dice box
-   top-right, collapsible cost card bottom-right (marks what the viewer can pay), toasts bottom-left; right
-   column: one card per player (VP, hand / card / guard counts, pieces left, awards, acting marker) above the
-   Log / Trade tabs; bottom: own hand as cards (all 5 resources always shown, +N/-N on change, development
-   cards) + action bar (build group, trade group, one large primary button: Roll or End turn). Number tokens
-   carry probability pips; hexes that just produced pulse (2D). Winner overlay.
+   top-right, collapsible cost card bottom-right (marks what the viewer can pay), toasts bottom-left; player
+   strip on top: one card per player (portrait with the seat emblem as a badge + name on the left, then VP,
+   hand / card / guard counts and pieces left / awards; one line on a wide card, stacked on a narrow one via
+   a container query; acting marker = gold ring); right column only with an expansion (Tidelands /
+   Strongholds panels). PO 2026-11-19: the Log / Trade side panel is removed; events show as toasts, the
+   trade status in the trade dialog. Strongholds advance cards sit bottom-left on the board (AdvanceHand:
+   name tabs, a click opens the full card with Play / Discard). Bottom: own hand as cards (all 5 resources
+   always shown, +N/-N on change, development cards) + action bar (build group, trade group, one large
+   primary button: Roll or End turn). Number tokens carry probability pips; hexes that just produced pulse
+   (2D). Winner overlay.
+   Online extras (2026-11-19, docs/PROTOCOL.md): portraits (6, picked in the lobby, first come first
+   served; hot-seat seats use the portrait matching their emblem), a floating chat bubble (lobby
+   bottom-right, game under the zoom buttons, unread counter), and "Let a bot play for me" (AFK: a
+   'normal' stand-in bot plays the seat until "I'm back"; the others get a popup).
 3. Hot-seat: "Pass the device to <name>" cover between actors so hands stay hidden.
 4. Phone layout (2026-11-21; CSS in src/table/mobile.css, e2e project "mobile"):
    - portrait (<= 640 px wide): top bar with turn + "?" + a menu (shell buttons, language); players in one
-     grid row (name, VP, hand / cards / guards; pieces left dropped); board fills the middle (pinch zoom with
+     grid row (small portrait + name, VP, hand / cards / guards; pieces left dropped); board fills the middle (pinch zoom with
      two fingers, drag to pan); hand as small cards; one row of equal action buttons (icon over short label).
    - landscape (<= 520 px tall): board on the left at full height, right column with top bar, players
      (two per row, pieces left back), hand and actions.
-   - the side column (log / trade, Strongholds and Tidelands panels) is a sheet behind the "Nhật ký" /
-     "Bảng & nhật ký" button (bottom sheet in portrait, from the right in landscape); picking an action
+   - the side column (Strongholds and Tidelands panels; the base game has none) is a sheet behind the
+     "Bảng mở rộng" button (bottom sheet in portrait, from the right in landscape); picking an action
      in a panel closes it so the board is in view.
 
 ## Interaction rules
@@ -95,7 +104,9 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
   buttons show the validateAction reason as a tooltip (e.g. "Not enough resources for: city").
 - Pick an action, then click the board: legal vertices / edges / hexes glow; Esc cancels.
 - Dialogs: discard (pick exactly N, counter), steal target, bank/harbor trade (best rate shown),
-  player trade (give / get columns, responses list, confirm), card play (harvest: pick 2, claim: pick 1).
+  player trade (one table: card | you have | you give | you get, responses list, confirm; an incoming
+  offer always pops up, also when the viewer lacks the cards - then accept is greyed out with the
+  reason), card play (harvest: pick 2, claim: pick 1).
 - Feedback: dice roll animation (< 600 ms), resource chips fly to the receiving player, toasts for
   other players' builds, sound optional and off by default.
 - Hidden info: render only getPlayerView / getEventsView data of the acting viewer.
@@ -106,7 +117,7 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
 ## Component structure (packages/client/src)
 ui/ (tokens.css, Button, Panel, Dialog, Toast, Tooltip), board/ (Board, HexTile, Token, Harbor, Piece,
 Highlights), board3d/ (Board3D, terrain, decor, pieces3d, strongholds3d), table/ (GameTable, TopBar, PlayerCards,
-ActionBar, CostCard, HandPanel), strongholds/ (Panel, BoardExtras, ChoiceDialogs, chooser), dialogs/
+ActionBar, CostCard, HandPanel), strongholds/ (Panel, AdvanceHand, BoardExtras, ChoiceDialogs, chooser), dialogs/
 (DiscardDialog, StealDialog, TradeDialog, CardDialog), shell/ (HomeScreen, HomeMap, home.css, OnlineHome, Lobby,
-HotseatShell, PassDeviceCover), i18n/. GameTable takes { view, legal, onAction, events } only, so the online
+ChatBubble, HotseatShell, PassDeviceCover), ui/Avatar, i18n/. GameTable takes { view, legal, onAction, events } only, so the online
 client reuses it.

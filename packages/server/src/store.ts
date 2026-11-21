@@ -4,13 +4,17 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { Action, GameInit } from '@hexgame/engine';
-import { CODE_RE, isBotLevel, optionsProblem, type BotLevelName, type RoomOptions } from './protocol';
+import { CODE_RE, isAvatar, isBotLevel, optionsProblem, type AvatarId, type BotLevelName, type RoomOptions } from './protocol';
 
 export interface PersistedSeat {
   name: string;
   tokenHash: string;
   /** Present for server-side bot seats. */
   bot?: BotLevelName;
+  /** A human seat currently played by its stand-in bot. */
+  afk?: boolean;
+  /** The seat's portrait (rooms saved before avatars existed have none; restore assigns one). */
+  avatar?: AvatarId;
 }
 
 export interface PersistedRoom {
@@ -98,7 +102,9 @@ function isPersistedSeat(s: PersistedSeat): boolean {
     s.name.length <= 24 &&
     typeof s.tokenHash === 'string' &&
     /^[0-9a-f]{64}$/.test(s.tokenHash) &&
-    (s.bot === undefined || isBotLevel(s.bot))
+    (s.bot === undefined || isBotLevel(s.bot)) &&
+    (s.afk === undefined || typeof s.afk === 'boolean') &&
+    (s.avatar === undefined || isAvatar(s.avatar))
   );
 }
 

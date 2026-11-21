@@ -69,7 +69,7 @@ test('portrait: setup and first roll fit one screen, all players and buttons vis
   expect(errors()).toEqual([]);
 });
 
-test('portrait: the menu holds the shell buttons, the sheet opens over the board and closes', async ({ page }, testInfo) => {
+test('portrait: the menu holds the shell buttons; the base game has no side sheet', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await loadFixture(page, 'city-game.json');
   await expectFitsScreen(page);
@@ -84,21 +84,25 @@ test('portrait: the menu holds the shell buttons, the sheet opens over the board
   await page.keyboard.press('Escape');
   await expect(home).toBeHidden();
 
-  // Log / trade sheet.
-  await page.locator('.sheet-toggle').click();
+  // The log panel was removed (PO 2026-11-19): without an expansion there is no side column,
+  // so no sheet button either.
+  await expect(page.locator('.sheet-toggle')).toHaveCount(0);
+  await expect(page.locator('.sidecol')).toHaveCount(0);
+  expect(errors()).toEqual([]);
+});
+
+test('portrait: the Tidelands sheet opens over the board, closes, and building a cog arms the board', async ({ page }, testInfo) => {
+  const errors = captureErrors(page);
+  await loadFixture(page, 'tidelands-firstLandfall.json');
   const sheet = page.locator('.sidecol');
+  await page.locator('.sheet-toggle').click();
   await expect(sheet).toBeVisible();
-  await expect(sheet.locator('.log-list li').first()).toBeVisible();
+  await expect(page.locator('.tl-panel')).toBeVisible();
   await page.waitForTimeout(300); // slide-in transition
   await page.screenshot({ path: shotPath('mobile-sheet.png', testInfo.project.name) });
   await page.locator('.sheet-close').click();
   await expect(sheet).toBeHidden();
-  expect(errors()).toEqual([]);
-});
 
-test('portrait: building a cog from the Tidelands sheet closes it and arms the board', async ({ page }, testInfo) => {
-  const errors = captureErrors(page);
-  await loadFixture(page, 'tidelands-firstLandfall.json');
   await page.locator('.sheet-toggle').click();
   await expect(page.locator('.tl-panel')).toBeVisible();
   const build = page.locator('.tl-panel button[data-tl="build"]');

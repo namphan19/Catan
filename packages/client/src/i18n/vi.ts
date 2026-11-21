@@ -3,7 +3,7 @@ export const vi: Record<string, string> = {
   appTitle: 'Boschtan',
   appSubtitle: 'Trò chơi hex — dựng làng, thương lượng, mở rộng',
   menu: 'Menu',
-  sheet_open: 'Bảng & nhật ký',
+  sheet_open: 'Bảng mở rộng',
   sheet_close: 'Đóng',
   langToggle: 'Tiếng Anh',
 
@@ -138,21 +138,15 @@ export const vi: Record<string, string> = {
   hand_total: 'Tổng: {n}',
 
   // Side panel
-  side_log: 'Nhật ký',
-  side_trade: 'Đổi bài',
   side_costs: 'Chi phí',
   side_costsNote: 'Chi phí của bộ luật cơ bản (đổi theo các bộ luật mở rộng).',
   side_costsRoad: 'Đường',
   side_costsSettlement: 'Làng',
   side_costsCity: 'Thành phố',
   side_costsCard: 'Thẻ phát triển',
-  side_noTrade: 'Không có đề nghị đổi bài nào đang mở.',
-  side_tradeFrom: '{name} đề nghị:',
-  side_tradeResponses: 'Phản hồi:',
   side_pending: 'Chưa trả lời',
   side_accepted: 'Đã chấp nhận',
   side_declined: 'Đã từ chối',
-  log_empty: 'Chưa có nước đi nào.',
 
   // Dialogs
   dlg_close: 'Đóng',
@@ -185,6 +179,8 @@ export const vi: Record<string, string> = {
   dlg_youGive: 'Bạn đưa',
   dlg_youGet: 'Bạn nhận',
   dlg_inHand: 'Số lá bạn đang có',
+  dlg_colCard: 'Lá bài',
+  dlg_colHave: 'Bạn có',
   dlg_bankNone: 'Bạn chưa có đủ lá cùng loại để đổi với ngân hàng (4:1, hoặc 3:1 / 2:1 nếu có cảng).',
   dlg_bankNotTurn: 'Bạn chỉ đổi với ngân hàng được trong lượt của mình.',
   dlg_bankRollFirst: 'Hãy gieo xúc xắc trước, rồi mới đổi bài.',
@@ -333,6 +329,12 @@ export const vi: Record<string, string> = {
   lobby_addBot: 'Thêm bot',
   lobby_botLevel: 'Độ khó bot',
   lobby_botHint: 'Bot chơi trên máy chủ và luôn sẵn sàng.',
+  lobby_avatarTitle: 'Chọn chân dung',
+  lobby_avatarHint: 'Ai chọn trước được trước; chân dung đã có người chọn thì bị khóa. Bấm lại chân dung của bạn để bỏ chọn. Ai chưa chọn (và bot) sẽ nhận một chân dung còn trống khi bắt đầu.',
+  lobby_avatarMine: 'Chân dung của bạn (bấm để bỏ chọn)',
+  lobby_avatarTaken: '{name} đã chọn',
+  lobby_avatarFree: 'Còn trống, bấm để chọn',
+  err_AVATAR_TAKEN: 'Chân dung này vừa có người khác chọn.',
   lobby_removeBot: 'Bỏ bot',
   lobby_removeBotTitle: 'Bỏ {name} khỏi phòng',
   bot_easy: 'Dễ',
@@ -344,6 +346,27 @@ export const vi: Record<string, string> = {
   home_seatHuman: 'Người chơi',
   home_needHuman: 'Cần ít nhất một ghế là người chơi.',
   strip_botThinking: '{name} đang nghĩ…',
+
+  // Away mode: a stand-in bot plays my seat until I take it back.
+  afk_go: '🤖 Cho bot chơi thay',
+  afk_goTitle: 'Bạn bận? Bot (mức {level}) sẽ tạm chơi thay bạn cho đến khi bạn quay lại.',
+  afk_back: 'Tôi đã quay lại',
+  afk_banner: '🤖 Bot (mức {level}) đang chơi thay bạn. Bấm "Tôi đã quay lại" để tự chơi tiếp.',
+  afk_popOnTitle: 'Bot vào chơi thay',
+  afk_popOn: '{name} tạm vắng mặt. Từ giờ bot (mức {level}) sẽ chơi thay {name} cho đến khi người này quay lại.',
+  afk_popOffTitle: 'Người chơi đã quay lại',
+  afk_popOff: '{name} đã quay lại và tự chơi tiếp. Bot không còn chơi thay nữa.',
+  afk_ok: 'Đã hiểu',
+
+  // Room chat (floating bubble).
+  chat_title: 'Trò chuyện',
+  chat_open: 'Mở trò chuyện',
+  chat_openUnread: 'Mở trò chuyện ({n} tin mới)',
+  chat_hide: 'Ẩn trò chuyện',
+  chat_empty: 'Chưa có tin nhắn nào. Chào mọi người đi!',
+  chat_placeholder: 'Nhập tin nhắn…',
+  chat_send: 'Gửi',
+  chat_you: 'Bạn',
 
   // Server error codes (protocol + engine) — unknown codes show the server message.
   err_unknown: 'Lỗi từ máy chủ: {msg}',
@@ -402,6 +425,9 @@ export const vi: Record<string, string> = {
   err_BAD_HEX: 'Ô hex không hợp lệ.',
   err_BAD_TARGET: 'Đích không hợp lệ.',
   err_BAD_VERTEX: 'Đỉnh không hợp lệ.',
+  err_AFK_ACTIVE: 'Bot đang chơi thay bạn; bấm "Tôi đã quay lại" trước.',
+  err_BAD_CHAT: 'Tin nhắn phải dài 1 đến 300 ký tự.',
+  err_CHAT_RATE: 'Bạn gửi tin nhắn nhanh quá, đợi vài giây nhé.',
   err_KICKED: 'Bạn đã bị chủ phòng mời ra khỏi phòng.',
   err_SEAT_TAKEN_OVER: 'Một phiên khác đã vào chỗ của bạn. Hãy vào lại phòng để lấy lại chỗ.',
 

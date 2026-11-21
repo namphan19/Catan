@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { BOT_TRADE_WAIT_MS } from '@hexgame/engine';
 import type { Action, GameEvent, PlayerId, PlayerView, StrongholdsView, Validation } from '@hexgame/engine';
 import { StrongholdsPanel } from '../strongholds/StrongholdsPanel';
+import { AdvanceHand } from '../strongholds/AdvanceHand';
 import { BoardExtras } from '../strongholds/BoardExtras';
 import { BagDialog, ChoiceDialog } from '../strongholds/ChoiceDialogs';
 import { CardReveal, useReveals } from '../strongholds/CardReveal';
@@ -30,9 +31,12 @@ import { CostCard } from './CostCard';
 import { HelpDialog } from './HelpDialog';
 import { HandPanel } from './HandPanel';
 import { ActionBar, type Pending } from './ActionBar';
-import { SidePanel } from './SidePanel';
 import { describeEvent } from './describe';
 import { DiscardDialog, StealDialog, TradeDialog, CardDialog, type TradeTab, type PickCard } from '../dialogs';
+
+// PO 2026-11-19: the log side panel (Nhật ký / Đổi bài tabs) is removed; events still show as
+// toasts and trade status in the trade dialog. The side column exists only for the expansion
+// panels (Tidelands, Strongholds).
 
 export interface GameTableProps {
   view: PlayerView;
@@ -52,9 +56,11 @@ export interface GameTableProps {
    *  pass device, export log, home). PO: one header row instead of two. */
   barInfo?: ReactNode;
   barActions?: ReactNode;
+  /** Extra floating UI inside the board area (online chat bubble). */
+  boardOverlay?: ReactNode;
 }
 
-export function GameTable({ view, legal, onAction, events, validate, errors, onExport, onHome, botSeats, barInfo, barActions }: GameTableProps) {
+export function GameTable({ view, legal, onAction, events, validate, errors, onExport, onHome, botSeats, barInfo, barActions, boardOverlay }: GameTableProps) {
   const { t } = useI18n();
   const name = useName();
   const check = validate ?? (() => ({ ok: true } as Validation));
@@ -256,8 +262,9 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const mustSteal = legal.some((a) => a.t === 'steal');
   const mustRespond = legal.some((a) => a.t === 'respondTrade');
 
-  // Open the trade dialog when an offer needs an answer; re-arm on each new offer. An offer the
-  // viewer cannot accept (missing cards) does not pop up: it only shows as a badge.
+  // Open the trade dialog the moment an offer needs an answer; re-arm on each new offer. PO
+  // 2026-11-18: it always pops up, also when the viewer lacks the cards (then only "decline" or a
+  // counter is possible, and the dialog says why accepting is greyed out).
   const offerKey = view.trade
     ? `${view.trade.from}:${JSON.stringify(view.trade.give)}:${JSON.stringify(view.trade.get)}`
     : '';
@@ -270,7 +277,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const myOfferOpen = !!view.trade && view.trade.from === view.viewer;
   const hadMyOffer = useRef(false);
   useEffect(() => {
-    if (mustRespond && canAcceptOffer && offerKey && offerKey !== lastOffer.current) {
+    if (mustRespond && offerKey && offerKey !== lastOffer.current) {
       setTradeOpen('players');
       setTradeTab('players');
       autoOpened.current = true;
@@ -279,7 +286,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
       autoOpened.current = false;
     }
     lastOffer.current = offerKey; // cleared when the offer ends, so the next offer opens again
-  }, [mustRespond, canAcceptOffer, offerKey]);
+  }, [mustRespond, offerKey]);
   useEffect(() => {
     if (hadMyOffer.current && !myOfferOpen) setTradeOpen(null);
     hadMyOffer.current = myOfferOpen;
@@ -382,7 +389,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
         <PlayerCards view={view} />
       </div>
       <div className="table-main">
-        <div className="board-area">
+        <div className={sh ? 'board-area has-sh-hand' : 'board-area'}>
           <Board
             overlay={
               sh || tl ? (
@@ -421,17 +428,22 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
             producing={producing}
           />
           <DiceBox view={view} sh={sh} />
-          {/* Phones only (mobile.css): the side column becomes a bottom sheet behind this button. */}
-          <button
-            type="button"
-            className="btn sheet-toggle"
-            aria-expanded={sheetOpen}
-            onClick={() => setSheetOpen((o) => !o)}
-          >
-            📜 {t(sh || tl ? 'sheet_open' : 'side_log')}
-          </button>
+          {/* Phones only (mobile.css): the side column (expansion panels) becomes a bottom sheet
+              behind this button. The base game has no side column since the log was removed. */}
+          {(sh || tl) && (
+            <button
+              type="button"
+              className="btn sheet-toggle"
+              aria-expanded={sheetOpen}
+              onClick={() => setSheetOpen((o) => !o)}
+            >
+              📜 {t('sheet_open')}
+            </button>
+          )}
           <CostCard view={view} />
+          {sh && <AdvanceHand view={view} sh={sh} legal={legal} onStart={startChoice} />}
           <ToastStack toasts={toasts} />
+          {boardOverlay}
           {reveals.current && <CardReveal reveal={reveals.current} onClose={reveals.close} t={t} name={name} />}
           {boardHint && !(choice && stage?.board) && (
             <div className="board-hint" role="status">
@@ -461,27 +473,28 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
             </div>
           )}
         </div>
-        <aside className="sidecol">
-          <button type="button" className="btn btn-ghost sheet-close" onClick={() => setSheetOpen(false)}>
-            ✕ {t('sheet_close')}
-          </button>
-          {tl && (
-            <TidelandsPanel
-              view={view}
-              tl={tl}
-              legal={legal}
-              onPick={(p) => {
-                setSheetOpen(false);
-                setChoice(null);
-                setPending(pending === p ? null : (p as 'tl:buildShip'));
-              }}
-              onStart={startChoice}
-              onAction={onAction}
-            />
-          )}
-          {sh && <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />}
-          <SidePanel view={view} />
-        </aside>
+        {(sh || tl) && (
+          <aside className="sidecol">
+            <button type="button" className="btn btn-ghost sheet-close" onClick={() => setSheetOpen(false)}>
+              ✕ {t('sheet_close')}
+            </button>
+            {tl && (
+              <TidelandsPanel
+                view={view}
+                tl={tl}
+                legal={legal}
+                onPick={(p) => {
+                  setSheetOpen(false);
+                  setChoice(null);
+                  setPending(pending === p ? null : (p as 'tl:buildShip'));
+                }}
+                onStart={startChoice}
+                onAction={onAction}
+              />
+            )}
+            {sh && <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />}
+          </aside>
+        )}
       </div>
       <div className="table-bottom">
         <HandPanel view={view} />

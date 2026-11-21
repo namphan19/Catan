@@ -1,12 +1,16 @@
 // Everyone at the table, one card per player in turn order: public info only (victory points,
 // hand/card counts, guards played, pieces left, awards). Numbers come straight from the view.
+// Layout (PO 2026-11-19): portrait + name on the left, then the card stats (hand, cards, guards),
+// the piece stats (roads, settlements, cities, awards) and the victory points on one line when the
+// card is wide enough; a narrow card stacks the two stat groups (3:3) under the VP line.
 import type { ReactNode } from 'react';
 import { baseConfig, type PlayerView } from '@hexgame/engine';
 import { useI18n } from '../i18n';
-import { useName } from '../shell/names';
+import { useAvatar, useName } from '../shell/names';
 import { assetUrl } from '../board/assets';
 import { playerColor, playerEmblem } from '../ui/colors';
 import { Emblem } from '../ui/Emblem';
+import { Avatar } from '../ui/Avatar';
 import { GuardIcon, HandIcon, PieceIcon, StarIcon, UiIcon } from '../ui/Icon';
 import { awardKey } from './describe';
 import { actorsOf } from './StatusBanner';
@@ -24,6 +28,7 @@ function Stat({ icon, n, label, warn, supply }: { icon: ReactNode; n: number; la
 export function PlayerCards({ view }: { view: PlayerView }) {
   const { t } = useI18n();
   const name = useName();
+  const avatar = useAvatar();
   const actors = actorsOf(view);
   const compact = view.players.length > 4;
   return (
@@ -46,11 +51,20 @@ export function PlayerCards({ view }: { view: PlayerView }) {
             className={`seat${p.id === view.viewer ? ' me' : ''}${acting ? ' acting' : ''}`}
             style={{ '--seat': color } as React.CSSProperties}
           >
-            <div className="seat-top">
-              <Emblem id={playerEmblem(p.id)} size={18} color={color} />
+            <div className="seat-grid">
+            <div className="seat-id">
+              <span className="seat-avatar">
+                <Avatar id={avatar(p.id)} seat={p.id} size={compact ? 38 : 46} />
+                {/* Emblem badge: the seat is never told apart by colour alone. */}
+                <span className="seat-emblem">
+                  <Emblem id={playerEmblem(p.id)} size={12} color={color} />
+                </span>
+              </span>
               <span className="seat-name" title={name(p.id)}>
                 {name(p.id)}
               </span>
+            </div>
+            <div className="seat-head">
               {p.id === view.viewer && <span className="seat-you">{t('you')}</span>}
               {acting && (
                 // A shape (not colour alone) next to the gold ring; the words are in the tooltip
@@ -70,7 +84,7 @@ export function PlayerCards({ view }: { view: PlayerView }) {
                 <small>/{view.init.vpToWin}</small>
               </span>
             </div>
-            <div className="seat-stats">
+            <div className="seat-stats seat-cards">
               <Stat
                 icon={<HandIcon size={18} />}
                 n={p.handCount}
@@ -79,7 +93,8 @@ export function PlayerCards({ view }: { view: PlayerView }) {
               />
               <Stat icon={<UiIcon name="card" size={18} />} n={p.cardCount} label={t('stat_cards')} />
               <Stat icon={<GuardIcon size={18} />} n={p.played['guard'] ?? 0} label={t('stat_guards')} />
-              <span className="seat-sep" aria-hidden="true" />
+            </div>
+            <div className="seat-stats seat-assets">
               <Stat icon={<PieceIcon kind="road" color={color} size={14} />} n={p.supply['road'] ?? 0} label={t('stat_roadsLeft')} supply />
               <Stat
                 icon={<PieceIcon kind="settlement" color={color} size={18} />}
@@ -95,10 +110,11 @@ export function PlayerCards({ view }: { view: PlayerView }) {
                   src={assetUrl('award', award)}
                   alt={t(awardKey(award))}
                   title={t(awardKey(award))}
-                  width={24}
-                  height={24}
+                  width={22}
+                  height={22}
                 />
               ))}
+            </div>
             </div>
           </div>
         );

@@ -74,13 +74,12 @@ test('4-player hot-seat game seed e2e-1: board, setup, roll, end turn, trade pan
   // Roll dice.
   await actionButton(page, VI.rollText).click();
 
-  // Log shows Vietnamese, human-readable lines (no raw ids, no English fallback).
-  const logLines = page.locator('.log-list li');
-  await expect(logLines.first()).toBeVisible();
-  const logText = await logLines.first().textContent();
-  expect(logText, `log line should be Vietnamese: ${logText}`).toMatch(/gieo xúc xắc|gieo được \d+/);
-  expect(logText, 'log must not be the English fallback').not.toMatch(/Roll dice|End turn/);
-  expect(logText, 'log must not contain raw board ids').not.toMatch(/[veh]:-?\d+,\d+|[NWS][EW]?\b/);
+  // PO 2026-11-19: the log side panel is gone (no side column in a base game). Event toasts are
+  // human-readable: no English fallback, no raw board ids.
+  await expect(page.locator('.sidecol')).toHaveCount(0);
+  const toastText = (await page.locator('.toast-stack').textContent()) ?? '';
+  expect(toastText, 'toasts must not be the English fallback').not.toMatch(/Roll dice|End turn/);
+  expect(toastText, 'toasts must not contain raw board ids').not.toMatch(/[veh]:-?\d+,\d+/);
 
   await clearHover(page);
   await page.screenshot({ path: shotPath('main-turn.png', project), fullPage: true });

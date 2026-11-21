@@ -5,14 +5,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Action, GameEvent, PlayerView } from '@hexgame/engine';
 import { Connection } from '../net/connection';
-import type { BotLevel, RoomInfo, RoomOptions, ServerMsg } from '../net/protocol';
-import { CODE_RE } from '../net/protocol';
+import type { AvatarId, BotLevel, ChatMessage, RoomInfo, RoomOptions, ServerMsg } from '../net/protocol';
+import { AFK_BOT_LEVEL, CODE_RE } from '../net/protocol';
 import { useErrorText } from '../net/errors';
 import { useI18n } from '../i18n';
 import { NamesProvider } from './names';
 import { OnlineHome } from './OnlineHome';
 import { Lobby } from './Lobby';
 import { GameTable } from '../table/GameTable';
+import { Dialog } from '../ui/Dialog';
+import { Button } from '../ui/Button';
+import { ChatBubble } from './ChatBubble';
+
+/** A seat was handed to its stand-in bot or taken back (server `afk` message). */
+interface AfkNotice {
+  id: number;
+  name: string;
+  afk: boolean;
+}
 
 const NAME_KEY = 'boschtan.name';
 export const ROOM_KEY = 'boschtan.room';
@@ -43,6 +53,11 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
   const [errors, setErrors] = useState<string[]>([]);
   const [online, setOnline] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Popups for the other players' "a bot plays for me" / "I am back" switches, oldest first. */
+  const [afkNotices, setAfkNotices] = useState<AfkNotice[]>([]);
+  const afkSeq = useRef(0);
+  /** Chat lines of the current room, oldest first. */
+  const [chat, setChat] = useState<ChatMessage[]>([]);
 
   // Latest values for the connection callbacks (created once, closure-safe via refs).
   const nameRef = useRef(name);
@@ -81,6 +96,21 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
         setEvents((prev) => [...prev, ...(msg.events as GameEvent[])]);
         break;
       }
+      case 'chat': {
+        const m = msg.message;
+        setChat((prev) => (prev.some((x) => x.id === m.id) ? prev : [...prev, m].slice(-100)));
+        break;
+      }
+      case 'chatHistory':
+        // Authoritative recent history (join / reconnect): replaces what we had.
+        setChat(msg.messages);
+        break;
+      case 'afk': {
+        // My own switch needs no popup: the "a bot plays for you" banner shows it.
+        if (msg.seat !== roomRef.current?.you)
+          setAfkNotices((prev) => [...prev, { id: ++afkSeq.current, name: msg.name, afk: msg.afk }]);
+        break;
+      }
       case 'error': {
         const text = errRef.current(msg.code, msg.message);
         if (msg.code === 'NO_SUCH_ROOM') {
@@ -104,6 +134,8 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
     setLegal([]);
     setEvents([]);
     setErrors([]);
+    setAfkNotices([]);
+    setChat([]);
   }, []);
 
   /** Final WebSocket close codes (no reconnect): 4001 KICKED clears the session and shows
@@ -212,6 +244,20 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
     connRef.current?.send({ type: 'addBot', level });
   }, []);
 
+  /** Hand my seat to the stand-in bot while I am away (true), or take it back (false). */
+  const setAfk = useCallback((afk: boolean) => {
+    connRef.current?.send({ type: 'setAfk', afk });
+  }, []);
+
+  /** Lobby: pick my portrait (the server refuses one another seat already has). */
+  const setAvatar = useCallback((avatar: AvatarId | null) => {
+    connRef.current?.send({ type: 'setAvatar', avatar });
+  }, []);
+
+  const sendChat = useCallback((text: string) => {
+    connRef.current?.send({ type: 'chat', text });
+  }, []);
+
   const sendAction = useCallback((a: Action) => {
     // The server only accepts actions naming our own seat; legal actions from the server
     // already carry it, but be defensive for engine shapes without a player field.
@@ -225,12 +271,28 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
   const names = useMemo<Record<string, string>>(() => {
     const map: Record<string, string> = {};
     room?.seats.forEach((s) => {
-      map[s.seat] = s.bot ? `🤖 ${s.name}` : s.name;
+      map[s.seat] = s.bot ? `🤖 ${s.name}` : s.afk ? `${s.name} 🤖` : s.name;
     });
     return map;
   }, [room]);
 
-  const botSeats = useMemo(() => (room?.seats ?? []).filter((s) => s.bot).map((s) => s.seat), [room]);
+  const avatars = useMemo<Record<string, AvatarId | undefined>>(() => {
+    const map: Record<string, AvatarId | undefined> = {};
+    room?.seats.forEach((s) => {
+      map[s.seat] = s.avatar;
+    });
+    return map;
+  }, [room]);
+
+  // Seats played by the server: real bots and the stand-in bots of away players.
+  const botSeats = useMemo(() => (room?.seats ?? []).filter((s) => s.bot || s.afk).map((s) => s.seat), [room]);
+  const meAfk = !!room?.seats.find((s) => s.seat === room.you)?.afk;
+  const gameOver = !!view?.winner;
+  const botLevelName = t(`bot_${AFK_BOT_LEVEL}`);
+  // While my stand-in plays I only watch: no legal actions reach the table (the server refuses them too).
+  const noLegal = useMemo<Action[]>(() => [], []);
+  const afkNotice = afkNotices[0];
+  const dismissAfkNotice = () => setAfkNotices((prev) => prev.slice(1));
 
   return (
     <>
@@ -259,29 +321,54 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
           onLeave={leaveRoom}
           onKick={kickSeat}
           onAddBot={addBot}
+          onAvatar={setAvatar}
           notice={notice}
           onLangToggle={onLangToggle}
         />
       )}
+      {screen === 'lobby' && room && (
+        <ChatBubble messages={chat} you={room.you} onSend={sendChat} placement="page" roomCode={room.code} />
+      )}
       {screen === 'game' && room && (
-        <NamesProvider names={names}>
+        <NamesProvider names={names} avatars={avatars}>
           <div className="shell">
             {/* The room code and the home button live in the game's single top bar. */}
             {view ? (
               <GameTable
                 barInfo={<span className="shell-viewing">{t('net_room', { code: room.code })}</span>}
                 barActions={
-                  <button type="button" className="btn btn-ghost" onClick={leaveRoom}>
-                    {t('net_home')}
-                  </button>
+                  <>
+                    {meAfk ? (
+                      <button type="button" className="btn btn-primary" onClick={() => setAfk(false)}>
+                        {t('afk_back')}
+                      </button>
+                    ) : (
+                      !gameOver && (
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          title={t('afk_goTitle', { level: botLevelName })}
+                          onClick={() => setAfk(true)}
+                        >
+                          {t('afk_go')}
+                        </button>
+                      )
+                    )}
+                    <button type="button" className="btn btn-ghost" onClick={leaveRoom}>
+                      {t('net_home')}
+                    </button>
+                  </>
                 }
                 view={view}
-                legal={legal}
+                legal={meAfk ? noLegal : legal}
                 onAction={sendAction}
                 events={events}
                 errors={errors}
                 onHome={leaveRoom}
                 botSeats={botSeats}
+                boardOverlay={
+                  <ChatBubble messages={chat} you={room.you} onSend={sendChat} placement="board" roomCode={room.code} />
+                }
               />
             ) : (
               <div className="shell-strip">
@@ -291,6 +378,28 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
                 </button>
                 <p className="hint net-loading">{t('net_loading')}</p>
               </div>
+            )}
+            {meAfk && view && (
+              <div className="afk-banner" role="status" aria-live="polite">
+                <span>{t('afk_banner', { level: botLevelName })}</span>
+                <button type="button" className="btn btn-primary" onClick={() => setAfk(false)}>
+                  {t('afk_back')}
+                </button>
+              </div>
+            )}
+            {afkNotice && (
+              <Dialog
+                key={afkNotice.id}
+                title={t(afkNotice.afk ? 'afk_popOnTitle' : 'afk_popOffTitle')}
+                onClose={dismissAfkNotice}
+              >
+                <p>{t(afkNotice.afk ? 'afk_popOn' : 'afk_popOff', { name: afkNotice.name, level: botLevelName })}</p>
+                <div className="dialog-actions">
+                  <Button variant="primary" onClick={dismissAfkNotice}>
+                    {t('afk_ok')}
+                  </Button>
+                </div>
+              </Dialog>
             )}
           </div>
         </NamesProvider>

@@ -1,7 +1,9 @@
 // Heuristic bot: every decision is legal, games finish for 3-6 players and with the expansion, and
 // the bot clearly beats random play. Uses the arena from fuzz/botArena.ts.
 import { describe, expect, it } from 'vitest';
-import { applyAction, botAct, createGame, decide, getLegalActions, getPlayerView, type GameState } from '../src';
+import {
+  BOT_RESPOND_DELAY_MS, applyAction, botAct, botRespondWaitMs, createGame, decide, getLegalActions, getPlayerView, type GameState,
+} from '../src';
 import { playArenaGame, type Policy } from '../fuzz/botArena';
 
 describe('heuristic bot', () => {
@@ -53,5 +55,45 @@ describe('heuristic bot', () => {
     const s = createGame({ seed: 'idle', playerCount: 4 });
     const idle = s.players.find((p) => getLegalActions(s, p.id).length === 0)!;
     expect(botAct(s, idle.id)).toBeNull();
+  });
+});
+
+describe('botRespondWaitMs (bot answers to an offer wait for the humans)', () => {
+  // p1 offers 1 ore for 1 wool; everyone holds wool, so every responder could accept.
+  const withOffer = (): GameState => {
+    const s = createGame({ seed: 'respond', playerCount: 4 });
+    for (const p of s.players) p.hand = { ...p.hand, wool: 2, ore: 1 };
+    s.trade = { from: 'p1', give: { ore: 1 }, get: { wool: 1 }, responses: {} };
+    return s;
+  };
+  const bots = (...ids: string[]) => (id: string) => ids.includes(id);
+
+  it('holds back while another human could still accept', () => {
+    const s = withOffer();
+    expect(botRespondWaitMs(s, 'p4', bots('p4'), 0)).toBe(BOT_RESPOND_DELAY_MS);
+    expect(botRespondWaitMs(s, 'p4', bots('p4'), 3_000)).toBe(BOT_RESPOND_DELAY_MS - 3_000);
+    expect(botRespondWaitMs(s, 'p4', bots('p4'), BOT_RESPOND_DELAY_MS)).toBe(0);
+  });
+
+  it('answers at once when no other human could race it', () => {
+    const s = withOffer();
+    // Everyone else is a bot (the human offerer does not count).
+    expect(botRespondWaitMs(s, 'p4', bots('p2', 'p3', 'p4'), 0)).toBe(0);
+    // The other humans already answered.
+    s.trade!.responses = { p2: { response: 'decline' }, p3: { response: 'accept' } };
+    expect(botRespondWaitMs(s, 'p4', bots('p4'), 0)).toBe(0);
+    // A human without the requested cards cannot accept, so it is no race either.
+    const t = withOffer();
+    for (const id of ['p2', 'p3']) t.players.find((p) => p.id === id)!.hand.wool = 0;
+    expect(botRespondWaitMs(t, 'p4', bots('p4'), 0)).toBe(0);
+  });
+
+  it('never applies to the offerer, a bot that answered, or without an offer', () => {
+    const s = withOffer();
+    expect(botRespondWaitMs(s, 'p1', bots('p1'), 0)).toBe(0);
+    s.trade!.responses = { p4: { response: 'decline' } };
+    expect(botRespondWaitMs(s, 'p4', bots('p4'), 0)).toBe(0);
+    delete s.trade;
+    expect(botRespondWaitMs(s, 'p4', bots('p4'), 0)).toBe(0);
   });
 });

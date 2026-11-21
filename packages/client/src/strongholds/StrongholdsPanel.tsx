@@ -1,6 +1,7 @@
 // Side panel of the Strongholds expansion: raid track, every player's improvement levels, the
-// viewer's expansion actions and advance cards. Buttons are enabled only when getLegalActions
-// contains a matching action; clicking hands those actions to the staged chooser.
+// viewer's expansion actions (the advance cards sit on the board: AdvanceHand). Buttons are
+// enabled only when getLegalActions contains a matching action; clicking hands those actions to
+// the staged chooser.
 import type { Action, PlayerView, StrongholdsView } from '@hexgame/engine';
 import { SH, TRACKS } from '@hexgame/engine';
 import { resKey, useI18n } from '../i18n';
@@ -27,7 +28,6 @@ export function StrongholdsPanel({ view, sh, legal, onStart }: PanelProps) {
   const name = useName();
   const me = view.viewer;
   const mine = view.players.find((p) => p.id === me);
-  const cards = mine?.cards ?? [];
   const of = (type: string, pred?: (a: Record<string, unknown>) => boolean): Action[] =>
     legal.filter((a) => a.t === type && (!pred || pred(a as unknown as Record<string, unknown>)));
 
@@ -37,8 +37,6 @@ export function StrongholdsPanel({ view, sh, legal, onStart }: PanelProps) {
   const defenders = view.players.reduce((s, p) => s + strength(p.id), 0);
   const stepsLeft = SH.raidTrack - sh.raid.pos;
 
-  const groups = new Map<string, number>();
-  for (const c of cards) groups.set(c, (groups.get(c) ?? 0) + 1);
   const bazaar = of('sh:bazaarOffer');
 
   return (
@@ -180,57 +178,59 @@ export function StrongholdsPanel({ view, sh, legal, onStart }: PanelProps) {
             </div>
           </div>
 
-          <div className="sh-group">
-            <span className="sh-label">
-              {t('sh_cards')}{' '}
-              <small className={cards.length > SH.handLimit ? 'sh-bad' : 'sh-muted'}>
-                {cards.length}/{SH.handLimit}
-              </small>
-            </span>
-            {groups.size === 0 ? (
-              <p className="sh-muted sh-empty">{t('sh_noCards')}</p>
-            ) : (
-              <ul className="sh-cards">
-                {[...groups.entries()].map(([card, n]) => {
-                  const plays = of('sh:play', (a) => a.card === card);
-                  const drops = of('sh:discardCard', (a) => a.card === card);
-                  return (
-                    <li key={card} className="sh-card" data-card={card}>
-                      <div className="sh-card-text">
-                        <b>
-                          {t(card)}
-                          {n > 1 ? ` ×${n}` : ''}
-                        </b>
-                        <span>{t(`cardfx_${card}`)}</span>
-                      </div>
-                      <div className="sh-card-btns">
-                        <Button
-                          className="sh-btn"
-                          variant="primary"
-                          disabled={plays.length === 0}
-                          onClick={() => onStart(plays, t(card))}
-                        >
-                          {t('sh_play')}
-                        </Button>
-                        {drops.length > 0 && (
-                          <Button className="sh-btn" variant="danger" onClick={() => onStart(drops, t('sh_discard'))}>
-                            {t('sh_discard')}
-                          </Button>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            {sh.vpCards[me].length > 0 && (
-              <p className="sh-muted">
-                {t('sh_vpCards')}: {sh.vpCards[me].map((c) => t(c)).join(', ')}
-              </p>
-            )}
-          </div>
+          {/* The viewer's advance cards moved to the bottom-left of the board (AdvanceHand). */}
         </>
       )}
+
+      {/* PO 2026-11-19: the freed log space shows what each track gives: the level-3 perk, the
+          level-4 capital and who holds it, the cards left in its deck; then the caravan. */}
+      <div className="sh-group sh-tracks">
+        <span className="sh-label">{t('sh_tracks')}</span>
+        {TRACKS.map((tr) => {
+          const cap = sh.capitals[tr];
+          const myLevel = me ? sh.levels[me]?.[tr] ?? 0 : 0;
+          const fixed = !!cap && sh.levels[cap.owner]?.[tr] >= SH.maxLevel;
+          return (
+            <div key={tr} className="sh-trackinfo" data-track={tr}>
+              <div className="sh-trackinfo-head">
+                <ResourceIcon res={SH.trackCommodity[tr]} size={16} />
+                <b>{trackName(t, tr)}</b>
+                <span className="sh-muted sh-trackinfo-deck">{t('sh_deckLeft', { n: sh.deckCounts[tr] ?? 0 })}</span>
+              </div>
+              <p className={myLevel >= SH.perkLevel ? 'sh-trackinfo-row sh-reached' : 'sh-trackinfo-row'}>
+                <span className="sh-trackinfo-lvl">{t('sh_perkAt', { n: SH.perkLevel })}</span>{' '}
+                {t(`sh_perk_${tr}`)}
+                {myLevel >= SH.perkLevel && (
+                  <span className="sh-tick" title={t('sh_reached')} aria-label={t('sh_reached')}>
+                    ✓
+                  </span>
+                )}
+              </p>
+              <p className="sh-trackinfo-row">
+                <span className="sh-trackinfo-lvl">{t('sh_capitalAt', { n: SH.capitalLevel, vp: SH.capitalVP })}</span>:{' '}
+                {cap ? (
+                  <span className="sh-trackinfo-owner">
+                    <Emblem id={playerEmblem(cap.owner)} size={12} color={playerColor(cap.owner)} /> {name(cap.owner)}
+                    {fixed && <span className="sh-muted"> ({t('sh_capitalFixed')})</span>}
+                  </span>
+                ) : (
+                  <span className="sh-muted">{t('sh_capitalNone')}</span>
+                )}
+              </p>
+            </div>
+          );
+        })}
+        <p className="sh-raid-info">
+          {sh.caravan ? (
+            <>
+              <Emblem id={playerEmblem(sh.caravan.owner)} size={12} color={playerColor(sh.caravan.owner)} />{' '}
+              {t('sh_caravanHolder', { name: name(sh.caravan.owner), vp: SH.caravanVP })}
+            </>
+          ) : (
+            <span className="sh-muted">{t('sh_caravanNone')}</span>
+          )}
+        </p>
+      </div>
     </section>
   );
 }

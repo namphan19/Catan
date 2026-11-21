@@ -126,11 +126,15 @@ async function act(label: string, loc: Locator): Promise<boolean> {
 }
 
 async function myTurnActions(): Promise<boolean> {
-  const cards = page.locator('.sh-card');
+  // Advance cards sit on the board (AdvanceHand): open a card's face, then its Play button.
+  const cards = page.locator('.sh-hand-tab');
   const nc = await cards.count();
   for (let i = 0; i < nc; i++) {
     const id = (await cards.nth(i).getAttribute('data-card')) ?? '?';
-    if (await act('card ' + id + i, cards.nth(i).locator('.sh-card-btns button:not(.btn-danger)'))) return true;
+    if (attempted.has(`${round}:card ${id}${i}`)) continue;
+    if ((await cards.nth(i).getAttribute('aria-expanded')) !== 'true') await cards.nth(i).click();
+    if (await act('card ' + id + i, page.locator('.sh-hand-face .btn-primary'))) return true;
+    await page.keyboard.press('Escape');
   }
   if (await act('city', page.locator('.actionbar button', { hasText: 'Nâng cấp thành phố' }))) return true;
   if (await act('settlement', page.locator('.actionbar button', { hasText: 'Xây làng' }))) return true;

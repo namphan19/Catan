@@ -4,10 +4,12 @@
 // compared in constant time; raw tokens, the seed and raw game state never leave here.
 import * as crypto from 'node:crypto';
 import {
+  BOT_RESPOND_DELAY_MS,
   BOT_TRADE_WAIT_MS,
   IllegalActionError,
   applyAction,
   planBot,
+  botRespondWaitMs,
   botTradeWaitMs,
   createGame,
   getEventsView,
@@ -22,7 +24,8 @@ import {
   type PlayerId,
 } from '@hexgame/engine';
 import {
-  CODE_RE, gameSetup, parseClientMessage, type BotLevelName, type ClientMsg, type RoomOptions, type ServerMsg,
+  AFK_BOT_LEVEL, AVATARS, CODE_RE, gameSetup, parseClientMessage, type AvatarId, type BotLevelName, type ChatMessage,
+  type ClientMsg, type RoomOptions, type ServerMsg,
 } from './protocol';
 import { RoomStore, type PersistedRoom } from './store';
 
@@ -42,6 +45,8 @@ export interface ConnRecord {
   seat: PlayerId | null;
   /** Failed joinRoom attempts on this connection (brute-force budget, see limits.ts). */
   failedJoins: number;
+  /** Times of this connection's recent chat lines (chat rate limit). */
+  chatTimes: number[];
 }
 
 interface RoomPlayer {
@@ -50,7 +55,21 @@ interface RoomPlayer {
   ready: boolean;
   /** Server-side bot seat. Its token is random and never issued, so nobody can claim the seat. */
   bot?: BotLevelName;
+  /** A human seat handed to its stand-in bot (AFK_BOT_LEVEL) until the owner takes it back. */
+  afk?: boolean;
+  /** Portrait picked in the lobby (unique per room); seats without one get a free one at start. */
+  avatar?: AvatarId;
 }
+
+/** Give every seat without a portrait a free one, in seat order (game start, restored rooms). */
+function ensureAvatars(players: RoomPlayer[]): void {
+  const taken = new Set(players.map((p) => p.avatar).filter(Boolean));
+  const free = AVATARS.filter((a) => !taken.has(a));
+  for (const p of players) if (!p.avatar) p.avatar = free.shift();
+}
+
+/** Who plays a seat on the server: its bot level, or undefined for a human at the controls. */
+const botLevelOf = (p: RoomPlayer): BotLevelName | undefined => p.bot ?? (p.afk ? AFK_BOT_LEVEL : undefined);
 
 interface Room {
   code: string;
@@ -69,6 +88,10 @@ interface Room {
   tradeSince?: number;
   /** An expert bot is searching; set `cancelled` to drop the result. */
   thinking?: { cancelled: boolean };
+  /** The last CHAT_HISTORY chat lines (memory only, not persisted). */
+  chat: ChatMessage[];
+  /** Id of the last chat line. */
+  chatSeq: number;
 }
 
 export interface HubOptions {
@@ -79,8 +102,10 @@ export interface HubOptions {
   idleMs?: number;
   /** Pause before each bot move, so humans can follow (default 700 ms). */
   botDelayMs?: number;
-  /** A bot waits this long for every answer to its trade offer before settling it (default 10 s). */
+  /** A bot waits this long for every answer to its trade offer before settling it (default 30 s). */
   botTradeWaitMs?: number;
+  /** A bot holds back its answer to an offer this long while a human could still accept (default 8 s). */
+  botRespondDelayMs?: number;
   /** Thinking time of 'expert' bots per searched decision (default 1500 ms). */
   botThinkMs?: number;
 }
@@ -91,8 +116,15 @@ const THINK_SLICE_MS = 15;
 
 export const DEFAULT_BOT_DELAY_MS = 700;
 export const DEFAULT_BOT_TRADE_WAIT_MS = BOT_TRADE_WAIT_MS;
+export const DEFAULT_BOT_RESPOND_DELAY_MS = BOT_RESPOND_DELAY_MS;
 /** Bot seats are named "Bot", "Bot 2", ...; clients show the level from the seat's `bot` field. */
 const BOT_NAME = 'Bot';
+
+/** Chat lines a room keeps for players who join or reconnect later. */
+export const CHAT_HISTORY = 50;
+/** Chat rate limit per connection: at most CHAT_BURST lines per CHAT_WINDOW_MS. */
+export const CHAT_BURST = 5;
+export const CHAT_WINDOW_MS = 10_000;
 
 export const DEFAULT_ROOM_LIMIT = 50;
 export const DEFAULT_IDLE_MS = 30 * 60 * 1000;
@@ -137,6 +169,7 @@ export class Hub {
   private readonly idleMs: number;
   private readonly botDelayMs: number;
   private readonly botTradeWaitMs: number;
+  private readonly botRespondDelayMs: number;
   private readonly botThinkMs: number;
 
   constructor(opts: HubOptions = {}) {
@@ -146,6 +179,7 @@ export class Hub {
     this.idleMs = opts.idleMs ?? DEFAULT_IDLE_MS;
     this.botDelayMs = opts.botDelayMs ?? DEFAULT_BOT_DELAY_MS;
     this.botTradeWaitMs = opts.botTradeWaitMs ?? DEFAULT_BOT_TRADE_WAIT_MS;
+    this.botRespondDelayMs = opts.botRespondDelayMs ?? DEFAULT_BOT_RESPOND_DELAY_MS;
   }
 
   /** Stop all pending bot moves (server shutdown, tests). */
@@ -170,6 +204,7 @@ export class Hub {
       roomCode: null,
       seat: null,
       failedJoins: 0,
+      chatTimes: [],
     };
     this.conns.set(conn.id, rec);
     return rec;
@@ -231,7 +266,16 @@ export class Hub {
           tokenHash: s.tokenHash,
           ready: true,
           ...(s.bot ? { bot: s.bot } : {}),
+          ...(s.afk && !s.bot ? { afk: true } : {}),
+          ...(s.avatar ? { avatar: s.avatar } : {}),
         }));
+        // Drop duplicates a hand-edited file might carry, then fill the gaps.
+        const seen = new Set<AvatarId>();
+        for (const pl of players) {
+          if (pl.avatar && seen.has(pl.avatar)) delete pl.avatar;
+          else if (pl.avatar) seen.add(pl.avatar);
+        }
+        ensureAvatars(players);
         const hostIdx = Math.max(0, players.findIndex((_, i) => seatOf(i) === p.hostSeat));
         const room: Room = {
           code: p.code,
@@ -242,6 +286,8 @@ export class Hub {
           players,
           game: { state, actions: [...p.actions] },
           emptySince: Date.now(),
+          chat: [],
+          chatSeq: 0,
         };
         this.rooms.set(room.code, room);
         count++;
@@ -295,6 +341,15 @@ export class Hub {
         break;
       case 'addBot':
         this.onAddBot(rec, msg);
+        break;
+      case 'setAvatar':
+        this.onSetAvatar(rec, msg);
+        break;
+      case 'setAfk':
+        this.onSetAfk(rec, msg);
+        break;
+      case 'chat':
+        this.onChat(rec, msg);
         break;
       case 'action':
         this.onAction(rec, msg);
@@ -356,6 +411,8 @@ export class Hub {
       started: false,
       players: [player],
       emptySince: null,
+      chat: [],
+      chatSeq: 0,
     };
     this.rooms.set(room.code, room);
     this.attachToRoom(rec, room, 0);
@@ -383,6 +440,7 @@ export class Hub {
       this.afterRoomChange(room);
       console.log(`[room] ${room.code} ${rec.seat} reconnected`);
       rec.conn.send({ type: 'room', ...this.roomMsg(room, rec) });
+      this.sendChatHistory(rec, room);
       if (room.started) {
         this.sendState(rec, room);
         this.scheduleBots(room); // bots pause while nobody is connected
@@ -403,6 +461,7 @@ export class Hub {
     this.afterRoomChange(room);
     this.broadcastRoom(room);
     rec.conn.send({ type: 'room', ...this.roomMsg(room, rec) });
+    this.sendChatHistory(rec, room);
   }
 
   private onLeaveRoom(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'leaveRoom' }>): void {
@@ -477,6 +536,7 @@ export class Hub {
       ...(opts.vpToWin !== undefined ? { vpToWin: opts.vpToWin } : {}),
       ...gameSetup(opts),
     });
+    ensureAvatars(room.players);
     room.started = true;
     room.game = { state, actions: [] };
     console.log(`[room] ${room.code} game started (${room.playerCount} players)`);
@@ -518,7 +578,106 @@ export class Hub {
     this.broadcastRoom(room);
   }
 
+  /**
+   * Lobby-only: pick my portrait, first come first served (docs/PROTOCOL.md). A portrait another
+   * seat holds is refused with AVATAR_TAKEN; picking my own again or null (clear) always works.
+   */
+  private onSetAvatar(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'setAvatar' }>): void {
+    const room = rec.roomCode ? this.rooms.get(rec.roomCode) : undefined;
+    const idx = room && rec.token ? room.players.findIndex((p) => hashEquals(p.tokenHash, hashToken(rec.token))) : -1;
+    if (!room || !rec.seat || idx === -1) {
+      this.error(rec.conn, msg.reqId, 'NOT_IN_ROOM', 'You are not in a room.');
+      return;
+    }
+    if (room.started) {
+      this.error(rec.conn, msg.reqId, 'GAME_STARTED', 'Portraits can only be picked in the lobby.');
+      return;
+    }
+    const me = room.players[idx];
+    if (msg.avatar && room.players.some((p, i) => i !== idx && p.avatar === msg.avatar)) {
+      this.error(rec.conn, msg.reqId, 'AVATAR_TAKEN', 'Another player already picked that portrait.');
+      rec.conn.send({ type: 'room', ...this.roomMsg(room, rec) }); // resync a stale picker
+      return;
+    }
+    if (msg.avatar) me.avatar = msg.avatar;
+    else delete me.avatar;
+    this.broadcastRoom(room);
+  }
+
+  // ------------------------------------------------------------------ chat
+
+  /** Lobby or game: relay a chat line to everyone in the room and keep it in the short history. */
+  private onChat(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'chat' }>): void {
+    const room = rec.roomCode ? this.rooms.get(rec.roomCode) : undefined;
+    const idx = room && rec.token ? room.players.findIndex((p) => hashEquals(p.tokenHash, hashToken(rec.token))) : -1;
+    if (!room || !rec.seat || idx === -1) {
+      this.error(rec.conn, msg.reqId, 'NOT_IN_ROOM', 'You are not in a room.');
+      return;
+    }
+    const now = Date.now();
+    rec.chatTimes = rec.chatTimes.filter((at) => now - at < CHAT_WINDOW_MS);
+    if (rec.chatTimes.length >= CHAT_BURST) {
+      this.error(rec.conn, msg.reqId, 'CHAT_RATE', 'You are sending chat messages too fast.');
+      return;
+    }
+    rec.chatTimes.push(now);
+    const sender = room.players[idx];
+    const message: ChatMessage = {
+      id: ++room.chatSeq,
+      seat: seatOf(idx),
+      name: sender.name,
+      ...(sender.avatar ? { avatar: sender.avatar } : {}),
+      text: msg.text,
+      at: now,
+    };
+    room.chat.push(message);
+    if (room.chat.length > CHAT_HISTORY) room.chat.splice(0, room.chat.length - CHAT_HISTORY);
+    for (const r of this.connsInRoom(room)) r.conn.send({ type: 'chat', message });
+  }
+
+  private sendChatHistory(rec: ConnRecord, room: Room): void {
+    rec.conn.send({ type: 'chatHistory', messages: room.chat });
+  }
+
   // ------------------------------------------------------------------ game
+
+  /**
+   * Running game only: hand my seat to a stand-in bot while I am away, or take it back
+   * (docs/PROTOCOL.md). Everyone in the room gets an `afk` notice (clients show a popup) and the
+   * room message carries the seat's `afk` flag. My own actions are refused while the bot plays.
+   */
+  private onSetAfk(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'setAfk' }>): void {
+    const room = rec.roomCode ? this.rooms.get(rec.roomCode) : undefined;
+    const idx = room && rec.token ? room.players.findIndex((p) => hashEquals(p.tokenHash, hashToken(rec.token))) : -1;
+    if (!room || !rec.seat || idx === -1) {
+      this.error(rec.conn, msg.reqId, 'NOT_IN_ROOM', 'You are not in a room.');
+      return;
+    }
+    if (!room.game) {
+      this.error(rec.conn, msg.reqId, 'NOT_IN_GAME', 'No game is running.');
+      return;
+    }
+    if (msg.afk && room.game.state.winner) {
+      this.error(rec.conn, msg.reqId, 'GAME_OVER', 'The game is over.');
+      return;
+    }
+    const player = room.players[idx];
+    if (!!player.afk === msg.afk) {
+      rec.conn.send({ type: 'room', ...this.roomMsg(room, rec) }); // already so: just resync
+      return;
+    }
+    if (msg.afk) player.afk = true;
+    else delete player.afk;
+    console.log(`[room] ${room.code} ${rec.seat} ${msg.afk ? 'away, stand-in bot plays' : 'back at the controls'}`);
+    this.persist(room);
+    for (const r of this.connsInRoom(room)) {
+      r.conn.send({ type: 'afk', seat: seatOf(idx), name: player.name, afk: msg.afk });
+    }
+    this.broadcastRoom(room);
+    // Taking the seat back sends fresh legal actions; handing it over lets the bot move.
+    if (!msg.afk) this.sendState(rec, room);
+    this.rescheduleBots(room);
+  }
 
   /** Host-only, lobby-only: free a seat and close that player's connection (docs/PROTOCOL.md). */
   private onKick(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'kick' }>): void {
@@ -571,6 +730,10 @@ export class Hub {
       this.error(rec.conn, msg.reqId, 'IMPERSONATION', `Actions must use your own seat (${rec.seat}).`);
       return;
     }
+    if (room.players[Number(rec.seat.slice(1)) - 1]?.afk) {
+      this.error(rec.conn, msg.reqId, 'AFK_ACTIVE', 'A stand-in bot plays your seat; take it back first.');
+      return;
+    }
     const v = validateAction(game.state, msg.action as Action);
     if (!v.ok) {
       this.error(rec.conn, msg.reqId, v.code, v.message);
@@ -594,9 +757,16 @@ export class Hub {
     const res = applyAction(game.state, action);
     game.state = res.state;
     const events: GameEvent[] = res.events;
-    if (!hadTrade && game.state.trade) room.tradeSince = Date.now();
+    // A fresh offer (also one that replaces an open offer) restarts the offer clock.
+    if (game.state.trade && (!hadTrade || action.t === 'offerTrade')) room.tradeSince = Date.now();
     game.actions.push(action);
-    this.persist(room);
+    try {
+      this.persist(room);
+    } catch (e) {
+      // A failed save (e.g. EPERM on the rename while Windows holds the file) must not swallow the
+      // broadcast: the move is applied, so everyone must see it; the next action saves again.
+      console.error(`[room] ${room.code} persist failed: ${String(e)}`);
+    }
     console.log(`[room] ${room.code} action #${game.state.log.length} ${String(action.t)} by ${by}`);
     if (game.state.winner) {
       console.log(`[room] ${room.code} game over, winner ${String(game.state.winner)}`);
@@ -606,13 +776,23 @@ export class Hub {
       r.conn.send({ type: 'events', events: getEventsView(events, r.seat), seq: game.state.log.length });
       this.sendState(r, room);
     }
-    this.scheduleBots(room);
+    this.rescheduleBots(room);
   }
 
   // ------------------------------------------------------------------ bots
 
+  /**
+   * Drop a pending bot wake-up and plan afresh: after a move or an away switch the old wake-up time
+   * (e.g. a bot holding back its answer until the humans had time) may no longer apply.
+   */
+  private rescheduleBots(room: Room): void {
+    if (room.botTimer) clearTimeout(room.botTimer);
+    room.botTimer = undefined;
+    this.scheduleBots(room);
+  }
+
   private scheduleBots(room: Room, delay = this.botDelayMs): void {
-    if (room.botTimer || !room.game || room.game.state.winner || !room.players.some((p) => p.bot)) return;
+    if (room.botTimer || !room.game || room.game.state.winner || !room.players.some((p) => botLevelOf(p))) return;
     room.botTimer = setTimeout(() => {
       room.botTimer = undefined;
       try {
@@ -666,14 +846,25 @@ export class Hub {
     const s = game.state;
     const cur = s.turn.current;
     const bots = room.players
-      .map((p, i) => ({ id: seatOf(i), level: p.bot }))
+      .map((p, i) => ({ id: seatOf(i), level: botLevelOf(p) }))
       .filter((b): b is { id: PlayerId; level: BotLevelName } => !!b.level);
     // Responders first, so an open offer is answered before its owner moves on.
     bots.sort((a, b) => Number(a.id === cur) - Number(b.id === cur));
-    const waited = room.tradeSince !== undefined ? Date.now() - room.tradeSince : 0;
+    // An offer restored after a server restart has no start time yet: its clock starts now.
+    if (s.trade && room.tradeSince === undefined) room.tradeSince = Date.now();
+    const waited = s.trade && room.tradeSince !== undefined ? Date.now() - room.tradeSince : 0;
     if (room.thinking) return; // a search is running; it reschedules when done
-    const tradeWait = s.trade ? botTradeWaitMs(s, (id) => bots.some((x) => x.id === id), this.botTradeWaitMs) : 0;
+    const isBot = (id: PlayerId): boolean => bots.some((x) => x.id === id);
+    const tradeWait = s.trade ? botTradeWaitMs(s, isBot, this.botTradeWaitMs) : 0;
+    // Earliest moment a bot that is holding back its answer to an offer may answer (ms from now).
+    let respondIn = Infinity;
     for (const b of bots) {
+      // Answer someone else's offer only after the humans had time to answer first.
+      const hold = botRespondWaitMs(s, b.id, isBot, waited, this.botRespondDelayMs);
+      if (hold > 0) {
+        respondIn = Math.min(respondIn, hold);
+        continue;
+      }
       // Settle a bot's own offer when the wait is over (shorter when no human could accept it).
       const tradeTimedOut = s.trade?.from === b.id && waited >= tradeWait;
       const plan = planBot(s, b.id, { level: b.level, tradeTimedOut, search: { timeMs: this.botThinkMs, clock: () => performance.now() } });
@@ -686,10 +877,10 @@ export class Hub {
         return;
       }
     }
-    // A bot waits for answers to its own offer: look again when the wait runs out.
-    if (s.trade && bots.some((b) => b.id === s.trade!.from)) {
-      this.scheduleBots(room, Math.max(50, tradeWait - waited));
-    }
+    // A bot waits for answers to its own offer, or holds back its answer: look again when that runs out.
+    let wake = respondIn;
+    if (s.trade && isBot(s.trade.from)) wake = Math.min(wake, tradeWait - waited);
+    if (wake !== Infinity) this.scheduleBots(room, Math.max(50, wake));
   }
 
   private onRequestState(rec: ConnRecord, msg: Extract<ClientMsg, { type: 'requestState' }>): void {
@@ -699,6 +890,7 @@ export class Hub {
       return;
     }
     rec.conn.send({ type: 'room', ...this.roomMsg(room, rec) });
+    this.sendChatHistory(rec, room);
     if (room.started) this.sendState(rec, room);
   }
 
@@ -770,6 +962,8 @@ export class Hub {
         connected: connected[i] || !!p.bot,
         ready: p.ready,
         ...(p.bot ? { bot: p.bot } : {}),
+        ...(p.afk ? { afk: true } : {}),
+        ...(p.avatar ? { avatar: p.avatar } : {}),
       })),
       you: rec.seat,
       started: room.started,
@@ -807,7 +1001,13 @@ export class Hub {
       hostSeat: seatOf(hostIdx),
       playerCount: room.playerCount,
       options: room.options,
-      seats: room.players.map((s) => ({ name: s.name, tokenHash: s.tokenHash, ...(s.bot ? { bot: s.bot } : {}) })),
+      seats: room.players.map((s) => ({
+        name: s.name,
+        tokenHash: s.tokenHash,
+        ...(s.bot ? { bot: s.bot } : {}),
+        ...(s.afk ? { afk: true } : {}),
+        ...(s.avatar ? { avatar: s.avatar } : {}),
+      })),
       init: room.game.state.init,
       actions: room.game.actions,
     });

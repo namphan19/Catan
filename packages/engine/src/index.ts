@@ -9,7 +9,7 @@ export { layoutHexes, registerLayout, isLayout } from './board/layouts';
 export type * from './ruleset/types';
 export { composeRules } from './ruleset/compose';
 export {
-  BOT_TRADE_GRACE_MS, BOT_TRADE_WAIT_MS, SearchRun, botTradeWaitMs, botAct, decide, determinize, evaluate, expertDecide, pips, planBot, rankActions, searchCandidates,
+  BOT_RESPOND_DELAY_MS, BOT_TRADE_GRACE_MS, BOT_TRADE_WAIT_MS, SearchRun, botRespondWaitMs, botTradeWaitMs, botAct, decide, determinize, evaluate, expertDecide, pips, planBot, rankActions, searchCandidates,
   searchDecide, tradeAwaitsHuman, type BotPlan,
   type BotLevel, type BotOptions, type SearchOptions, type SearchStats,
 } from './bot';

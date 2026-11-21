@@ -57,6 +57,31 @@ export function botTradeWaitMs(state: GameState, isBot: (id: PlayerId) => boolea
   return tradeAwaitsHuman(state, isBot) ? waitMs : Math.min(waitMs, BOT_TRADE_GRACE_MS);
 }
 
+/**
+ * How long a bot holds back its answer to someone else's trade offer (ms since the offer was made)
+ * while a human could still accept it. Without it a bot answers within a second and the offerer tends
+ * to confirm with the bot before the humans have even read the offer. 8 s: about the time a person
+ * needs to notice the offer, read give/get, check their hand and click (roughly 5-8 s), and well below
+ * the 30 s a bot's own offer waits, so it does not drag out the turn (see docs/PROTOCOL.md).
+ */
+export const BOT_RESPOND_DELAY_MS = 8_000;
+
+/**
+ * How long bot `id` must still hold back its answer to the open offer, given `waited` ms since the
+ * offer was made: 0 when it may answer now. It waits only while another human (not the offerer, not
+ * answered yet) holds the requested cards; once they all answered there is nobody to race.
+ */
+export function botRespondWaitMs(
+  state: GameState, id: PlayerId, isBot: (id: PlayerId) => boolean, waited: number, delayMs = BOT_RESPOND_DELAY_MS,
+): number {
+  const t = state.trade;
+  if (!t || t.from === id || t.responses[id] || waited >= delayMs) return 0;
+  const humanCouldAccept = state.players.some(
+    (p) => p.id !== t.from && p.id !== id && !isBot(p.id) && !t.responses[p.id] && bagHas(p.hand, t.get),
+  );
+  return humanCouldAccept ? delayMs - waited : 0;
+}
+
 export type BotPlan =
   | { kind: 'now'; action: Action | null }
   /** Step `run` (run.step(ms)) until it is done, then call finish() for the checked action. */
