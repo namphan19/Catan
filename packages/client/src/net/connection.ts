@@ -80,6 +80,10 @@ export class Connection {
   // ------------------------------------------------------------------ internals
 
   private url(): string {
+    // VITE_WS_URL (build-time) points a statically hosted client, e.g. on Vercel, at a
+    // separately hosted server: `wss://my-server.example.com/ws`. Unset -> same origin.
+    const configured = import.meta.env.VITE_WS_URL?.trim();
+    if (configured) return configured;
     return `${location.origin.replace(/^http/, 'ws')}/ws`;
   }
 
