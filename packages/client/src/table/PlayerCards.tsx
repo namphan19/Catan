@@ -11,10 +11,10 @@ import { GuardIcon, HandIcon, PieceIcon, StarIcon, UiIcon } from '../ui/Icon';
 import { awardKey } from './describe';
 import { actorsOf } from './StatusBanner';
 
-function Stat({ icon, n, label, warn }: { icon: ReactNode; n: number; label: string; warn?: boolean }) {
+function Stat({ icon, n, label, warn, supply }: { icon: ReactNode; n: number; label: string; warn?: boolean; supply?: boolean }) {
   const text = `${label}: ${n}`;
   return (
-    <span className={warn ? 'stat warn' : 'stat'} title={text} aria-label={text} role="img">
+    <span className={`stat${warn ? ' warn' : ''}${supply ? ' stat-supply' : ''}`} title={text} aria-label={text} role="img">
       {icon}
       <b>{n}</b>
     </span>
@@ -27,7 +27,12 @@ export function PlayerCards({ view }: { view: PlayerView }) {
   const actors = actorsOf(view);
   const compact = view.players.length > 4;
   return (
-    <div className={compact ? 'seats seats-compact' : 'seats'} role="list" aria-label={t('seat_list')}>
+    <div
+      className={compact ? 'seats seats-compact' : 'seats'}
+      role="list"
+      aria-label={t('seat_list')}
+      data-n={view.players.length}
+    >
       {view.players.map((p) => {
         const vp = p.vp ?? p.publicVP;
         const color = playerColor(p.id);
@@ -75,13 +80,14 @@ export function PlayerCards({ view }: { view: PlayerView }) {
               <Stat icon={<UiIcon name="card" size={18} />} n={p.cardCount} label={t('stat_cards')} />
               <Stat icon={<GuardIcon size={18} />} n={p.played['guard'] ?? 0} label={t('stat_guards')} />
               <span className="seat-sep" aria-hidden="true" />
-              <Stat icon={<PieceIcon kind="road" color={color} size={14} />} n={p.supply['road'] ?? 0} label={t('stat_roadsLeft')} />
+              <Stat icon={<PieceIcon kind="road" color={color} size={14} />} n={p.supply['road'] ?? 0} label={t('stat_roadsLeft')} supply />
               <Stat
                 icon={<PieceIcon kind="settlement" color={color} size={18} />}
                 n={p.supply['settlement'] ?? 0}
                 label={t('stat_settlementsLeft')}
+                supply
               />
-              <Stat icon={<PieceIcon kind="city" color={color} size={18} />} n={p.supply['city'] ?? 0} label={t('stat_citiesLeft')} />
+              <Stat icon={<PieceIcon kind="city" color={color} size={18} />} n={p.supply['city'] ?? 0} label={t('stat_citiesLeft')} supply />
               {awards.map(([award]) => (
                 <img
                   key={award}

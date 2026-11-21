@@ -1,0 +1,661 @@
+/* Phone layouts for the game table (loaded last, after table.css and home.css).
+   Two disjoint layouts, plus the rules they share:
+   - portrait  (max-width: 640px) and (min-height: 521px): top bar, players in a grid, board,
+     hand row, one row of action buttons; the side column is a bottom sheet.
+   - landscape (max-height: 520px) and (max-width: 1000px): board on the left at full height,
+     a right column with top bar, players, hand and actions; the side column slides in from the right.
+   Wider screens keep the desktop / tablet table untouched. */
+
+/* ---------- Desktop defaults for the phone-only controls ---------- */
+.topbar-menu-btn,
+.sheet-toggle,
+.sheet-close {
+  display: none;
+}
+
+.topbar-menu-wrap,
+.topbar-menu {
+  display: contents;
+}
+
+/* Desktop order stays: shell buttons, help, language. */
+.topbar .btn-lang {
+  order: 1;
+}
+
+/* ---------- Shared phone rules ---------- */
+@media (max-width: 640px), (max-height: 520px) and (max-width: 1000px) {
+  .shell {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  .table {
+    overflow: hidden;
+  }
+
+  /* No double-tap zoom delay on the controls. */
+  .btn,
+  .tab,
+  .res-card {
+    touch-action: manipulation;
+  }
+
+  /* Top bar: turn label + info, help, and a menu with the shell buttons and the language. */
+  .topbar {
+    position: relative;
+    z-index: 50;
+    gap: 6px;
+    padding: 2px 6px;
+  }
+
+  .game-title {
+    display: none;
+  }
+
+  .topbar-left {
+    gap: 8px;
+  }
+
+  .turn-label {
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .topbar-info {
+    font-size: 0.8rem;
+  }
+
+  .topbar .btn-help {
+    order: 0;
+    width: 32px;
+    min-height: 32px;
+  }
+
+  .topbar-menu-wrap {
+    display: block;
+    position: relative;
+    order: 1;
+  }
+
+  .topbar .topbar-menu-btn {
+    display: inline-flex;
+    justify-content: center;
+    width: 36px;
+    min-height: 32px;
+    padding: 0;
+    font-size: 1.1rem;
+  }
+
+  .topbar-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 80;
+    min-width: 210px;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    background: var(--parchment);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  }
+
+  .topbar-menu.open {
+    display: flex;
+  }
+
+  .topbar-menu .topbar-actions {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .topbar .topbar-menu .btn {
+    order: 0;
+    min-height: 42px;
+    padding: 6px 12px;
+    justify-content: flex-start;
+    font-size: 1rem;
+  }
+
+  /* Board overlays: smaller, and out of each other's way. */
+  .board-zoom {
+    left: 6px;
+    top: 6px;
+    gap: 3px;
+  }
+
+  .board-zoom .btn {
+    min-height: 32px;
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .dice-box {
+    top: 6px;
+    right: 6px;
+    padding: 4px 6px;
+    border-radius: 8px;
+  }
+
+  .dice-roll {
+    gap: 4px;
+  }
+
+  .dice-box .die {
+    width: 28px;
+    height: 28px;
+  }
+
+  .dice-sum {
+    font-size: 1.15rem;
+  }
+
+  .dice-event {
+    margin-left: 2px;
+    padding-left: 5px;
+  }
+
+  .cost-card {
+    right: 6px;
+    bottom: 6px;
+    font-size: 0.8rem;
+    max-width: calc(100% - 12px);
+  }
+
+  .cost-card-head {
+    padding: 4px 8px;
+    font-size: 0.85rem;
+  }
+
+  .cost-row {
+    grid-template-columns: 22px minmax(64px, auto) 1fr 12px;
+  }
+
+  .board-hint {
+    top: 6px;
+    left: 46px;
+    right: 116px;
+    max-width: none;
+    transform: none;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    padding: 4px 8px;
+    font-size: 0.82rem;
+    line-height: 1.25;
+  }
+
+  .board-hint .btn,
+  .sh-pickbar .btn {
+    min-height: 30px;
+    padding: 2px 10px;
+    font-size: 0.85rem;
+  }
+
+  .toast-stack {
+    left: 6px;
+    bottom: 48px;
+    max-width: calc(100% - 12px);
+  }
+
+  .toast {
+    padding: 4px 10px;
+    font-size: 0.82rem;
+  }
+
+  /* The side column (log, trade, expansion panels) becomes a sheet over the board. */
+  .sheet-toggle {
+    display: inline-flex;
+    position: absolute;
+    left: 6px;
+    bottom: 6px;
+    z-index: 7;
+    min-height: 34px;
+    padding: 3px 10px;
+    font-size: 0.85rem;
+    background: rgba(243, 233, 210, 0.96);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .sidecol {
+    position: absolute;
+    z-index: 45;
+    width: auto;
+    max-height: none;
+    flex: none;
+    overflow-y: auto;
+    border: 2px solid var(--ink);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.3);
+    visibility: hidden;
+    transition:
+      transform 0.2s ease,
+      visibility 0.2s;
+  }
+
+  .table[data-sheet='open'] .sidecol {
+    transform: none;
+    visibility: visible;
+  }
+
+  .sheet-close {
+    display: inline-flex;
+    flex: none;
+    align-self: flex-end;
+    min-height: 34px;
+    margin: 6px 8px 0;
+    padding: 2px 12px;
+  }
+
+  /* The whole sheet scrolls, so the expansion panels show in full (no own max-height). */
+  .sidecol .tl-panel,
+  .sidecol .sh-panel {
+    flex: none;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .sidecol .sidepanel {
+    min-height: 220px;
+  }
+
+  /* Player cards: name + VP on top, hand / cards / guards below (pieces left are in the
+     tooltip on wider screens; on a phone they are dropped). */
+  .seat-strip .seats,
+  .seat-strip .seats-compact {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    overflow: visible;
+    gap: 4px;
+    padding: 4px 6px;
+  }
+
+  .seat-strip .seats[data-n='2'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .seat-strip .seats[data-n='3'],
+  .seat-strip .seats[data-n='5'],
+  .seat-strip .seats[data-n='6'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .seat,
+  .seats-compact .seat {
+    border-left-width: 4px;
+    border-radius: 6px;
+    padding: 2px 3px;
+  }
+
+  .seat.acting {
+    box-shadow: 0 0 0 2px var(--gold);
+  }
+
+  .seat-top {
+    gap: 3px;
+  }
+
+  .seat-top .emblem,
+  .seat-top .emblem svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .seat-name {
+    font-size: 0.82rem;
+  }
+
+  .seat-you,
+  .seat-acting-tag,
+  .seat-vp small,
+  .seat-sep,
+  .stat-supply {
+    display: none;
+  }
+
+  .seat.me .seat-name {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .seat-vp {
+    gap: 1px;
+  }
+
+  .seat-vp svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .seat-vp strong {
+    font-size: 1rem;
+  }
+
+  .seat-stats,
+  .seats-compact .seat-stats {
+    gap: 1px 4px;
+    margin-top: 0;
+    min-height: 0;
+    font-size: 0.74rem;
+  }
+
+  .seat-stats .stat {
+    gap: 1px;
+  }
+
+  .seat-stats svg,
+  .seat-stats .uiicon {
+    width: 12px;
+    height: 12px;
+  }
+
+  .seat-award {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Hand: small cards, no titles (the counts are on the cards). */
+  .hand {
+    gap: 8px;
+    padding-top: 7px;
+    padding-right: 8px;
+    overflow-x: auto;
+  }
+
+  .hand-title,
+  .hand-empty {
+    display: none;
+  }
+
+  .hand-group {
+    gap: 0;
+  }
+
+  .hand-res,
+  .dev-cards {
+    gap: 6px;
+  }
+
+  .res-card,
+  .res-card-art {
+    width: 42px;
+  }
+
+  .res-card-fallback {
+    width: 42px;
+    height: 59px;
+  }
+
+  .res-card-name {
+    display: none;
+  }
+
+  .res-card-count {
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    font-size: 0.72rem;
+  }
+
+  .res-delta {
+    font-size: 0.95rem;
+  }
+
+  .dev-card {
+    width: 46px;
+  }
+
+  .dev-card img,
+  .dev-card-blank {
+    width: 30px;
+    height: 42px;
+  }
+
+  .dev-card-name {
+    min-height: 0;
+    font-size: 0.55rem;
+  }
+
+  /* Action bar: one row of equal buttons, icon over a short label; extra buttons (play a
+     card, cancel an offer) make it scroll sideways. */
+  .actionbar {
+    flex: none;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .act-group {
+    display: contents;
+  }
+
+  .actionbar > .act-group > .btn,
+  .actionbar > .act-group > .tipwrap {
+    flex: 1 1 0;
+    min-width: 46px;
+  }
+
+  .actionbar .tipwrap > .btn {
+    width: 100%;
+  }
+
+  .actionbar .btn {
+    position: relative;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 2px;
+    min-height: 50px;
+    padding: 5px 3px 3px;
+    font-size: 0.72rem;
+    line-height: 1.1;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .actionbar .btn-play {
+    min-width: 92px;
+  }
+
+  .actionbar .badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    margin: 0;
+  }
+
+  .act-primary .btn,
+  .actionbar .act-primary .btn {
+    min-height: 50px;
+    padding: 3px 8px;
+    font-size: 0.88rem;
+    font-weight: 700;
+  }
+
+  .actionbar > .act-primary > .btn,
+  .actionbar > .act-primary > .tipwrap {
+    flex: 0 0 auto;
+    min-width: 72px;
+  }
+
+  .actionbar .lbl-full {
+    display: none;
+  }
+
+  .actionbar .lbl-short {
+    display: inline;
+  }
+
+  /* Dialogs use the whole screen width. */
+  .dialog-overlay {
+    padding: 8px;
+  }
+
+  .dialog-overlay.docked {
+    place-items: end center;
+    padding: 8px;
+  }
+
+  .dialog {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .dialog-head {
+    padding: 8px 12px;
+  }
+
+  .dialog-body {
+    padding: 10px 12px;
+  }
+
+  .tipwrap::after {
+    max-width: min(240px, calc(100vw - 16px));
+  }
+}
+
+/* ---------- Portrait phone ---------- */
+@media (max-width: 640px) and (min-height: 521px) {
+  .table-main {
+    position: relative;
+    flex-direction: row;
+  }
+
+  .board-area {
+    min-height: 0;
+  }
+
+  .sidecol {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 72%;
+    border-width: 2px 0 0;
+    border-radius: 12px 12px 0 0;
+    transform: translateY(105%);
+  }
+
+  .table-bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 2px 6px calc(4px + env(safe-area-inset-bottom));
+  }
+}
+
+/* ---------- Landscape phone ---------- */
+@media (max-height: 520px) and (max-width: 1000px) {
+  .table {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) min(46vw, 400px);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'board top'
+      'board seats'
+      'board hand'
+      'board actions';
+  }
+
+  .table-main,
+  .table-bottom {
+    display: contents;
+  }
+
+  .board-area {
+    grid-area: board;
+    min-height: 0;
+    border-right: 2px solid var(--ink);
+  }
+
+  .topbar {
+    grid-area: top;
+  }
+
+  .seat-strip {
+    grid-area: seats;
+  }
+
+  /* Wider cards than in portrait: two per row, pieces left are back. */
+  .seat-strip .seats,
+  .seat-strip .seats-compact,
+  .seat-strip .seats[data-n] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .seat-strip .seats[data-n='5'],
+  .seat-strip .seats[data-n='6'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .seat-strip .seats:not([data-n='5']):not([data-n='6']) .stat-supply {
+    display: inline-flex;
+  }
+
+  .hand {
+    grid-area: hand;
+    min-height: 0;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    align-items: flex-start;
+    overflow: hidden auto;
+    padding: 9px 8px 4px;
+    background: var(--parchment-dark);
+  }
+
+  .res-card,
+  .res-card-art {
+    width: 46px;
+  }
+
+  .actionbar {
+    grid-area: actions;
+    padding: 4px 6px calc(4px + env(safe-area-inset-bottom));
+    border-top: 2px solid var(--ink);
+    background: var(--parchment-dark);
+  }
+
+  /* Above the top bar of the right column, so the close button is never hidden. */
+  .sidecol {
+    z-index: 55;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(46vw, 400px);
+    height: auto;
+    border-width: 0 0 0 2px;
+    transform: translateX(105%);
+  }
+
+  .board-hint {
+    right: 110px;
+  }
+}
+
+/* ---------- Small phones (360 px class): seven buttons still fit in one row ---------- */
+@media (max-width: 380px) {
+  .actionbar > .act-group > .btn,
+  .actionbar > .act-group > .tipwrap {
+    min-width: 38px;
+  }
+
+  .actionbar .btn {
+    font-size: 0.68rem;
+  }
+
+  .actionbar > .act-primary > .btn,
+  .actionbar > .act-primary > .tipwrap {
+    min-width: 60px;
+  }
+
+  .act-primary .btn,
+  .actionbar .act-primary .btn {
+    padding: 3px 5px;
+    font-size: 0.8rem;
+  }
+}

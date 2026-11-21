@@ -66,6 +66,8 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const [tradeOpen, setTradeOpen] = useState<TradeTab | null>(null);
   const [cardOpen, setCardOpen] = useState<PickCard | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  /** Phones: the side column (log, trade, expansion panels) is a bottom sheet, open or not. */
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [producing, setProducing] = useState<ReadonlySet<string> | undefined>(undefined);
   const phaseKey = view.phase.k;
 
@@ -106,6 +108,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   }, [choice, stage, onAction]);
   const startChoice = (cands: Action[], title: string) => {
     setPending(null);
+    setSheetOpen(false); // phones: a pick from the panel needs the board in view
     setChoice(cands.length > 0 ? { cands, title, mandatory: false } : null);
   };
   const pickValue = (value: unknown) =>
@@ -371,7 +374,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const winner = view.winner ? view.players.find((p) => p.id === view.winner) : undefined;
 
   return (
-    <div className="table">
+    <div className="table" data-sheet={sheetOpen ? 'open' : undefined}>
       <TopBar view={view} info={barInfo} actions={barActions} onHelp={() => setHelpOpen(true)} />
       {/* PO 2026-11-17: the players sit in one row on top (no status sentence any more); whose turn
           it is shows as the gold ring, what to do next as a pulsing Roll / End turn button. */}
@@ -418,6 +421,15 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
             producing={producing}
           />
           <DiceBox view={view} sh={sh} />
+          {/* Phones only (mobile.css): the side column becomes a bottom sheet behind this button. */}
+          <button
+            type="button"
+            className="btn sheet-toggle"
+            aria-expanded={sheetOpen}
+            onClick={() => setSheetOpen((o) => !o)}
+          >
+            📜 {t(sh || tl ? 'sheet_open' : 'side_log')}
+          </button>
           <CostCard view={view} />
           <ToastStack toasts={toasts} />
           {reveals.current && <CardReveal reveal={reveals.current} onClose={reveals.close} t={t} name={name} />}
@@ -450,12 +462,16 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
           )}
         </div>
         <aside className="sidecol">
+          <button type="button" className="btn btn-ghost sheet-close" onClick={() => setSheetOpen(false)}>
+            ✕ {t('sheet_close')}
+          </button>
           {tl && (
             <TidelandsPanel
               view={view}
               tl={tl}
               legal={legal}
               onPick={(p) => {
+                setSheetOpen(false);
                 setChoice(null);
                 setPending(pending === p ? null : (p as 'tl:buildShip'));
               }}

@@ -96,6 +96,8 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
 
   const clampRef = useRef(clampTf);
   clampRef.current = clampTf;
+  const tfRef = useRef(tf);
+  tfRef.current = tf;
 
   // Wheel zoom anchored at the cursor (native listener so preventDefault works).
   useEffect(() => {
@@ -120,8 +122,72 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
   // Pan by dragging anywhere on the board — but only once the pointer has clearly moved.
   // A press-and-release without movement must NOT capture the pointer, so the browser
   // delivers a real `click` to the highlighted hit target underneath (BUG-QA-02).
+  // Two fingers pinch-zoom (touch screens), anchored at the point between them. While a pinch
+  // runs the one-finger pan is dropped, and a lifted finger ends the pinch.
+  const touches = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ d0: number; s0: number; tx0: number; ty0: number; bx: number; by: number; pxPerUnit: number; mx: number; my: number } | null>(null);
+  useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const pts = touches.current;
+    const dist = () => {
+      const [p, q] = [...pts.values()];
+      return { d: Math.hypot(p.x - q.x, p.y - q.y), mx: (p.x + q.x) / 2, my: (p.y + q.y) / 2 };
+    };
+    const down = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch') return;
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pts.size !== 2) return;
+      drag.current = null; // a second finger turns the pan into a pinch
+      const ctm = el.getScreenCTM();
+      const rect = el.getBoundingClientRect();
+      if (!ctm) return;
+      const { d, mx, my } = dist();
+      const pt = new DOMPoint(mx, my).matrixTransform(ctm.inverse());
+      const prev = tfRef.current;
+      pinch.current = {
+        d0: Math.max(d, 1),
+        s0: prev.s,
+        tx0: prev.tx,
+        ty0: prev.ty,
+        bx: (pt.x - prev.tx) / prev.s,
+        by: (pt.y - prev.ty) / prev.s,
+        pxPerUnit: Math.min(rect.width / ext.w, rect.height / ext.h),
+        mx,
+        my,
+      };
+    };
+    const move = (e: PointerEvent) => {
+      if (!pts.has(e.pointerId)) return;
+      pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const p = pinch.current;
+      if (!p || pts.size !== 2) return;
+      const { d, mx, my } = dist();
+      const s = Math.min(MAX_SCALE, Math.max(MIN_SCALE, (p.s0 * d) / p.d0));
+      // Anchor point in viewBox units, moved along with the fingers' midpoint.
+      const ax = p.bx * p.s0 + p.tx0 + (mx - p.mx) / p.pxPerUnit;
+      const ay = p.by * p.s0 + p.ty0 + (my - p.my) / p.pxPerUnit;
+      setTf(clampRef.current({ s, tx: ax - p.bx * s, ty: ay - p.by * s }));
+    };
+    const up = (e: PointerEvent) => {
+      if (!pts.delete(e.pointerId)) return;
+      if (pts.size < 2) pinch.current = null;
+    };
+    el.addEventListener('pointerdown', down);
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    return () => {
+      el.removeEventListener('pointerdown', down);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', up);
+    };
+  }, [ext]);
+
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (e.button !== 0) return;
+    if (touches.current.size > 1) return; // second finger: the pinch handler owns it
     // Clear a selection left from before (e.g. a double click) so the drag starts clean.
     window.getSelection()?.removeAllRanges();
     const rect = svgRef.current?.getBoundingClientRect();
@@ -132,7 +198,7 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
     const pointerId = e.pointerId;
     const move = (ev: PointerEvent) => {
       const d = drag.current;
-      if (!d) return;
+      if (!d || pinch.current) return;
       const dx = ev.clientX - d.x;
       const dy = ev.clientY - d.y;
       if (!d.active) {
