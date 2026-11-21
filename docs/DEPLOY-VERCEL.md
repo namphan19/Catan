@@ -28,25 +28,22 @@ persistent disk và đặt `DATA_DIR` trỏ vào đó.
 
 ## 2. Deploy client lên Vercel
 1. Vercel → **Add New → Project** → import repo này.
-2. **Root Directory: để trống** (gốc repo). Các lệnh install/build/output đã có sẵn trong `vercel.json`,
-   không cần sửa gì trong phần Build Settings.
+2. **Root Directory: `packages/client`**. Repo không có `vercel.json`: Vercel tự nhận ra Vite và tự
+   cấu hình. Phần Build Settings **không bật override nào** (Framework: Vite, Build: `pnpm run build`,
+   Output: `dist`, Install: pnpm theo `pnpm-lock.yaml` ở gốc repo, cài cả workspace nên `@hexgame/engine`
+   có sẵn). Để mục "Include files outside the Root Directory" bật (mặc định).
 3. **Environment Variables**: thêm `VITE_WS_URL` = `wss://boschtan-server.onrender.com/ws` (URL server ở bước 1).
 4. Deploy.
+
+Lỗi `No Output Directory named "dist" found`: thường do Root Directory để trống, hoặc ô Output Directory bị
+override (ví dụ điền `packages/client/dist` trong khi Root Directory đã là `packages/client`). Đặt lại như bước 2.
+Link mời dùng `/?room=CODE` ngay trên trang gốc, nên không cần rewrite nào.
 
 `VITE_WS_URL` được nhúng vào lúc **build**: đổi giá trị thì phải **Redeploy**. Không đặt biến này thì client
 kết nối tới `wss://<domain-vercel>/ws`, mà địa chỉ đó không có server.
 
-Deploy bằng CLI (thay cho bước 2):
-```bash
-npx vercel@latest login
-npx vercel@latest env add VITE_WS_URL production   # dán wss://.../ws
-npx vercel@latest --prod
-```
-
 ## 3. Các file liên quan
-- `vercel.json`: install bằng pnpm (qua corepack, theo `packageManager` trong `package.json`), build
-  `@hexgame/client`, xuất `packages/client/dist`, fallback mọi đường dẫn về `index.html`, cache lâu cho `/assets/*`.
-- `.vercelignore`: không upload `archive/`, `data/`, `docs/`, `tools/`, e2e.
+- Không có `vercel.json` / `.vercelignore` (PO 2026-11-21): mọi cấu hình nằm trong Project Settings của Vercel.
 - `packages/client/src/net/connection.ts`: đọc `VITE_WS_URL`; không có thì dùng cùng domain (như cách chạy cổng 8080 cũ).
 
 ## 4. Bảo mật

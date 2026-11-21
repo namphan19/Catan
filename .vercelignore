@@ -1,7 +1,0 @@
-archive/
-data/
-docs/
-tools/
-packages/e2e/
-**/node_modules/
-**/dist/
