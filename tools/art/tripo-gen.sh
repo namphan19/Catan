@@ -10,7 +10,7 @@ export TRIPO_CLIENT_APP=claude
 OUT=data/raw/tripo/out
 mkdir -p "$OUT" data/raw/tripo/runs
 MANIFEST=tools/art/prompts.tsv
-PAR=${PAR:-4}
+PAR=${PAR:-2}  # Tripo returns 429 (concurrency limit) for some jobs at 4 parallel
 
 style() {
   case "$1" in

@@ -8,7 +8,15 @@ import { Button } from '../ui/Button';
 import { playerColor, playerEmblem } from '../ui/colors';
 import { Emblem } from '../ui/Emblem';
 import type { TlView } from './view';
+import { art2dUrl, useAssets } from '../board/assets';
 import './tidelands.css';
+
+/** Small painted wonder card (art2d/card/wonder-<id>.webp) once it has loaded; nothing before. */
+function WonderArt({ id }: { id: string }) {
+  const url = art2dUrl('card', `wonder-${id}`);
+  const ok = useAssets([url])[url];
+  return ok ? <img className="tl-wonder-art" src={url} alt="" /> : null;
+}
 
 interface PanelProps {
   view: PlayerView;
@@ -127,6 +135,7 @@ export function TidelandsPanel({ view, tl, legal, onPick, onStart, onAction }: P
             const owner = tl.works!.claims[w];
             return (
               <li key={w}>
+                <WonderArt id={w} />
                 <b>{t(`wonder_${w}`)}</b> — {t(`wneed_${WONDER_NEEDS[w]}`)} ·{' '}
                 {owner ? (
                   <span style={{ color: playerColor(owner) }}>

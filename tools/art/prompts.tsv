@@ -38,3 +38,26 @@ i-books	icon	1024x1024	Subject: one closed thick book with a plain brown leather
 i-silver	icon	1024x1024	Subject: a small stack of three shiny silver coins, plain faces.
 t-harbor	terrain	1024x1024	Subject: calm shallow turquoise harbour water over pale sand, lighter and clearer than the open sea, soft ripples and light glints, a few smooth pebbles at one side, no boats, no structures.
 i-any	icon	1024x1024	Subject: one small closed plain wooden crate, warm light brown, simple planks suggested by two shallow grooves.
+# Tidelands (sea expansion) - same styles as base/strongholds: painted terrain, plain wooden pieces, chunky icons, storybook cards
+t-goldmine	terrain	1024x1024	Subject: rocky ochre hills with an open mine entrance framed by timber beams, bright veins and nuggets of gold glinting in the rock, a small mine cart on a short track. Warm glowing gold-yellow dominates.
+t-mist	terrain	1024x1024	Subject: open sea water veiled by thick soft drifting white-grey sea mist, the teal water only faintly visible through a few gaps, calm and mysterious, uniform with no focal point, no land, no boats. Pale misty grey dominates.
+t-village	terrain	1024x1024	Subject: a small sandy islet with a cluster of three simple round thatched huts, colourful silk cloths drying on lines between poles, a short wooden jetty reaching into turquoise water at one side. Soft sand and rose-pink silk tones dominate.
+p-cog	piece	1024x1024	Subject: a small simple ship like a classic wooden board game ship piece: a rounded hull block seen from the side with one straight round mast and one plain square sail, the bow pointing to the left.
+p-warship	piece	1024x1024	Subject: a small simple ship like a classic wooden board game ship piece: a rounded hull block with one straight round mast and one plain square sail, plus a small square tower block with three plain crenellations on the stern, the bow pointing to the left.
+p-corsair	piecec	1024x1024	Subject: a simple ship like a classic wooden board game ship piece: a rounded hull block with one straight round mast and one plain square sail, matte black hull and mast, deep crimson red sail, the bow pointing to the left.
+p-fort	piecec	1024x1024	Subject: a small squat round tower block with a flat top and three plain square crenellations, standing on a low rough rock, dark weathered grey-brown colour.
+p-landing	piece	1024x1024	Subject: a simple flag: a thin straight round pole standing on a small round disc base, with one plain rectangular pennant flag with a triangular notch at its free end.
+i-reward-vp	icon	1024x1024	Subject: one plain chunky five-pointed star token, warm gold yellow.
+i-reward-card	icon	1024x1024	Subject: a small fanned stack of three plain blank cards with rounded corners, deep navy blue backs with cream edges.
+i-reward-harbor	icon	1024x1024	Subject: one chunky simple ship anchor, dark steel blue.
+i-silk	icon	1024x1024	Subject: one rolled bolt of shiny silk fabric, rose pink with a soft sheen.
+i-wonder-wall	icon	1024x1024	Subject: a short straight section of plain grey stone wall block with three square crenellations on top.
+i-wonder-bridge	icon	1024x1024	Subject: a simple stone bridge block with one round arch, warm grey stone.
+i-wonder-beacon	icon	1024x1024	Subject: a short round stone tower block with a bright orange flame on top.
+d-wonder-cathedral	card	1024x1536	Subject: a grand gothic cathedral with tall spires and a rose window on a hill above a small coastal town.
+d-wonder-seaWall	card	1024x1536	Subject: a massive curved stone sea wall protecting a small harbour town from crashing waves.
+d-wonder-kingsBridge	card	1024x1536	Subject: a long many-arched stone bridge spanning a sea strait between two green islands, banners on its towers.
+d-wonder-obelisk	card	1024x1536	Subject: a tall carved stone obelisk standing on a grassy headland by the sea at sunset.
+d-wonder-highKeep	card	1024x1536	Subject: a tall square castle keep on a rocky crag, banners flying, clouds drifting around its top.
+d-wonder-beacon	card	1024x1536	Subject: a stone beacon tower on a sea cliff with a great fire burning on top, guiding small ships home at dusk.
+d-wonder-scriptorium	card	1024x1536	Subject: a monastery scriptorium hall with tall arched windows, wooden writing desks with open books and scrolls in warm light.

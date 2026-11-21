@@ -1,12 +1,23 @@
 // Board overlay of the Tidelands expansion: cogs, the corsair / corsair fleet, rewards on edges,
 // weavers' villages, wonder sites, corsair forts and landings. Display only (board coordinates).
-// PLACEHOLDER ART: simple vector shapes in the player colours until the design team delivers the
-// pieces listed in docs/ART_TIDELANDS.md (cog, warship, corsair, fort, reward tokens, silk, wonders).
+// Painted sprites (Tripo art, docs/ART_TIDELANDS.md) once they have loaded; the simple vector shapes
+// stay as the fallback (same rule as the base pieces).
 import type { EdgeId, Graph, HexId, PlayerId, Pieces, VertexId } from '@hexgame/engine';
 import { edgeGeom, hexCenter, SIZE, vertexPos } from '../board/geom';
+import { Sprite, useSprite } from '../board/Piece';
+import { art2dUrl, useAssets } from '../board/assets';
 import { playerColor } from '../ui/colors';
 import { useI18n } from '../i18n';
 import type { TlView } from './view';
+
+const SHADOW = { filter: 'drop-shadow(0 1.5px 1.2px rgba(27, 21, 18, 0.5))' };
+
+/** URL of a painted icon once it has loaded, else null. */
+function useIcon(name: string | undefined): string | null {
+  const url = name ? art2dUrl('icon', name) : '';
+  const ok = useAssets(url ? [url] : [])[url];
+  return ok ? url : null;
+}
 
 /** A cog: hull + sail, rotated along its edge (placeholder art). */
 function Cog({ graph, e, owner, war }: { graph: Graph; e: EdgeId; owner: PlayerId; war?: boolean }) {
@@ -14,6 +25,15 @@ function Cog({ graph, e, owner, war }: { graph: Graph; e: EdgeId; owner: PlayerI
   const s = SIZE * 0.36;
   const angle = ((g.angle % 180) + 180) % 180; // keep the sail upright-ish
   const color = playerColor(owner);
+  const painted = useSprite(war ? 'warship' : 'cog');
+  if (painted) {
+    const w = SIZE * 0.66;
+    return (
+      <g className={`tl-cog${war ? ' tl-warship' : ''}`} transform={`translate(${g.mid.x} ${g.mid.y})`} data-owner={owner} pointerEvents="none" style={SHADOW}>
+        <Sprite name={war ? 'warship' : 'cog'} x={-w / 2} y={-w * 0.62} width={w} height={w} owner={owner} />
+      </g>
+    );
+  }
   return (
     <g className={`tl-cog${war ? ' tl-warship' : ''}`} transform={`translate(${g.mid.x} ${g.mid.y}) rotate(${angle > 90 ? angle - 180 : angle})`} data-owner={owner} pointerEvents="none">
       <path
@@ -33,6 +53,24 @@ function Corsair({ hex, fleet }: { hex: HexId; fleet?: boolean }) {
   const { t } = useI18n();
   const c = hexCenter(hex);
   const s = SIZE * 0.5;
+  const painted = useSprite('corsair');
+  if (painted) {
+    const w = SIZE * 1.0;
+    return (
+      <g className="tl-corsair" transform={`translate(${c.x} ${c.y + SIZE * 0.1})`} pointerEvents="none" style={SHADOW}>
+        <title>{t(fleet ? 'tl_fleet' : 'tl_corsair')}</title>
+        <Sprite name="corsair" x={-w / 2} y={-w * 0.66} width={w} height={w} />
+        {fleet && (
+          <g transform={`translate(${w * 0.36} ${-w * 0.5})`}>
+            <circle r={SIZE * 0.15} fill="#1f1a17" stroke="#9c2a22" strokeWidth={1.5} />
+            <text y={SIZE * 0.06} textAnchor="middle" fontSize={SIZE * 0.18} fill="#f4ead2">
+              ☠
+            </text>
+          </g>
+        )}
+      </g>
+    );
+  }
   return (
     <g className="tl-corsair" transform={`translate(${c.x} ${c.y + SIZE * 0.1})`} pointerEvents="none">
       <title>{t(fleet ? 'tl_fleet' : 'tl_corsair')}</title>
@@ -47,13 +85,75 @@ function Corsair({ hex, fleet }: { hex: HexId; fleet?: boolean }) {
 
 const REWARD_GLYPH: Record<string, string> = { vp: '★', card: '▤', harbor: '⚓' };
 
-function Badge({ x, y, text, fill = '#f4ead2', ink = 'var(--ink)', r = SIZE * 0.2 }: { x: number; y: number; text: string; fill?: string; ink?: string; r?: number }) {
+const REWARD_ICON: Record<string, string> = { vp: 'reward-vp', card: 'reward-card', harbor: 'reward-harbor' };
+const MARK_ICON: Record<string, string> = { wall: 'wonder-wall', bridge: 'wonder-bridge', beacon: 'wonder-beacon' };
+
+/** A round token: the painted icon once it has loaded, else the text glyph. */
+function Badge({ x, y, text, icon, fill = '#f4ead2', ink = 'var(--ink)', r = SIZE * 0.2 }: { x: number; y: number; text: string; icon?: string; fill?: string; ink?: string; r?: number }) {
+  const url = useIcon(icon);
   return (
     <g transform={`translate(${x} ${y})`} pointerEvents="none">
       <circle r={r} fill={fill} stroke="var(--ink)" strokeWidth={1.3} />
-      <text y={r * 0.36} textAnchor="middle" fontSize={r * 1.1} fill={ink} fontWeight={700}>
-        {text}
+      {url ? (
+        <image href={url} x={-r * 0.82} y={-r * 0.82} width={r * 1.64} height={r * 1.64} />
+      ) : (
+        <text y={r * 0.36} textAnchor="middle" fontSize={r * 1.1} fill={ink} fontWeight={700}>
+          {text}
+        </text>
+      )}
+    </g>
+  );
+}
+
+/** Silk supply of a weavers' village: the silk bolt icon (once loaded) next to the count. */
+function SilkBadge({ x, y, n }: { x: number; y: number; n: number }) {
+  const url = useIcon('silk');
+  const r = SIZE * 0.17;
+  return (
+    <g transform={`translate(${x} ${y})`} pointerEvents="none">
+      {url && <image href={url} x={-r * 2.3} y={-r * 0.95} width={r * 1.9} height={r * 1.9} />}
+      <circle r={r} fill="#f3d7e6" stroke="var(--ink)" strokeWidth={1.3} />
+      <text y={r * 0.36} textAnchor="middle" fontSize={r * 1.1} fill="var(--ink)" fontWeight={700}>
+        {n}
       </text>
+    </g>
+  );
+}
+
+/** A corsair fort (Corsair Coves) with its lair count, and its owner's landing flag. */
+function FortSeat({ fort, landing, owner, lairs }: { fort: VertexId; landing: VertexId; owner: PlayerId; lairs: number }) {
+  const f = vertexPos(fort);
+  const l = vertexPos(landing);
+  const fortArt = useSprite('fort');
+  const flagArt = useSprite('landing');
+  const fw = SIZE * 0.62;
+  const lw = SIZE * 0.46;
+  return (
+    <g pointerEvents="none">
+      {lairs > 0 &&
+        (fortArt ? (
+          <g transform={`translate(${f.x} ${f.y})`} style={SHADOW}>
+            <Sprite name="fort" x={-fw / 2} y={-fw * 0.62} width={fw} height={fw} />
+            <circle cx={fw * 0.34} cy={-fw * 0.42} r={SIZE * 0.13} fill="#3b2f2f" stroke={playerColor(owner)} strokeWidth={2.5} />
+            <text x={fw * 0.34} y={-fw * 0.42 + SIZE * 0.06} textAnchor="middle" fontSize={SIZE * 0.17} fill="#f4ead2" fontWeight={700}>
+              {lairs}
+            </text>
+          </g>
+        ) : (
+          <g transform={`translate(${f.x} ${f.y})`}>
+            <rect x={-SIZE * 0.24} y={-SIZE * 0.24} width={SIZE * 0.48} height={SIZE * 0.4} fill="#3b2f2f" stroke={playerColor(owner)} strokeWidth={3} />
+            <text y={SIZE * 0.08} textAnchor="middle" fontSize={SIZE * 0.26} fill="#f4ead2" fontWeight={700}>
+              {lairs}
+            </text>
+          </g>
+        ))}
+      {flagArt ? (
+        <g transform={`translate(${l.x} ${l.y})`} style={SHADOW}>
+          <Sprite name="landing" x={-lw / 2} y={-lw * 0.9} width={lw} height={lw} owner={owner} />
+        </g>
+      ) : (
+        <path d={`M ${l.x} ${l.y} l 0 ${-SIZE * 0.42} l ${SIZE * 0.26} ${SIZE * 0.09} l ${-SIZE * 0.26} ${SIZE * 0.09}`} fill={playerColor(owner)} stroke="var(--ink)" strokeWidth={1.2} />
+      )}
     </g>
   );
 }
@@ -80,13 +180,13 @@ export function SeaExtras({ graph, pieces, tl }: { graph: Graph; pieces: Pieces;
       )}
       {tl.works?.markers.map((m, i) => {
         const p = vertexPos(m.v as VertexId);
-        return <Badge key={`m${i}`} x={p.x} y={p.y} text={MARK_GLYPH[m.kind] ?? '•'} r={SIZE * 0.15} fill={m.kind === 'x' ? '#ddd' : '#e9d9a6'} />;
+        return <Badge key={`m${i}`} x={p.x} y={p.y} text={MARK_GLYPH[m.kind] ?? '•'} icon={MARK_ICON[m.kind]} r={SIZE * 0.15} fill={m.kind === 'x' ? '#ddd' : '#e9d9a6'} />;
       })}
       {Object.entries(tl.silk?.villages ?? {}).map(([h, v]) => {
         const c = hexCenter(h as HexId);
         return (
           <g key={`vil${h}`} pointerEvents="none">
-            <Badge x={c.x + SIZE * 0.42} y={c.y - SIZE * 0.42} text={String(v.silk)} fill="#f3d7e6" r={SIZE * 0.17} />
+            <SilkBadge x={c.x + SIZE * 0.42} y={c.y - SIZE * 0.42} n={v.silk} />
             {v.traders.map((p, i) => (
               <circle key={p} cx={c.x - SIZE * 0.45 + i * SIZE * 0.2} cy={c.y + SIZE * 0.55} r={SIZE * 0.08} fill={playerColor(p)} stroke="var(--ink)" strokeWidth={1} />
             ))}
@@ -95,27 +195,12 @@ export function SeaExtras({ graph, pieces, tl }: { graph: Graph; pieces: Pieces;
       })}
       {Object.entries(tl.castaways?.rewards ?? {}).map(([e, kind]) => {
         const g = edgeGeom(graph, e as EdgeId);
-        return <Badge key={`rw${e}`} x={g.mid.x} y={g.mid.y} text={REWARD_GLYPH[kind] ?? '?'} fill={kind === 'vp' ? '#f2d16b' : '#f4ead2'} />;
+        return <Badge key={`rw${e}`} x={g.mid.x} y={g.mid.y} text={REWARD_GLYPH[kind] ?? '?'} icon={REWARD_ICON[kind]} fill={kind === 'vp' ? '#f2d16b' : '#f4ead2'} />;
       })}
       {cv &&
-        Object.entries(cv.seats).map(([p, seat]) => {
-          const f = vertexPos(seat.fort as VertexId);
-          const l = vertexPos(seat.landing as VertexId);
-          const lairs = cv.lairs[p] ?? 0;
-          return (
-            <g key={`fort${p}`} pointerEvents="none">
-              {lairs > 0 && (
-                <g transform={`translate(${f.x} ${f.y})`}>
-                  <rect x={-SIZE * 0.24} y={-SIZE * 0.24} width={SIZE * 0.48} height={SIZE * 0.4} fill="#3b2f2f" stroke={playerColor(p)} strokeWidth={3} />
-                  <text y={SIZE * 0.08} textAnchor="middle" fontSize={SIZE * 0.26} fill="#f4ead2" fontWeight={700}>
-                    {lairs}
-                  </text>
-                </g>
-              )}
-              <path d={`M ${l.x} ${l.y} l 0 ${-SIZE * 0.42} l ${SIZE * 0.26} ${SIZE * 0.09} l ${-SIZE * 0.26} ${SIZE * 0.09}`} fill={playerColor(p)} stroke="var(--ink)" strokeWidth={1.2} />
-            </g>
-          );
-        })}
+        Object.entries(cv.seats).map(([p, seat]) => (
+          <FortSeat key={`fort${p}`} fort={seat.fort as VertexId} landing={seat.landing as VertexId} owner={p as PlayerId} lairs={cv.lairs[p] ?? 0} />
+        ))}
       {ships.map(([e, owner]) => (
         <Cog key={`cog${e}`} graph={graph} e={e as EdgeId} owner={owner} war={warships.has(e)} />
       ))}

@@ -1,38 +1,41 @@
-# Art needed for Tidelands (placeholders today)
+# Art for Tidelands
 
-The Tidelands UI reuses the existing art where it fits (sea and harbor tiles, terrains, resource icons,
-player colours, the dice, cards). Everything below is drawn today as a **simple placeholder** (flat colour
-polygon or vector shape in the player colour) so the game is fully playable. When the design team delivers
-these files, the terrain tiles appear automatically; the pieces need a small code switch (noted per row).
+Tidelands uses the same art rules as the base game and Strongholds (PO decisions 2026-11-18). Every file is made
+with Tripo **text prompts only** (`tools/art/prompts.tsv`, section "Tidelands"), then built with
+`python -I tools/art/build.py <names>` into `packages/client/public/assets/art2d/`. The client draws each sprite
+once it has loaded and keeps the simple vector placeholder as the fallback, so a missing file never breaks a game.
 
-Style: same painted medieval style as `packages/client/public/assets/art2d/` (see the README there). Our own
-designs only: no reference to any commercial game's art.
+## Style rules (same as base + Strongholds)
+- **Terrain tiles**: painted top-down tabletop diorama (gouache/watercolour), one dominant colour so it reads
+  small, cut to a pointy-top hex with the bevelled rim; tiles keep a visible sand seam between them.
+- **Pieces**: **minimalist plain wooden blocks** like classic board-game pieces: smooth geometric shapes, no
+  windows, planks, ropes, shields or other detail, three-quarter view from the same side as the settlement.
+  Player pieces are painted off-white and tinted with the seat colour at runtime (`TINTED` in build.py);
+  neutral pieces keep their own colours. No player emblems on board pieces. Small: about 0.5-0.7 of the hex radius.
+- **Icons / tokens**: a few chunky plain shapes, bold silhouette readable at 20 px, same style as the goods icons.
+- **Cards**: storybook gouache illustration, one central subject, full bleed in the parchment frame.
+- Our own designs only: never upload `docs/art-reference/` or any commercial game's art.
 
-## Terrain tiles (drop-in, no code change)
-Format like the existing tiles: `packages/client/public/assets/art2d/terrain/<name>.webp`, cut exactly to a
-pointy-top hex (width √3·R, height 2·R), built with `tools/art/build.py`.
-| File | Placeholder now | Content |
-|---|---|---|
-| `terrain/goldmine.webp` | yellow hex with a ◆ mark | a gold mine: rocky hill with a mine entrance, gold veins, a cart |
-| `terrain/mist.webp` | grey hex with a dashed border and "?" | an undiscovered hex: drifting sea mist over water |
-| `terrain/village.webp` | sand-coloured hex with a ⌂ mark | a weavers' islet: small huts, drying cloth / silk banners, a jetty |
+## Files
+| File (art2d/...) | Prompt name | Kind | Content | Used by |
+|---|---|---|---|---|
+| `terrain/goldmine.webp` | t-goldmine | terrain | ochre rocky hills, mine entrance, gold veins | gold hexes (drop-in) |
+| `terrain/mist.webp` | t-mist | terrain | sea veiled by drifting mist | undiscovered hexes (drop-in) |
+| `terrain/village.webp` | t-village | terrain | sandy islet, three huts, drying silk, jetty | weavers' villages (drop-in) |
+| `piece/cog.webp` | p-cog | piece, tinted | plain hull block, one mast, square sail | cogs (SeaExtras) |
+| `piece/warship.webp` | p-warship | piece, tinted | the cog with a small crenellated block on the stern | warships, Corsair Coves |
+| `piece/corsair.webp` | p-corsair | piece, own colours | black hull, crimson sail | corsair and corsair fleet (fleet adds a ☠ token) |
+| `piece/fort.webp` | p-fort | piece, own colours | squat crenellated round block on a rock | corsair forts (+ lair count token) |
+| `piece/landing.webp` | p-landing | piece, tinted | pole on a disc base with a notched pennant | landing flags |
+| `icon/reward-vp.webp` | i-reward-vp | icon | gold star | Castaways reward |
+| `icon/reward-card.webp` | i-reward-card | icon | three fanned cards | Castaways reward |
+| `icon/reward-harbor.webp` | i-reward-harbor | icon | anchor | Castaways reward |
+| `icon/silk.webp` | i-silk | icon | rose-pink silk bolt | village silk supply |
+| `icon/wonder-wall.webp`, `-bridge`, `-beacon` | i-wonder-* | icon | wall block / arch / tower with flame | wonder site marks (the "x" mark stays a vector cross) |
+| `card/wonder-<id>.webp` × 7 | d-wonder-* | card | cathedral, seaWall, kingsBridge, obelisk, highKeep, beacon, scriptorium | side panel wonder list |
 
-## Pieces and markers (need a code switch in `packages/client/src/tidelands/SeaExtras.tsx`)
+## Not made yet (optional)
 | Suggested file | Placeholder now | Content |
 |---|---|---|
-| `piece/cog.webp` (tinted per player like the other pieces) | vector hull + sail in the player colour | a medieval cog seen from the side, fits on a hex edge |
-| `piece/warship.webp` | dark hull + sail in the player colour | the same cog armed: castle on the stern, shields on the rail |
-| `piece/corsair.webp` | black ship with a red sail | the corsair ship (sits on a sea hex) |
-| `piece/corsairFleet.webp` | the corsair ship with ☠ | the corsair fleet (Corsair Coves) |
-| `piece/fort.webp` + lair counter | dark square with the lair count, border in the owner's colour | a corsair fort on a cliff; small skull tokens 1-3 |
-| `piece/landing.webp` | small flag in the player colour | a landing banner on the beach |
-| `icon/reward-vp.webp`, `icon/reward-card.webp`, `icon/reward-harbor.webp` | ★ / ▤ / ⚓ round badges | reward tokens lying on a sea edge (Castaways) |
-| `icon/silk.webp` | pink badge with the silk count | a bolt of silk (village supply, players' silk) |
-| `icon/wonder-wall.webp`, `-bridge`, `-beacon`, `x` | ▮ / ⌒ / ✦ / ✕ badges | wonder site marks and the "no starting settlement" mark |
-| `card/wonder-<id>.webp` × 7 | text only in the side panel | wonder tiles: Cathedral, Sea Wall, King's Bridge, Obelisk, High Keep, Beacon Tower, Scriptorium (4 building stages each) |
-
-## Home and panel (optional)
-| Suggested file | Placeholder now | Content |
-|---|---|---|
-| `ui/scenario-<id>.webp` × 9 | scenario name + one-line text | a small vignette per scenario for the scenario picker / side panel |
-| `ui/tidelands.svg` | ⛵ emoji in the cost card | cog icon for the cost card and buttons |
+| `ui/scenario-<id>.webp` × 9 | scenario name + one-line text | small storybook vignette per scenario for the picker |
+| cog icon for the cost card | ⛵ emoji | could reuse `piece/cog.webp` |
