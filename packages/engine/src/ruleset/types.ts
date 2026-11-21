@@ -83,8 +83,11 @@ export interface Hooks {
   landVertex(ctx: Ctx, prev: boolean, v: VertexId): boolean;
   /** May the blocker be put on this hex (base: any board hex)? */
   blockerAllowed(ctx: Ctx, prev: boolean, hex: HexId): boolean;
-  /** Can the player place at least one free road-like piece now (road building / free road windows)? */
-  freeRouteAvailable(ctx: Ctx, prev: boolean, player: PlayerId): boolean;
+  /** Can the player place at least one free road-like piece now (road building / free road windows)?
+   *  `only` narrows it to one kind of route piece. */
+  freeRouteAvailable(ctx: Ctx, prev: boolean, player: PlayerId, only?: 'road' | 'ship'): boolean;
+  /** May an extension piece (e.g. 'caravan') stand on this hex (base: yes)? */
+  hexAllowsPiece(ctx: Ctx, prev: boolean, piece: string, hex: HexId): boolean;
   /** Is this award (e.g. 'longestRoute') in play (base: yes)? */
   awardActive(ctx: Ctx, prev: boolean, award: string): boolean;
   /** Production still owed per player as a later choice (e.g. a resource of choice), not yet in hand. */
@@ -112,7 +115,8 @@ export interface Ruleset {
   requires?: string[];
   config?(prev: RulesConfig | undefined): RulesConfig;
   hooks?: { [K in HookName]?: Hooks[K] };
-  actions?: Record<string, (prev: ActionDef | undefined) => ActionDef>;
+  /** Add or wrap actions. Returning undefined (only for a wrapper whose `prev` is missing) adds nothing. */
+  actions?: Record<string, (prev: ActionDef | undefined) => ActionDef | undefined>;
   init?(ctx: ApplyCtx): void;
   /** Adjust the game setup before the board is made (layout, VP target from `init.options`).
    *  `given` says which values the caller fixed explicitly (those must not change). */

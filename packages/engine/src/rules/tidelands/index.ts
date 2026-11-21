@@ -13,12 +13,13 @@ import { emptyVillages, initSilk, produceSilk, silkFinalWinner, silkOf, stealSil
 import { buildWonder, claimWonder, initWorks, worksWinner } from './works';
 import { armCard, attackFort, covesOf, covesWinner, initCoves, placeCovesStart, reachedFort, robAnyone, sailFleet } from './coves';
 import { resolveRoll } from '../base/turn';
+import { chaseAction } from './chase';
 import { randInt } from '../../rng';
 import { goldAround, goldClaims, goldWindowAfter, oweGold, takeGold } from './gold';
 import { SCENARIOS, scenarioOf, seatKey } from './scenarios';
 import { buildShip, moveShip, shipSpots } from './ships';
 import { afterRoutePlaced, settlementBan } from './special';
-import { hexIndex, isLand, isLandCorner, isLandEdge, isSea, regionsAt, scenario, tl, type TlState } from './state';
+import { emitTl, hexIndex, isLand, isLandCorner, isLandEdge, isSea, regionsAt, scenario, tl, type TlState } from './state';
 
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
@@ -130,12 +131,15 @@ export const tidelandsRuleset: Ruleset = {
       return silkOf(ctx.state)?.final ? silkFinalWinner(ctx) : undefined;
     },
 
-    freeRouteAvailable(ctx, _prev, id) {
+    freeRouteAvailable(ctx, _prev, id, only) {
       const { state, graph } = ctx;
       const sup = player(state, id).supply;
-      if ((sup.road ?? 0) > 0 && legalRoadSpots(graph, state.pieces, id).some((e) => isLandEdge(ctx, e))) return true;
-      return (sup.ship ?? 0) > 0 && shipSpots(ctx, id).length > 0;
+      if (only !== 'ship' && (sup.road ?? 0) > 0 && legalRoadSpots(graph, state.pieces, id).some((e) => isLandEdge(ctx, e)))
+        return true;
+      return only !== 'road' && (sup.ship ?? 0) > 0 && shipSpots(ctx, id).length > 0;
     },
+    // C&K + seafaring rulebook: the merchant (our caravan) never stands on a gold mine.
+    hexAllowsPiece: (ctx, prev, piece, hex) => prev && !(piece === 'caravan' && hexIndex(ctx.state)[hex]?.terrain === GOLD),
 
     pendingGains(ctx, prev) {
       const g = tl(ctx.state).gold;
@@ -249,6 +253,12 @@ export const tidelandsRuleset: Ruleset = {
           const s = tl(state);
           if (!s.coves) {
             prev.apply(ctx, a);
+            // With strongholds the corsair enters play (at its scenario hex) after the first raid.
+            if (s.corsairHome && !s.corsair && (state.ext.strongholds as { blockerActive?: boolean } | undefined)?.blockerActive) {
+              s.corsair = s.corsairHome;
+              s.corsairHome = null;
+              emitTl(ctx, { type: 'corsairArrived', hex: s.corsair });
+            }
             return;
           }
           const dice = rules.call('rollDice', ctx, []);
@@ -278,6 +288,19 @@ export const tidelandsRuleset: Ruleset = {
     playCard: (prev) =>
       guarded(prev, 'playCard', (ctx, a) =>
         tl(ctx.state).coves && (a as { card?: string }).card === 'guard' ? err('USE_ARM', 'Guards arm a cog here.') : null,
+      ),
+
+    // Strongholds + seafaring: a warden on a corner of the corsair's hex may chase the corsair away (then only
+    // the corsair moves); chasing the blocker moves only the blocker.
+    'sh:chase': (prev) => (prev ? chaseAction(prev) : undefined),
+    moveBlocker: (prev) =>
+      guarded(
+        prev,
+        'moveBlocker',
+        (ctx) => (tl(ctx.state).chase === 'corsair' ? err('CHASED_CORSAIR', 'Move the corsair you chased away.') : null),
+        (ctx) => {
+          tl(ctx.state).chase = null;
+        },
       ),
 
     // A steal ends the corsair's silk option.
@@ -323,6 +346,11 @@ export const tidelandsRuleset: Ruleset = {
     if (!s.corsair && mapById(state.board.layout).def.scatter) {
       const seas = state.board.hexes.filter((h) => isSea(state, h.id));
       s.corsair = seas[randInt(state.rng, seas.length)].id;
+    }
+    // C&K rulebook (combining with seafaring): the pirate waits on the barbarian track until the first raid.
+    if (state.init.rulesetIds.includes('strongholds') && s.corsair) {
+      s.corsairHome = s.corsair;
+      s.corsair = null;
     }
     if (sc.special === 'castaways') s.castaways = initCastaways(state, state.rng);
     if (sc.special === 'silk') s.silk = initSilk(state);

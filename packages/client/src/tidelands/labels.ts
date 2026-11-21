@@ -55,6 +55,10 @@ export function describeTlEvent(ev: Extract<GameEvent, { e: 'ext' }>, t: TFn, na
       return t(`tlev_fortBattle_${String(d.result)}`, { name: who, n: Number(d.lairs ?? 0) });
     case 'warship':
       return t('tlev_warship', { name: who });
+    case 'corsairArrived':
+      return t('tlev_corsairArrived');
+    case 'chaseCorsair':
+      return t('tlev_chaseCorsair', { name: who });
     default:
       return '';
   }

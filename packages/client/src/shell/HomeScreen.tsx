@@ -124,6 +124,7 @@ export function ScenarioSelect({ id, value, onChange, strongholds }: { id?: stri
         <option key={sc} value={sc} disabled={strongholds && !SCENARIOS[sc].strongholds} title={t(`sc_${sc}_desc`)}>
           {t(`sc_${sc}`)}
           {strongholds && !SCENARIOS[sc].strongholds ? ` — ${t('tl_combineNo')}` : ''}
+          {strongholds && SCENARIOS[sc].strongholdsFit ? ` — ${t(SCENARIOS[sc].strongholdsFit === 'good' ? 'tl_fitGood' : 'tl_fitHarder')}` : ''}
         </option>
       ))}
     </select>

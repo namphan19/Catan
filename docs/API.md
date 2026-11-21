@@ -66,13 +66,17 @@ view exposes it (the view drops `ext` entirely today).
   the last round's settlement yields starting resources).
 - `Ruleset.prepare(init, config, given)` (layout / VP target from options before the board exists) and
   `Ruleset.makeBoard(rng, init, config)` (scenario boards instead of the random base layout).
-- Hooks: `landHex`, `landVertex` (what is land), `blockerAllowed(hex)`, `freeRouteAvailable(player)`
+- Hooks: `landHex`, `landVertex` (what is land), `blockerAllowed(hex)`, `hexAllowsPiece(piece, hex)`,
+  `freeRouteAvailable(player, only?)`
   (free road windows may place other route pieces), `pendingGains` (production still to be chosen),
   `awardActive(award)` (switch off longest route / largest force). Base helpers: `isLandHex`,
-  `isLandVertex`, `blockerAllowed`, `freeRouteAvailable`, `lastSetupRound`, `advanceAfterRoute`.
+  `isLandVertex`, `blockerAllowed`, `hexAllowsPiece`, `freeRouteAvailable`, `lastSetupRound`, `advanceAfterRoute`.
+  Phase `freeRoads` may carry `only: 'road' | 'ship'`. An action wrapper may return undefined when the action
+  it wraps is not in the game (e.g. tidelands wraps `sh:chase` only when strongholds is played).
 - Strongholds resumes another ruleset's `ext` window after its own pending choices.
 - Ruleset `tidelands` (`createGame({ rulesets: ['base', 'tidelands'], options: { scenario } })`, with
   strongholds `['base', 'strongholds', 'tidelands']`): rules in docs/RULES_TIDELANDS.md. New actions:
   `tl:buildShip{e}` `tl:moveShip{from,to}` `tl:moveCorsair{hex}` `tl:gold{bag}` `tl:placeHarbor{kind,e}`
-  `tl:stealSilk{target}` `tl:claimWonder{wonder}` `tl:buildWonder` `tl:arm`. View: `PlayerView.ext.tidelands`
+  `tl:stealSilk{target}` `tl:claimWonder{wonder}` `tl:buildWonder` `tl:arm`, and with strongholds
+  `sh:chase{v, piece: 'corsair'}`. View: `PlayerView.ext.tidelands`
   (mist stacks and reserved reward cards are hidden).

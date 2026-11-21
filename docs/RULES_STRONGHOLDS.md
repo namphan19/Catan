@@ -164,3 +164,4 @@ immediately on reaching 13 VP.
 | S9 | Blocker entry hex | The waste hex the base setup would have used (first one on the large board). | lead |
 | S10 | Wins during pending choices | A win is detected when the interrupted phase resumes, not in the middle of a pending choice. | lead |
 | S11 | Legacy extra build phase | Not supported with this expansion; 5-6 players always use paired players. | lead |
+| S12 | With the Tidelands sea expansion | Played together as the 2025 rulebook's "combining with Seafarers" section says: see docs/RULES_TIDELANDS.md section 6. | rulebook |

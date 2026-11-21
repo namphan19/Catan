@@ -66,6 +66,7 @@ export const buildShip: ActionDef = {
     if (typeof a.e !== 'string') return err('BAD_EDGE', 'Choose an edge.');
     const spot = shipSpotError(ctx, a.player, a.e, ph.k === 'setup' ? { setupAt: ph.at ?? '' } : {});
     if (spot) return spot;
+    if (ph.k === 'freeRoads' && ph.only === 'road') return err('ONLY_ROAD', 'Rebuild a road here.');
     if (ph.k === 'setup' || ph.k === 'freeRoads') return null;
     return canAfford(ctx, a.player, 'ship');
   },
@@ -89,6 +90,7 @@ export const buildShip: ActionDef = {
     const ph = state.phase;
     if (expect(state, { t: 'tl:buildShip', player: id }, [...BUILD_PHASES])) return [];
     if (ph.k === 'setup' && ph.step !== 'road') return [];
+    if (ph.k === 'freeRoads' && ph.only === 'road') return [];
     if ((player(state, id).supply.ship ?? 0) <= 0) return [];
     if (ph.k !== 'setup' && ph.k !== 'freeRoads' && canAfford(ctx, id, 'ship')) return [];
     return shipSpots(ctx, id, ph.k === 'setup' ? { setupAt: ph.at ?? '' } : {}).map(
@@ -113,6 +115,19 @@ export function isMovable(ctx: Ctx, e: EdgeId): boolean {
   );
 }
 
+/** Moving the cog on `from` to `to` would leave one of the player's wardens without an own road or cog
+ *  (C&K rulebook, combining with seafaring: knights always stay connected to a route of their colour). */
+export function strandsWarden(ctx: Ctx, id: PlayerId, from: EdgeId, to: EdgeId): boolean {
+  const { state, graph } = ctx;
+  const occ = state.pieces.occupants;
+  if (!occ) return false;
+  return graph.edgeEnds[from].some((v) => {
+    const o = occ[v];
+    if (!o || o.owner !== id || o.kind !== 'warden' || graph.edgeEnds[to].includes(v)) return false;
+    return !graph.vertexEdges[v].some((x) => x !== from && (state.pieces.roads[x] === id || state.pieces.ships?.[x] === id));
+  });
+}
+
 function moveError(ctx: Ctx, id: PlayerId, from: unknown, to: unknown): RuleError | null {
   const { state } = ctx;
   if (tl(state).moved) return err('ALREADY_MOVED', 'Only one cog may move per turn.');
@@ -121,7 +136,9 @@ function moveError(ctx: Ctx, id: PlayerId, from: unknown, to: unknown): RuleErro
   if (corsairEdges(ctx).includes(from)) return err('CORSAIR', 'The corsair blocks this cog.');
   if (!isMovable(ctx, from)) return err('CLOSED', 'Only a cog with an open end may move.');
   if (typeof to !== 'string' || to === from) return err('BAD_EDGE', 'Choose another edge.');
-  return shipSpotError(ctx, id, to, { moving: from });
+  const spot = shipSpotError(ctx, id, to, { moving: from });
+  if (spot) return spot;
+  return strandsWarden(ctx, id, from, to) ? err('WARDEN_CUT', 'A warden must stay connected to your roads or cogs.') : null;
 }
 
 export const moveShip: ActionDef = {
@@ -147,7 +164,8 @@ export const moveShip: ActionDef = {
     const ships = state.pieces.ships ?? {};
     for (const from of Object.keys(ships)) {
       if (ships[from] !== id || !isMovable(ctx, from)) continue;
-      for (const to of shipSpots(ctx, id, { moving: from })) out.push({ t: 'tl:moveShip', player: id, from, to });
+      for (const to of shipSpots(ctx, id, { moving: from }))
+        if (!strandsWarden(ctx, id, from, to)) out.push({ t: 'tl:moveShip', player: id, from, to });
     }
     return out;
   },

@@ -15,8 +15,8 @@ export const TL = {
   costs: { ship: { timber: 1, fiber: 1 } } as Record<string, Bag>,
   /** Cogs per player. */
   supply: { ship: 15 } as Record<string, number>,
-  /** VP target added when the strongholds expansion is played too (its own target is 3 above the base game). */
-  strongholdsExtraVP: 3,
+  /** VP target added when the strongholds expansion is played too (C&K rulebook 2025, combining with seafaring: +2). */
+  strongholdsExtraVP: 2,
 };
 
 /** Terrain letters used in the map pictures (scenarios.ts). */

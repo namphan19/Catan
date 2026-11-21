@@ -103,7 +103,7 @@ describe('strongholds rooms', () => {
     const v = lastState(players[0]).view as View & { init: { options?: { scenario?: string } }; ext?: { tidelands?: { scenario?: string } } };
     expect(v.init.rulesetIds).toEqual(['base', 'strongholds', 'tidelands']);
     expect(v.init.options?.scenario).toBe('scatteredIsles');
-    expect(v.init.vpToWin).toBe(16);
+    expect(v.init.vpToWin).toBe(15);
     expect(v.ext?.tidelands?.scenario).toBe('scatteredIsles');
     expect(JSON.stringify(v)).not.toContain('"mist":[');
     const seq = await playSome(12);

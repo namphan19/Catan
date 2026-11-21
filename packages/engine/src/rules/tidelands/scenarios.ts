@@ -15,6 +15,9 @@ export interface Scenario {
   maps: Record<SeatKey, string>;
   /** May be played together with the strongholds expansion. */
   strongholds: boolean;
+  /** With strongholds: 'good' = recommended by the C&K rulebook's seafaring section; 'harder' = playable,
+   *  but exploring / many small islands make the raids hit harder. */
+  strongholdsFit?: 'good' | 'harder';
   /** Undiscovered hexes are revealed when a road or cog reaches them. */
   mist?: boolean;
   /** Scenario with its own rules module. */
@@ -55,6 +58,7 @@ const firstLandfall: Scenario = {
   vp: 14,
   landfall: 2,
   strongholds: true,
+  strongholdsFit: 'good',
   maps: maps('firstLandfall', {
     '3': {
       rows: [
@@ -119,6 +123,7 @@ const isles: Scenario = {
   vp: 13,
   landfall: 2,
   strongholds: true,
+  strongholdsFit: 'harder',
   maps: maps('scatteredIsles', {
     '3': {
       rows: [
@@ -180,6 +185,7 @@ const mists: Scenario = {
   vp: 12,
   landfall: 0,
   strongholds: true,
+  strongholdsFit: 'harder',
   mist: true,
   maps: maps('islesOfMist', {
     '3': {
@@ -243,6 +249,7 @@ const wastes: Scenario = {
   vp: 14,
   landfall: 2,
   strongholds: true,
+  strongholdsFit: 'good',
   maps: maps('beyondTheWastes', {
     '3': {
       rows: [
@@ -537,6 +544,7 @@ const uncharted: Scenario = {
   vp: 12,
   landfall: 1,
   strongholds: true,
+  strongholdsFit: 'harder',
   maps: maps('uncharted', {
     '3': {
       rows: scatterRows(7, 6),

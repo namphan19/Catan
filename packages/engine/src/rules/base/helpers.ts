@@ -119,11 +119,16 @@ export function vp(ctx: Ctx, id: PlayerId, opts: { public: boolean } = { public:
 }
 
 /** Whether the player can place a free road-like piece now (base: a road; extensions add ships). */
-export function freeRouteAvailable(ctx: Ctx, id: PlayerId): boolean {
+export function freeRouteAvailable(ctx: Ctx, id: PlayerId, only?: 'road' | 'ship'): boolean {
   const { state, graph } = ctx;
-  const base = (player(state, id).supply.road ?? 0) > 0 && legalRoadSpots(graph, state.pieces, id).length > 0;
-  return ctx.rules.call('freeRouteAvailable', ctx, base, id);
+  const base =
+    only !== 'ship' && (player(state, id).supply.road ?? 0) > 0 && legalRoadSpots(graph, state.pieces, id).length > 0;
+  return ctx.rules.call('freeRouteAvailable', ctx, base, id, only);
 }
+
+/** May an extension piece (e.g. the caravan) stand on this hex? */
+export const hexAllowsPiece = (ctx: Ctx, piece: string, hex: string): boolean =>
+  ctx.rules.call('hexAllowsPiece', ctx, true, piece, hex);
 
 /** Is the hex land (rulesets with sea maps say no for sea hexes)? */
 export const isLandHex = (ctx: Ctx, hex: string): boolean => ctx.rules.call('landHex', ctx, true, hex);

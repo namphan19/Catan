@@ -90,6 +90,10 @@ export interface TlState {
   coves?: CovesState;
   /** Corsair coves: resources of choice won against the fleet on this roll (merged into the gold window). */
   fleetBonus?: Record<PlayerId, number>;
+  /** With strongholds: the corsair's starting hex while it waits for the first raid (corsair is null). */
+  corsairHome?: HexId | null;
+  /** With strongholds: which piece a warden chased away (only that one moves in this blocker step). */
+  chase?: 'blocker' | 'corsair' | null;
 }
 
 export const tl = (state: GameState): TlState => state.ext[TL_ID] as TlState;

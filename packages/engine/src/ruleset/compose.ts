@@ -13,7 +13,11 @@ export function composeRules(list: Ruleset[]): Rules {
 
   const actions: Record<string, ActionDef> = {};
   for (const r of list)
-    for (const [t, make] of Object.entries(r.actions ?? {})) actions[t] = make(actions[t]);
+    for (const [t, make] of Object.entries(r.actions ?? {})) {
+      // A wrapper may decline (undefined) when the action it extends is not in this game.
+      const def = make(actions[t]);
+      if (def) actions[t] = def;
+    }
 
   const hookLists: Partial<Record<HookName, Array<(...a: unknown[]) => unknown>>> = {};
   for (const r of list)

@@ -26,6 +26,7 @@ export const moveCorsair: ActionDef = {
     if (e) return e;
     const s = tl(state);
     if (!s.corsair) return err('NO_CORSAIR', 'There is no corsair in this scenario.');
+    if (s.chase === 'blocker') return err('CHASED_BLOCKER', 'Move the blocker you chased away.');
     if (typeof a.hex !== 'string' || !graph.hexVertices[a.hex] || !isSea(state, a.hex))
       return err('BAD_HEX', 'The corsair sails on sea hexes.');
     if (a.hex === s.corsair) return err('SAME_HEX', 'The corsair must move to a different hex.');
@@ -40,6 +41,7 @@ export const moveCorsair: ActionDef = {
     const { resume, actor } = state.phase;
     const hex = a.hex as HexId;
     tl(state).corsair = hex;
+    tl(state).chase = null;
     emitTl(ctx, { type: 'corsairMoved', player: a.player, hex });
     const from = corsairVictims(ctx, hex, a.player);
     tl(state).corsairSteal = from.length > 0;
@@ -49,6 +51,7 @@ export const moveCorsair: ActionDef = {
   legal(ctx, id) {
     const { state, graph } = ctx;
     if (expect(state, { t: 'tl:moveCorsair', player: id }, ['moveBlocker']) || !tl(state).corsair) return [];
+    if (tl(state).chase === 'blocker') return [];
     if (tl(state).silk && !tradesWithVillage(state, id)) return [];
     return graph.hexes
       .filter((h) => h !== tl(state).corsair && isSea(state, h))

@@ -35,7 +35,8 @@ Chosen at game creation (`createGame({ rulesets: ['base', 'tidelands'], options:
 | `greatWorks` | Những Công Trình Vĩ Đại | wonder | claim and build a wonder; landfall +1 | no |
 | `uncharted` | Vùng Biển Chưa Biết | 12 | random map; islands of your starting settlements are home; landfall +1 | yes |
 
-With Strongholds the VP target is the scenario's target + 3 (e.g. 17 for First Landfall).
+With Strongholds the VP target is the scenario's target + 2 (e.g. 16 for First Landfall); all rules of
+playing both together are in section 7.
 
 ## 2. Board
 - A scenario map has land, sea and (Isles of Mist) undiscovered hexes. The area outside the map counts as sea.
@@ -60,7 +61,7 @@ With Strongholds the VP target is the scenario's target + 3 (e.g. 17 for First L
   never open, also when an opponent builds in between.
 
 ## 4. Corsair and gold
-- When you must move the blocker (a rolled 7, a guard card, a chasing warden), you may move the
+- When you must move the blocker (a rolled 7, a guard card), you may move the
   **corsair** to another sea hex instead and rob one player with a cog on that hex.
 - **Gold mines** produce on their number: 1 resource of your choice per settlement, 2 per city. Everybody
   owed something picks in a short window before the turn goes on (limited by the bank).
@@ -100,11 +101,35 @@ With Strongholds the VP target is the scenario's target + 3 (e.g. 17 for First L
   the roller robs any player (no blocker). You win with your fort taken and 10 VP.
 - **Uncharted Waters:** terrains and sea are shuffled over the frame; islands are found automatically.
 
-## 6. Five and six players
+## 6. Playing together with Strongholds
+Source: the PO's Cities & Knights rulebook (2025, `docs/CN3087*.pdf`, page 12, "Combining with Seafarers"),
+mapped to our names; points it does not cover are lead decisions (marked *).
+- **Scenarios:** First Landfall, Scattered Isles, Isles of Mist, Beyond the Wastes, Uncharted. The rulebook
+  recommends maps without exploration or many small islands (First Landfall, Beyond the Wastes); the other
+  three are playable but the raids hit harder (the scenario picker says so). Castaways, Silk, Corsair Coves
+  and Great Works are not combined* (their own card, VP and win rules collide with the strongholds systems).
+- **VP target:** scenario target + 2.
+- **Corsair:** it waits off the board until the first raid (like the blocker), then enters on its scenario
+  hex. Until then it blocks nothing.
+- **Route pieces:** strongholds rules about roads apply to cogs: a warden is recruited on an intersection
+  touching your road or cog, moves along your roads and cogs and may end where only sea hexes meet; plot
+  and turncoat treat cogs like roads; pavers place roads and/or cogs.
+- **Moving a cog:** a warden must stay connected to one of your roads or cogs; a move that would cut it off
+  is not allowed.
+- **Chasing:** a warden on a corner of the corsair's hex may chase the corsair away exactly as one next to
+  the blocker chases the blocker. The piece that was chased is the one that moves (and robs).
+- **Toll** moves only the blocker, never the corsair.
+- **Envoy** may remove an open road or an open cog; if it was yours, the free rebuild is a road for a road
+  and a cog for a cog.
+- **Gold mines** pay resources only (a city 2), never commodities, and count as production for the learning
+  perk*. The **caravan** may not stand on a gold mine (nor at sea).
+- **Raids** hit all islands at once: all cities and active wardens on the board count.
+
+## 7. Five and six players
 Paired players as in the base game (player 2 may build, move one cog, play a card, trade with the bank).
 Each scenario has its own 5-6 map with the 5-6 component counts.
 
-## 7. Decisions (T-numbers)
+## 8. Decisions (T-numbers)
 | ID | Topic | Decision | Status |
 |---|---|---|---|
 | T1 | Names | All names are our own (table in section 0); scenario names differ from the rulebook. | PO request |
@@ -113,8 +138,8 @@ Each scenario has its own 5-6 map with the 5-6 component counts.
 | T4 | Frame | The area outside the map is sea: cogs may lie on border edges. | lead |
 | T5 | Gold at setup | The last-round starting settlement takes 1 resource of choice per adjacent gold mine. | lead |
 | T6 | Discovered gold | A mist hex turned into a gold mine pays 1 resource of choice. | lead |
-| T7 | Corsair with Strongholds | The corsair waits for the first raid like the blocker; a chasing warden may move the corsair too. | lead |
-| T8 | Strongholds combination | Basic scenarios only (First Landfall, Scattered Isles, Isles of Mist, Beyond the Wastes, Uncharted); VP target +3; gold pays base resources only (cities 2); wardens stand on land and use roads and cogs; the caravan stays on land; gold counts as production for the learning perk. | lead, PO to confirm |
+| T7 | Corsair with Strongholds | Off the board until the first raid, then on its scenario hex; wardens next to it chase it; the chased piece is the one that moves; toll never moves it. | C&K rulebook p.12 |
+| T8 | Strongholds combination | Section 6: VP +2, roads rules cover cogs, wardens may stand at sea, cog moves keep wardens connected, envoy rebuilds the same kind, gold pays resources only, no caravan on gold. Lead decisions inside it: only the five basic scenarios are combined; gold counts for the learning perk. | C&K rulebook p.12 + lead (PO gave full authority 2026-11-21) |
 | T9 | Castaways rewards | The kinds of rewards are shuffled over the reward edges; a harbor that cannot be placed waits in hand. | lead |
 | T10 | Silk map | 8 (12) one-number village hexes on 2-hex islets; the gold mines of the printed list are left out so the token counts match (20 / 26 numbered hexes + deserts). End at 5 of 8 / 8 of 12 empty villages; after VP and silk, seat order breaks ties. | lead, PO to confirm |
 | T11 | Corsair Coves | Our own geometry (seats, landings, forts, loop); 3 players play without relic cards, 4-6 use relics as guards; the fleet's hex blocks cogs; the bonus resource from beating the fleet is picked with the gold window. | lead, PO to confirm |

@@ -106,5 +106,9 @@ Run: `pnpm install` / `pnpm test` / `pnpm typecheck` / `pnpm build` / `pnpm star
   (numbers in docs/PLAN.md section 7).
 - Run locally: `fuzz 12 0 tidelands`, `fuzz 9 0 both`, `arena 16 hard,random,random,random tidelands`;
   e2e on a machine whose Chromium does not match Playwright: `PW_CHROMIUM_PATH=/path/to/chrome`.
-- Open: PO playtest; PO to confirm T8 (strongholds combination details), T10 (silk map counts), T11 (corsair
-  coves geometry); final art; the expert bot uses the heuristic in expansion games (no search yet).
+- Open: PO playtest; PO to confirm T10 (silk map counts), T11 (corsair coves geometry); final art; the expert bot
+  uses the heuristic in expansion games (no search yet).
+- 2026-11-21: the PO gave full authority over combination questions. The combination now follows the C&K
+  rulebook's "Combining with Seafarers" page (docs/CN3087*.pdf p.12): VP +2, corsair after the first raid,
+  wardens at sea and chasing the corsair, cog moves keep wardens connected, envoy on cogs, no caravan on gold
+  (docs/RULES_TIDELANDS.md section 6). catan.com itself is blocked by the cloud sandbox's network policy.

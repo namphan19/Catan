@@ -4,7 +4,6 @@ import type {
 } from '../../types';
 import type { ApplyCtx, Ctx } from '../../ruleset/types';
 import { SH_ID, type EventFace, type Track } from './config';
-import { isLandVertex } from '../base/helpers';
 
 /** A choice a player still has to make. The queue is resolved head first. */
 export type Pending =
@@ -105,14 +104,13 @@ export const hexById = (state: GameState, id: HexId): Hex | undefined =>
 export const ownRoute = (state: GameState, e: string, id: PlayerId): boolean =>
   state.pieces.roads[e] === id || state.pieces.ships?.[e] === id;
 
-/** Empty land intersections (no building, no occupant) touching one of the player's roads or cogs. */
+/** Empty intersections (no building, no occupant) touching one of the player's roads or ships. With sea
+ *  maps a warden may also stand where only sea hexes meet (C&K rulebook, combining with seafaring). */
 export function wardenSpots(ctx: Ctx, id: PlayerId): VertexId[] {
   const { state, graph } = ctx;
   const occ = occupants(state);
   return graph.vertices.filter(
-    (v) =>
-      !state.pieces.buildings[v] && !occ[v] && graph.vertexEdges[v].some((e) => ownRoute(state, e, id)) &&
-      isLandVertex(ctx, v),
+    (v) => !state.pieces.buildings[v] && !occ[v] && graph.vertexEdges[v].some((e) => ownRoute(state, e, id)),
   );
 }
 
@@ -147,10 +145,10 @@ export function reach(ctx: Ctx, owner: PlayerId, from: VertexId): VertexId[] {
   return out;
 }
 
-/** Empty land intersections a warden standing on `from` can move to. */
+/** Empty intersections a warden standing on `from` can move to (along its owner's roads and ships). */
 export function moveTargets(ctx: Ctx, owner: PlayerId, from: VertexId): VertexId[] {
   const occ = occupants(ctx.state);
-  return reach(ctx, owner, from).filter((v) => !ctx.state.pieces.buildings[v] && !occ[v] && isLandVertex(ctx, v));
+  return reach(ctx, owner, from).filter((v) => !ctx.state.pieces.buildings[v] && !occ[v]);
 }
 
 /** Emit an expansion event; `secret` is only delivered to `visibleTo`. */

@@ -101,10 +101,11 @@ describe('tidelands: scenarios and maps', () => {
     expect(JSON.stringify(c.board)).not.toBe(JSON.stringify(a.board));
   });
 
-  it('combines with strongholds (VP target +3) only for the basic scenarios', () => {
+  it('combines with strongholds (VP target +2) only for the basic scenarios', () => {
     const s = createGame({ seed: 'c', playerCount: 4, rulesets: ['base', 'strongholds', 'tidelands'], options: { scenario: 'firstLandfall' } });
-    expect(s.init.vpToWin).toBe(17);
+    expect(s.init.vpToWin).toBe(16);
     expect(s.board.blocker).toBe(''); // the blocker waits for the first raid, as in strongholds
+    expect((s.ext.tidelands as TlState).corsair).toBeNull(); // ... and so does the corsair
     expect(() =>
       createGame({ seed: 'c', playerCount: 4, rulesets: ['base', 'strongholds', 'tidelands'], options: { scenario: 'castaways' } }),
     ).toThrow(/cannot be played with strongholds/);
@@ -444,6 +445,137 @@ describe('tidelands: special scenarios', () => {
     expect(victoryPoints(v, 'p1')).toBeGreaterThanOrEqual(10);
     const v2 = act(v, { t: 'endTurn', player: 'p1' });
     expect(v2.winner).toBeUndefined();
+  });
+});
+
+// Strongholds + Tidelands: the C&K rulebook's "combining with seafaring" section (docs/RULES_TIDELANDS.md T8).
+describe('tidelands with strongholds', () => {
+  const RSB = ['base', 'strongholds', 'tidelands', 'testdice'];
+  type Sh = { blockerActive: boolean; blockerHome: string; raid: { pos: number }; decks: Record<string, string[]> };
+  const shx = (s: GameState) => s.ext.strongholds as Sh;
+  function both(phase: GameState['phase'] = { k: 'main' }, scenario = 'firstLandfall', seed = 'both'): GameState {
+    const s = createGame({ seed, playerCount: 4, rulesets: RSB, firstPlayer: 'p1', options: { scenario } });
+    s.phase = phase;
+    s.turn = { n: 1, current: 'p1', cardPlayed: false, roll: [3, 4] };
+    return s;
+  }
+  /** After the first raid: blocker and corsair on the board. */
+  function afterRaid(s: GameState): void {
+    shx(s).blockerActive = true;
+    s.board.blocker = shx(s).blockerHome;
+    x(s).corsair = x(s).corsairHome!;
+    x(s).corsairHome = null;
+  }
+  function warden(s: GameState, id: string, v: VertexId, active = true): void {
+    (s.pieces.occupants ??= {})[v] = { owner: id, kind: 'warden', level: 1, active, tags: [] };
+    pl(s, id).supply.warden1 -= 1;
+  }
+  function giveCard(s: GameState, id: string, card: string): void {
+    for (const d of Object.values(shx(s).decks)) {
+      const i = d.indexOf(card);
+      if (i >= 0) {
+        d.splice(i, 1);
+        pl(s, id).cards.push(card);
+        return;
+      }
+    }
+    throw new Error(`no ${card} in the decks`);
+  }
+
+  it('the VP target is the scenario target + 2', () => {
+    expect(both().init.vpToWin).toBe(SCENARIOS.firstLandfall.vp + 2);
+    expect(both(undefined, 'beyondTheWastes').init.vpToWin).toBe(16);
+  });
+
+  it('the corsair waits off the board until the first raid, then appears at its scenario hex', () => {
+    const s = both({ k: 'preRoll' });
+    expect(x(s).corsair).toBeNull();
+    const home = x(s).corsairHome;
+    expect(home).toBeTruthy();
+    shx(s).raid.pos = 6;
+    s.ext.forceDice = [2, 3, 0]; // event die face 0: the raid fleet sails its last step
+    const t = act(s, { t: 'roll', player: 'p1' });
+    expect(shx(t).blockerActive).toBe(true);
+    expect(x(t).corsair).toBe(home);
+  });
+
+  it('a warden may stand where only sea hexes meet; a cog move may not cut it off its route', () => {
+    const s = both();
+    const g = graphOf(s);
+    const c = coast(s);
+    put(s, 'p1', c.v);
+    ship(s, 'p1', c.sea);
+    const v1 = other(g, c.sea, c.v);
+    const e2 = seaFrom(s, g, v1, [c.sea])!;
+    ship(s, 'p1', e2);
+    const v2 = other(g, e2, v1);
+    setHand(s, 'p1', { fiber: 1, stone: 1 });
+    const seaOnly = [v1, v2].find((v) => g.vertexHexes[v].every((h) => !isLandHex(s, h)));
+    expect(seaOnly).toBeDefined();
+    expect(code(s, { t: 'sh:recruit', player: 'p1', v: seaOnly! })).toBe('OK');
+    // Without a warden at v2 the outer cog may move anywhere; with one there it must keep touching v2.
+    const free = getLegalActions(s, 'p1').filter((a) => a.t === 'tl:moveShip' && (a as unknown as { from: string }).from === e2);
+    const away = free.find((a) => !g.edgeEnds[(a as unknown as { to: EdgeId }).to].includes(v2));
+    warden(s, 'p1', v2);
+    expect(away).toBeDefined();
+    expect(code(s, away!)).toBe('WARDEN_CUT');
+    for (const a of getLegalActions(s, 'p1').filter((m) => m.t === 'tl:moveShip' && (m as unknown as { from: string }).from === e2))
+      expect(g.edgeEnds[(a as unknown as { to: EdgeId }).to]).toContain(v2);
+  });
+
+  it('a warden next to the corsair chases it away, and then only the corsair moves (and vice versa)', () => {
+    const s = both();
+    afterRaid(s);
+    const g = graphOf(s);
+    const sea = x(s).corsair!;
+    const v = g.hexVertices[sea].find((u) => !s.pieces.buildings[u])!;
+    warden(s, 'p1', v);
+    const chase = { t: 'sh:chase', player: 'p1', v, piece: 'corsair' } as Action;
+    expect(getLegalActions(s, 'p1')).toContainEqual(chase);
+    const t = act(s, chase);
+    expect(t.phase.k).toBe('moveBlocker');
+    const land = s.board.hexes.find((h) => isLandHex(s, h.id) && h.id !== s.board.blocker)!;
+    expect(code(t, { t: 'moveBlocker', player: 'p1', hex: land.id })).toBe('CHASED_CORSAIR');
+    const otherSea = s.board.hexes.find((h) => h.terrain === SEA && h.id !== sea)!;
+    const u = act(t, { t: 'tl:moveCorsair', player: 'p1', hex: otherSea.id });
+    expect(x(u).corsair).toBe(otherSea.id);
+    expect(x(u).chase).toBeNull();
+    // Chasing the blocker moves only the blocker.
+    const b = both();
+    afterRaid(b);
+    const corner = g.hexVertices[b.board.blocker].find((w) => !b.pieces.buildings[w])!;
+    warden(b, 'p1', corner);
+    const bt = act(b, { t: 'sh:chase', player: 'p1', v: corner });
+    expect(bt.phase.k).toBe('moveBlocker');
+    expect(code(bt, { t: 'tl:moveCorsair', player: 'p1', hex: otherSea.id })).toBe('CHASED_BLOCKER');
+  });
+
+  it('the envoy removes an open cog; its owner may rebuild only a cog', () => {
+    const s = both();
+    const g = graphOf(s);
+    const c = coast(s);
+    put(s, 'p1', c.v);
+    ship(s, 'p1', c.sea);
+    const e2 = seaFrom(s, g, other(g, c.sea, c.v), [c.sea])!;
+    ship(s, 'p1', e2);
+    giveCard(s, 'p1', 'envoy');
+    const t = act(s, { t: 'sh:play', player: 'p1', card: 'envoy', e: e2, rebuild: true } as Action);
+    expect(t.pieces.ships![e2]).toBeUndefined();
+    expect(pl(t, 'p1').supply.ship).toBe(TL.supply.ship - 1);
+    expect(t.phase).toMatchObject({ k: 'freeRoads', only: 'ship' });
+    const legal = getLegalActions(t, 'p1');
+    expect(legal.length).toBeGreaterThan(0);
+    expect(legal.every((a) => a.t === 'tl:buildShip')).toBe(true);
+  });
+
+  it('the caravan never stands on a gold mine', () => {
+    const s = both();
+    const g = graphOf(s);
+    const gold = s.board.hexes.find((h) => h.terrain === 'goldmine')!;
+    put(s, 'p1', g.hexVertices[gold.id][0]);
+    giveCard(s, 'p1', 'caravan');
+    expect(code(s, { t: 'sh:play', player: 'p1', card: 'caravan', hex: gold.id } as Action)).toBe('BAD_HEX');
+    expect(getLegalActions(s, 'p1').some((a) => (a as { hex?: string }).hex === gold.id)).toBe(false);
   });
 });
 

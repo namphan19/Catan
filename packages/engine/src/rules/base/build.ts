@@ -92,9 +92,12 @@ export function advanceAfterRoute(ctx: ApplyCtx, ph: Phase, id: PlayerId): void 
     else state.phase = { k: 'setup', idx, step: 'settlement' };
   } else if (ph.k === 'freeRoads') {
     const left = ph.left - 1;
-    const more = left > 0 && freeRouteAvailable(ctx, id);
+    const more = left > 0 && freeRouteAvailable(ctx, id, ph.only);
     // An `actor` marks a freeRoads window opened by the paired player: resume to that phase.
-    if (more) state.phase = ph.actor ? { k: 'freeRoads', left, actor: ph.actor } : { k: 'freeRoads', left };
+    if (more)
+      state.phase = {
+        k: 'freeRoads', left, ...(ph.actor ? { actor: ph.actor } : {}), ...(ph.only ? { only: ph.only } : {}),
+      };
     else setPhase(ctx, ph.actor ? resumePhase(state, 'paired') : { k: 'main' });
   }
 }
@@ -118,7 +121,7 @@ export const placeRoad: ActionDef = {
     // Same as legalRoadSpots(...).includes(a.e) for a free edge, without scanning every edge (M4 speed).
     if (!roadConnects(graph, state.pieces, a.player, a.e))
       return err('NOT_CONNECTED', 'A road must connect to your road network.');
-    if (ph.k === 'freeRoads') return null;
+    if (ph.k === 'freeRoads') return ph.only === 'ship' ? err('ONLY_SHIP', 'Rebuild a ship here.') : null;
     return canAfford(ctx, a.player, 'road');
   },
   apply(ctx, action) {
