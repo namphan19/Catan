@@ -107,3 +107,6 @@ harbors, wonders, lines to forts. Arena results (0 invalid bot actions in every 
 the combination without invariant failures. Server: room option `tidelands: <scenario>` (+ `expansion`).
 Client: scenario picker (home + online), sea maps, cogs, corsair, rewards, villages, wonder sites, forts,
 side panel, gold / road-or-cog dialogs; e2e `tests/tidelands.spec.ts` (16 tests desktop + tablet).
+2026-11-21: Strongholds + Tidelands aligned with the C&K rulebook's "Combining with Seafarers" page (docs/RULES_TIDELANDS.md
+section 6). 268 engine tests; fuzzer `both` 10 games / 70,850 actions without invariant failures; arena `both` hard vs 3 random
+15/15, hard,normal,easy,hard,normal 70/10/20% (0 invalid bot actions); e2e tidelands + strongholds 20/20.
