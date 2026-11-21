@@ -1,6 +1,6 @@
 # Boschtan - UI / UX spec (lead)
 
-Web only (desktop browser first, tablet usable). Self-hosted by the PO for family and colleagues (private
+Web only (desktop browser first, tablet usable, phone layout since 2026-11-21). Self-hosted by the PO for family and colleagues (private
 use, not for commercial release); online play is the target (server = M2), hot-seat stays for testing. No bots.
 
 ## Art direction: close to the original CATAN look
@@ -80,6 +80,15 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
    cards) + action bar (build group, trade group, one large primary button: Roll or End turn). Number tokens
    carry probability pips; hexes that just produced pulse (2D). Winner overlay.
 3. Hot-seat: "Pass the device to <name>" cover between actors so hands stay hidden.
+4. Phone layout (2026-11-21; CSS in src/table/mobile.css, e2e project "mobile"):
+   - portrait (<= 640 px wide): top bar with turn + "?" + a menu (shell buttons, language); players in one
+     grid row (name, VP, hand / cards / guards; pieces left dropped); board fills the middle (pinch zoom with
+     two fingers, drag to pan); hand as small cards; one row of equal action buttons (icon over short label).
+   - landscape (<= 520 px tall): board on the left at full height, right column with top bar, players
+     (two per row, pieces left back), hand and actions.
+   - the side column (log / trade, Strongholds and Tidelands panels) is a sheet behind the "Nhật ký" /
+     "Bảng & nhật ký" button (bottom sheet in portrait, from the right in landscape); picking an action
+     in a panel closes it so the board is in view.
 
 ## Interaction rules
 - The UI never decides legality: buttons, highlights and dialogs come from getLegalActions; disabled

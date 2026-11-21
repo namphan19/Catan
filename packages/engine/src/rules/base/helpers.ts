@@ -1,7 +1,7 @@
 // Shared helpers for base rule modules.
 import type { Action, Bag, GameState, Phase, PlayerId, PlayerState, Resume, RuleError } from '../../types';
 import type { ApplyCtx, Ctx } from '../../ruleset/types';
-import { longestRoute } from '../../board/graph';
+import { legalRoadSpots, longestRoute } from '../../board/graph';
 import { bagTotal } from '../../bag';
 
 export const err = (code: string, message: string): RuleError => ({ code, message });
@@ -27,8 +27,15 @@ export function setupOrder(state: GameState): PlayerId[] {
   const s = seatOrder(state);
   const k = s.indexOf(state.turn.current);
   const rot = k < 0 ? s : [...s.slice(k), ...s.slice(0, k)];
-  return [...rot, ...[...rot].reverse()];
+  const out = [...rot, ...[...rot].reverse()];
+  // Extra rounds (scenario option) go forward from the first player again.
+  for (let r = 2; r < (state.init.setupRounds ?? 2); r++) out.push(...rot);
+  return out;
 }
+
+/** The setup placement at `idx` belongs to the last round (its settlement yields starting resources). */
+export const lastSetupRound = (state: GameState, idx: number): boolean =>
+  idx >= ((state.init.setupRounds ?? 2) - 1) * state.players.length;
 
 /** 5-6 players, paired mode (5-6 p.3): player 2 is the third seat to the left of player 1. */
 export function pairedPlayer(state: GameState): PlayerId {
@@ -111,9 +118,33 @@ export function vp(ctx: Ctx, id: PlayerId, opts: { public: boolean } = { public:
   return ctx.rules.call('victoryPoints', ctx, 0, id, opts);
 }
 
+/** Whether the player can place a free road-like piece now (base: a road; extensions add ships). */
+export function freeRouteAvailable(ctx: Ctx, id: PlayerId, only?: 'road' | 'ship'): boolean {
+  const { state, graph } = ctx;
+  const base =
+    only !== 'ship' && (player(state, id).supply.road ?? 0) > 0 && legalRoadSpots(graph, state.pieces, id).length > 0;
+  return ctx.rules.call('freeRouteAvailable', ctx, base, id, only);
+}
+
+/** May an extension piece (e.g. the caravan) stand on this hex? */
+export const hexAllowsPiece = (ctx: Ctx, piece: string, hex: string): boolean =>
+  ctx.rules.call('hexAllowsPiece', ctx, true, piece, hex);
+
+/** Is the hex land (rulesets with sea maps say no for sea hexes)? */
+export const isLandHex = (ctx: Ctx, hex: string): boolean => ctx.rules.call('landHex', ctx, true, hex);
+
+/** Is the intersection on land (may pieces such as buildings or wardens stand there)? */
+export const isLandVertex = (ctx: Ctx, v: string): boolean => ctx.rules.call('landVertex', ctx, true, v);
+
+/** May the blocker stand on this hex (a board hex the rulesets allow)? */
+export function blockerAllowed(ctx: Ctx, hex: string): boolean {
+  return !!ctx.graph.hexVertices[hex] && ctx.rules.call('blockerAllowed', ctx, true, hex);
+}
+
 /** Recompute the longest-route award after any road or settlement placement. */
 export function updateLongestRoute(ctx: ApplyCtx): void {
   const { state, graph } = ctx;
+  if (!ctx.rules.call('awardActive', ctx, true, 'longestRoute')) return;
   const { min } = ctx.rules.config.awards.longestRoute;
   const len: Record<PlayerId, number> = {};
   for (const p of state.players) len[p.id] = longestRoute(graph, state.pieces, p.id);
@@ -136,6 +167,7 @@ export function updateLongestRoute(ctx: ApplyCtx): void {
  *  larger count takes it. The counted card ids come from config (D21), not hardcoded. */
 export function updateLargestForce(ctx: ApplyCtx, id: PlayerId): void {
   const { state } = ctx;
+  if (!ctx.rules.call('awardActive', ctx, true, 'largestForce')) return;
   const { min, cards } = ctx.rules.config.awards.largestForce;
   const count = (p: PlayerId) => {
     const played = player(state, p).played;

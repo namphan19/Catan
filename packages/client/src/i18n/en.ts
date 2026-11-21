@@ -2,6 +2,9 @@
 export const en: Record<string, string> = {
   appTitle: 'Boschtan',
   appSubtitle: 'A hex game — settle, trade, expand',
+  menu: 'Menu',
+  sheet_open: 'Panel & log',
+  sheet_close: 'Close',
   langToggle: 'Tiếng Việt',
 
   home_newGame: 'New hot-seat game',

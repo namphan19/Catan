@@ -6,6 +6,7 @@ import type { Action, GameEvent, PlayerId } from '@hexgame/engine';
 import { cardKey, resKey } from '../i18n';
 import { ResourceIcon } from '../ui/ResourceIcon';
 import { describeShAction, describeShEvent } from '../strongholds/labels';
+import { describeTlAction, describeTlEvent } from '../tidelands/labels';
 
 export type TFn = (key: string, params?: Record<string, string | number>) => string;
 export type NameFn = (id: PlayerId) => string;
@@ -27,6 +28,7 @@ export function awardKey(award: string): string {
 function pieceKey(kind: string): string {
   if (kind === 'settlement') return 'piece_settlement';
   if (kind === 'city') return 'piece_city';
+  if (kind === 'ship') return 'piece_ship';
   return 'piece_road';
 }
 
@@ -152,7 +154,7 @@ export function describeAction(a: Action, t: TFn, name: NameFn, out?: LogOutcome
     case 'endTurn':
       return t('log_endTurn', { name: who });
     default:
-      return describeShAction(a, t, name) ?? t('log_other', { name: who, action: a.t });
+      return describeShAction(a, t, name) ?? describeTlAction(a, t, name) ?? t('log_other', { name: who, action: a.t });
   }
 }
 
@@ -233,6 +235,7 @@ export function describeEvent(ev: GameEvent, t: TFn, name: NameFn): ReactNode {
     case 'turnStarted':
       return t('toast_turnStarted', { name: name(ev.player) });
     case 'ext':
+      if (ev.id === 'tidelands') return describeTlEvent(ev, t, name);
       return ev.id === 'strongholds' ? describeShEvent(ev, t, name) : '';
     default:
       return '';

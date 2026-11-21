@@ -27,8 +27,24 @@ function large(): Axial[] {
   return out;
 }
 
+/** Extra layouts (e.g. scenario maps of an expansion), registered once at module load. */
+const REGISTERED: Record<string, Axial[]> = {};
+
+/** Register the hex positions of a custom layout. Re-registering the same id must give the same hexes. */
+export function registerLayout(id: LayoutId, hexes: Axial[]): void {
+  if (id === 'standard' || id === 'large') throw new Error(`layout id ${id} is reserved`);
+  const prev = REGISTERED[id];
+  const key = (list: Axial[]) => list.map((a) => `${a.q},${a.r}`).sort().join(' ');
+  if (prev && key(prev) !== key(hexes)) throw new Error(`layout ${id} registered twice with different hexes`);
+  REGISTERED[id] = hexes.map((a) => ({ q: a.q, r: a.r }));
+}
+
+export const isLayout = (id: string): boolean => id === 'standard' || id === 'large' || !!REGISTERED[id];
+
 export function layoutHexes(layout: LayoutId): Axial[] {
   if (layout === 'standard') return standard();
   if (layout === 'large') return large();
+  const reg = REGISTERED[layout];
+  if (reg) return reg.map((a) => ({ ...a }));
   throw new Error(`unknown layout ${String(layout)}`);
 }

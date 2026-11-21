@@ -45,6 +45,10 @@ export const TERRAIN_COLORS: Record<string, string> = {
   quarry: 'var(--quarry)',
   waste: 'var(--waste)',
   sea: 'var(--sea)',
+  // Tidelands placeholders until the painted tiles arrive (see docs/ART_TIDELANDS.md).
+  goldmine: '#C9A227',
+  mist: '#9AA3A8',
+  village: '#B9A07A',
 };
 
 /** Same palette as hex strings, for WebGL materials (CSS var() cannot reach a shader). */

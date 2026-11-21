@@ -5,7 +5,7 @@ import type { ActionDef, ApplyCtx, Ctx } from '../../ruleset/types';
 import { bagAdd, bagHas, bagSub, bagToList, bagTotal, bagValid } from '../../bag';
 import { randInt } from '../../rng';
 import {
-  err, expect, handSize, nextSeat, player, releaseNewCards, resumePhase, setPhase, startTurn, subBags,
+  blockerAllowed, err, expect, handSize, nextSeat, player, releaseNewCards, resumePhase, setPhase, startTurn, subBags,
 } from './helpers';
 
 type A<T extends string> = Extract<Action, { t: T }>;
@@ -115,6 +115,7 @@ export const moveBlocker: ActionDef = {
     if (e) return e;
     if (!graph.hexVertices[a.hex]) return err('BAD_HEX', `Unknown hex ${String(a.hex)}.`);
     if (a.hex === state.board.blocker) return err('SAME_HEX', 'The blocker must move to a different hex.');
+    if (!blockerAllowed(ctx, a.hex)) return err('BAD_HEX', 'The blocker cannot go there.');
     return null;
   },
   apply(ctx, action) {

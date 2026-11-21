@@ -9,6 +9,8 @@ export const trackName = (t: TFn, track: unknown): string => t(`track_${String(t
 
 /** Label of one option in a choice dialog. */
 export function valueLabel(field: string, value: unknown, t: TFn, name: NameFn): string {
+  // Strongholds + Tidelands: chase the blocker (no piece field) or the corsair.
+  if (field === 'piece') return value === 'corsair' ? t('tl_corsair') : t('tl_pieceBlocker');
   if (value === undefined) {
     if (field === 'rebuild') return t('sh_noRebuild');
     return field.startsWith('vs') ? t('sh_done') : t('sh_skip');
@@ -27,6 +29,11 @@ export function valueLabel(field: string, value: unknown, t: TFn, name: NameFn):
       return `${t(String(value))}: ${t(`cardfx_${String(value)}`)}`;
     case 'rebuild':
       return t('sh_rebuild');
+    // Tidelands: harbor kinds (place harbor) and wonders (claim wonder).
+    case 'kind':
+      return value === 'any' ? '3:1' : `${t(resKey(String(value)))} 2:1`;
+    case 'wonder':
+      return t(`wonder_${String(value)}`);
     case 'skip':
       return t('sh_skip');
     default:

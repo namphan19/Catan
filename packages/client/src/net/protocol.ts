@@ -7,6 +7,8 @@ export interface RoomOptions {
   largeTableMode?: 'paired' | 'extraBuild';
   vpToWin?: number;
   expansion?: 'strongholds';
+  /** Tidelands scenario id (the sea expansion). */
+  tidelands?: string;
 }
 
 export type BotLevel = 'easy' | 'normal' | 'hard' | 'expert';

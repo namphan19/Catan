@@ -3,10 +3,14 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from 're
 import { vi } from './vi';
 import { en } from './en';
 import { shEn, shVi } from '../strongholds/i18n';
+import { tlEn, tlVi } from '../tidelands/i18n';
 
 export type Lang = 'vi' | 'en';
 
-const DICTS: Record<Lang, Record<string, string>> = { vi: { ...vi, ...shVi }, en: { ...en, ...shEn } };
+const DICTS: Record<Lang, Record<string, string>> = {
+  vi: { ...vi, ...shVi, ...tlVi },
+  en: { ...en, ...shEn, ...tlEn },
+};
 
 export interface I18n {
   lang: Lang;

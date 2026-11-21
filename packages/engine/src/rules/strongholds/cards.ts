@@ -2,9 +2,11 @@
 // A played card goes back under its deck. Any number of cards may be played in an action phase.
 import type { Action, EdgeId, ExtAction, HexId, Phase, PlayerId, RuleError, VertexId } from '../../types';
 import type { ActionDef, ApplyCtx, Ctx } from '../../ruleset/types';
-import { legalRoadSpots } from '../../board/graph';
 import { bagAdd, bagSub, bagTotal } from '../../bag';
-import { actors, err, expect, hasPlayer, player, setPhase, updateLongestRoute, vp } from '../base/helpers';
+import {
+  actors, blockerAllowed, err, expect, freeRouteAvailable, hasPlayer, hexAllowsPiece, isLandHex, player, setPhase,
+  updateLongestRoute, vp,
+} from '../base/helpers';
 import { SH, isCommodity, type Track } from './config';
 import { settle } from './flow';
 import {
@@ -12,7 +14,7 @@ import {
   promoteError, rampartError, returnCard, stealRandom, transfer, upgradeError, wardenPiece,
 } from './ops';
 import {
-  citiesOf, emitSh, hexById, occupants, sh, turnOrderFrom, wardensOf,
+  citiesOf, emitSh, hexById, occupants, ownRoute, sh, turnOrderFrom, wardensOf,
 } from './state';
 import { ACTION_PHASES } from './wardens';
 
@@ -75,11 +77,16 @@ function collect(ctx: ApplyCtx, id: PlayerId, resource: string, max: number): vo
   emitSh(ctx, { type: 'collected', player: id, resource, taken });
 }
 
-function freeRoads(ctx: ApplyCtx, id: PlayerId, count: number): void {
-  const { state, graph } = ctx;
-  const left = Math.min(count, player(state, id).supply.road ?? 0);
-  if (left <= 0 || legalRoadSpots(graph, state.pieces, id).length === 0) return;
-  setPhase(ctx, state.phase.k === 'paired' ? { k: 'freeRoads', left, actor: id } : { k: 'freeRoads', left });
+/** Free route pieces: roads, or with sea maps ships too (`only` keeps one kind, e.g. a rebuild after envoy). */
+function freeRoads(ctx: ApplyCtx, id: PlayerId, count: number, only?: 'road' | 'ship'): void {
+  const { state } = ctx;
+  const sup = player(state, id).supply;
+  const have = only === 'road' ? (sup.road ?? 0) : only === 'ship' ? (sup.ship ?? 0) : (sup.road ?? 0) + (sup.ship ?? 0);
+  const left = Math.min(count, have);
+  if (left <= 0 || !freeRouteAvailable(ctx, id, only)) return;
+  setPhase(ctx, {
+    k: 'freeRoads', left, ...(state.phase.k === 'paired' ? { actor: id } : {}), ...(only ? { only } : {}),
+  });
 }
 
 /** Simulate promoting the listed wardens in order (a promotion frees a piece of the old rank). */
@@ -173,9 +180,7 @@ export const CARDS: Record<string, CardDef> = {
   /** Two roads at no cost. */
   pavers: {
     check(ctx, a) {
-      const { state, graph } = ctx;
-      const can = (player(state, a.player).supply.road ?? 0) > 0 && legalRoadSpots(graph, state.pieces, a.player).length > 0;
-      return can ? null : err('NO_ROAD_SPOT', 'You have nowhere to build a road.');
+      return freeRouteAvailable(ctx, a.player) ? null : err('NO_ROAD_SPOT', 'You have nowhere to build a road.');
     },
     run: (ctx, a) => freeRoads(ctx, a.player, 2),
     options: () => NONE,
@@ -234,7 +239,9 @@ export const CARDS: Record<string, CardDef> = {
     check(ctx, a) {
       const { state, graph } = ctx;
       const vs = typeof a.hex === 'string' ? graph.hexVertices[a.hex] : undefined;
-      return vs && vs.some((v) => state.pieces.buildings[v]?.owner === a.player)
+      // The caravan stands on land (sea maps: never on a sea hex).
+      return vs && vs.some((v) => state.pieces.buildings[v]?.owner === a.player) && isLandHex(ctx, a.hex as string) &&
+        hexAllowsPiece(ctx, 'caravan', a.hex as string)
         ? null
         : err('BAD_HEX', 'The caravan goes on a hex next to one of your buildings.');
     },
@@ -247,7 +254,11 @@ export const CARDS: Record<string, CardDef> = {
     options(ctx, id) {
       const { state, graph } = ctx;
       return graph.hexes
-        .filter((h) => graph.hexVertices[h].some((v) => state.pieces.buildings[v]?.owner === id))
+        .filter(
+          (h) =>
+            graph.hexVertices[h].some((v) => state.pieces.buildings[v]?.owner === id) && isLandHex(ctx, h) &&
+            hexAllowsPiece(ctx, 'caravan', h),
+        )
         .map((hex) => ({ hex }));
     },
   },
@@ -280,23 +291,28 @@ export const CARDS: Record<string, CardDef> = {
   },
 
   // ---- council ---------------------------------------------------------------------------------
-  /** Remove an open road; if it was yours you may rebuild one road for free. */
+  /** Remove an open road (or ship); if it was yours you may rebuild one of the same kind for free. */
   envoy: {
     check: (ctx, a) =>
       typeof a.e === 'string' && isOpenRoad(ctx, a.e) ? null : err('BAD_EDGE', 'Choose an open road (one with a loose end).'),
     run(ctx, a) {
       const { state } = ctx;
       const e = a.e as EdgeId;
-      const owner = state.pieces.roads[e];
-      delete state.pieces.roads[e];
-      player(state, owner).supply.road += 1;
-      emitSh(ctx, { type: 'roadRemoved', player: a.player, owner, e });
+      const ship = !state.pieces.roads[e];
+      const owner = ship ? state.pieces.ships![e] : state.pieces.roads[e];
+      if (ship) delete state.pieces.ships![e];
+      else delete state.pieces.roads[e];
+      player(state, owner).supply[ship ? 'ship' : 'road'] += 1;
+      emitSh(ctx, { type: 'roadRemoved', player: a.player, owner, e, ship });
       updateLongestRoute(ctx);
-      if (owner === a.player && a.rebuild) freeRoads(ctx, a.player, 1);
+      // Seafaring combination (C&K rulebook): a removed road is rebuilt as a road, a ship as a ship
+      // (games without ships keep the plain free-road window).
+      if (owner === a.player && a.rebuild) freeRoads(ctx, a.player, 1, state.pieces.ships ? (ship ? 'ship' : 'road') : undefined);
     },
     options(ctx, id) {
       const out: Params[] = [];
-      for (const [e, owner] of Object.entries(ctx.state.pieces.roads)) {
+      const all = [...Object.entries(ctx.state.pieces.roads), ...Object.entries(ctx.state.pieces.ships ?? {})];
+      for (const [e, owner] of all) {
         if (!isOpenRoad(ctx, e)) continue;
         out.push({ e });
         if (owner === id) out.push({ e, rebuild: true });
@@ -334,7 +350,7 @@ export const CARDS: Record<string, CardDef> = {
     check(ctx, a) {
       const { state, graph } = ctx;
       const o = typeof a.v === 'string' ? occupants(state)[a.v] : undefined;
-      const onMyRoad = !!o && graph.vertexEdges[a.v as VertexId].some((e) => state.pieces.roads[e] === a.player);
+      const onMyRoad = !!o && graph.vertexEdges[a.v as VertexId].some((e) => ownRoute(state, e, a.player));
       return o && o.kind === 'warden' && o.owner !== a.player && onMyRoad
         ? null
         : err('BAD_TARGET', "Choose an opponent's warden on one of your roads.");
@@ -358,7 +374,8 @@ export const CARDS: Record<string, CardDef> = {
     check(ctx, a) {
       const { state, graph } = ctx;
       if (!sh(state).blockerActive) return err('NO_BLOCKER', 'The blocker is not on the board yet.');
-      return typeof a.hex === 'string' && graph.hexVertices[a.hex] && a.hex !== state.board.blocker
+      return typeof a.hex === 'string' && graph.hexVertices[a.hex] && a.hex !== state.board.blocker &&
+        blockerAllowed(ctx, a.hex)
         ? null
         : err('BAD_HEX', 'Move the blocker to a different hex.');
     },
@@ -370,7 +387,7 @@ export const CARDS: Record<string, CardDef> = {
       const owners = new Set(graph.hexVertices[hex].map((v) => state.pieces.buildings[v]?.owner));
       for (const o of others(ctx, a.player)) if (owners.has(o)) stealRandom(ctx, o, a.player);
     },
-    options: (ctx) => ctx.graph.hexes.map((hex) => ({ hex })),
+    options: (ctx) => ctx.graph.hexes.filter((hex) => blockerAllowed(ctx, hex)).map((hex) => ({ hex })),
   },
   /** Another player removes one of their wardens; you may place one of yours of at most that rank. */
   turncoat: {

@@ -257,16 +257,19 @@ export function doUpgrade(ctx: ApplyCtx, id: PlayerId, v: VertexId, item: string
 
 // ---- roads -------------------------------------------------------------------------------------
 
-/** A road is open when one of its ends touches none of its owner's other roads, buildings or wardens. */
+/** A road (or, on sea maps, a ship) is open when one of its ends touches none of its owner's other
+ *  pieces of the same kind, buildings or wardens (roads and ships join only at buildings). */
 export function isOpenRoad(ctx: Ctx, e: EdgeId): boolean {
   const { state, graph } = ctx;
-  const owner = state.pieces.roads[e];
-  if (!owner) return false;
+  const ships = state.pieces.ships ?? {};
+  const kind = state.pieces.roads[e] ? state.pieces.roads : ships[e] ? ships : null;
+  if (!kind) return false;
+  const owner = kind[e];
   const occ = occupants(state);
   return graph.edgeEnds[e].some(
     (v) =>
       state.pieces.buildings[v]?.owner !== owner &&
       occ[v]?.owner !== owner &&
-      !graph.vertexEdges[v].some((x) => x !== e && state.pieces.roads[x] === owner),
+      !graph.vertexEdges[v].some((x) => x !== e && kind[x] === owner),
   );
 }

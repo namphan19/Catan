@@ -2,7 +2,7 @@
 // the base config; the "you can pay this" marks only compare the viewer's hand with the
 // cost bag for display — whether a build is actually allowed still comes from getLegalActions.
 import { useState } from 'react';
-import { baseConfig, type PlayerView } from '@hexgame/engine';
+import { TL, baseConfig, type PlayerView } from '@hexgame/engine';
 import { useI18n, resKey, RESOURCE_ORDER } from '../i18n';
 import { playerColor } from '../ui/colors';
 import { ResourceIcon } from '../ui/ResourceIcon';
@@ -23,6 +23,7 @@ function readOpen(): boolean {
 
 const ROWS: Array<{ item: string; key: string; piece?: 'road' | 'settlement' | 'city' }> = [
   { item: 'road', key: 'side_costsRoad', piece: 'road' },
+  { item: 'ship', key: 'cost_ship' },
   { item: 'settlement', key: 'side_costsSettlement', piece: 'settlement' },
   { item: 'city', key: 'side_costsCity', piece: 'city' },
   { item: 'card', key: 'side_costsCard' },
@@ -58,7 +59,10 @@ export function CostCard({ view }: { view: PlayerView }) {
         <>
           <ul className="cost-rows">
             {ROWS.map(({ item, key, piece }) => {
-              const bag = baseConfig.costs[item] as Record<string, number> | undefined;
+              // Cogs exist only with the tidelands expansion (cost from its config).
+              const bag = (item === 'ship' ? (view.ext?.tidelands ? TL.costs.ship : undefined) : baseConfig.costs[item]) as
+                | Record<string, number>
+                | undefined;
               if (!bag) return null;
               if (item === 'card' && view.ext?.strongholds) return null; // no base card deck there
               const can = !!hand && Object.entries(bag).every(([r, n]) => (hand[r] ?? 0) >= n);
@@ -70,7 +74,7 @@ export function CostCard({ view }: { view: PlayerView }) {
               return (
                 <li key={item} className={can ? 'cost-row can' : 'cost-row'} title={label} aria-label={label}>
                   <span className="cost-icon">
-                    {piece ? <PieceIcon kind={piece} color={color} size={18} /> : <UiIcon name="card" size={18} />}
+                    {piece ? <PieceIcon kind={piece} color={color} size={18} /> : item === 'ship' ? <span style={{ color }}>⛵</span> : <UiIcon name="card" size={18} />}
                   </span>
                   <span className="cost-name">
                     {t(key)}

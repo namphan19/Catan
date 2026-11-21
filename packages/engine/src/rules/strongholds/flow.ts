@@ -27,7 +27,8 @@ export function settle(ctx: ApplyCtx): void {
     if (s.pending.length) {
       const head = s.pending[0];
       const cur = state.phase;
-      if (cur.k !== 'ext') s.resume = cur;
+      // Another ruleset's window (e.g. a resource choice) is resumed after our choices like any phase.
+      if (cur.k !== 'ext' || cur.id !== SH_ID) s.resume = cur;
       const same =
         cur.k === 'ext' && cur.actors?.[0] === head.player && (cur.data as { kind?: string }).kind === head.kind;
       state.phase = { k: 'ext', id: SH_ID, data: { kind: head.kind }, actors: [head.player] };
@@ -40,11 +41,11 @@ export function settle(ctx: ApplyCtx): void {
     if (s.productionDue) {
       s.productionDue = false;
       s.resume = null;
-      if (state.phase.k === 'ext') state.phase = { k: 'preRoll' };
+      if (state.phase.k === 'ext' && state.phase.id === SH_ID) state.phase = { k: 'preRoll' };
       runProduction(ctx);
       continue; // production may have queued new choices
     }
-    if (state.phase.k === 'ext') {
+    if (state.phase.k === 'ext' && state.phase.id === SH_ID) {
       const back = s.resume ?? { k: 'main' };
       s.resume = null;
       setPhase(ctx, back);
@@ -59,8 +60,10 @@ function runProduction(ctx: ApplyCtx): void {
   const { state, rules } = ctx;
   const { sum, gains } = resolveRoll(ctx);
   if (sum === rules.config.blockerNumber) return;
+  // Production still to be chosen (e.g. a resource of choice from another ruleset) counts as received.
+  const later = rules.call('pendingGains', ctx, {});
   for (const id of turnOrderFrom(state, state.turn.current))
-    if (levelOf(state, id, 'learning') >= SH.perkLevel && bagTotal(gains[id] ?? {}) === 0)
+    if (levelOf(state, id, 'learning') >= SH.perkLevel && bagTotal(gains[id] ?? {}) === 0 && !(later[id] > 0))
       sh(state).pending.push({ kind: 'provision', player: id });
 }
 

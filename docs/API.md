@@ -6,7 +6,7 @@ no `Date`/`Math.random`. State is plain JSON. Types: `packages/engine/src/types.
 ## Functions
 | Function | Purpose |
 |---|---|
-| `createGame({ seed, playerCount, layout?, rulesets?, vpToWin?, extraBuild? })` | New game. 3-6 players (ids `p1..pN`); 5-6 default to the large layout and the extra build phase. `rulesets` defaults to `['base']`. |
+| `createGame({ seed, playerCount, layout?, rulesets?, vpToWin?, extraBuild?, options? })` | New game. 3-6 players (ids `p1..pN`); 5-6 default to the large layout and paired turns. `rulesets` defaults to `['base']`. `options` are ruleset options kept in `init.options` (e.g. `{ scenario: 'firstLandfall' }` for tidelands). |
 | `validateAction(state, action)` | `{ ok: true }` or `{ ok: false, code, message }` (codes like `NOT_YOUR_TURN`, `WRONG_PHASE`, `DISTANCE_RULE`, `CANNOT_AFFORD`). |
 | `applyAction(state, action)` | `{ state, events }`; never mutates the input; throws `IllegalActionError(code)` if invalid; appends `{ seq, action, roll?, gains? }` to `state.log` (`roll` = dice of a roll action, `gains` = public production it caused; both shown in player views). |
 | `getLegalActions(state, playerId)` | Concrete legal actions. Open-ended spaces are sampled: offers = all 1-for-1 offers, discards = up to 5000 combinations (validateAction is the authority). |
@@ -55,3 +55,28 @@ view exposes it (the view drops `ext` entirely today).
   `sh:promote{v}` `sh:activate{v}` `sh:moveWarden{from,to}` `sh:displace{from,to}` `sh:chase{v}`
   `sh:play{card,...}` `sh:bazaarOffer{target,resource}` `sh:discardCard{card}`
   `sh:resolve{kind,...}` (answers the head of `view.ext.strongholds.pending`).
+
+## Extension points added for the sea expansion (Tidelands)
+- Layouts: `registerLayout(id, axials)` adds a custom hex layout (scenario maps); `LayoutId` is any
+  registered id; `getGraph(layout)` works for them. `Hex.region` labels map areas (islands).
+- `state.pieces.ships`: route pieces on edges. An edge holds a road or a ship. Base geometry honours them:
+  `legalSettlementSpots` / settlement connection accept ships, `longestRoute` joins roads and ships only at
+  an own building, `shipConnects` connects to own ships / buildings (never roads alone).
+- `GameInit.options` (ruleset options) and `GameInit.setupRounds` (default 2; extra rounds go forward;
+  the last round's settlement yields starting resources).
+- `Ruleset.prepare(init, config, given)` (layout / VP target from options before the board exists) and
+  `Ruleset.makeBoard(rng, init, config)` (scenario boards instead of the random base layout).
+- Hooks: `landHex`, `landVertex` (what is land), `blockerAllowed(hex)`, `hexAllowsPiece(piece, hex)`,
+  `freeRouteAvailable(player, only?)`
+  (free road windows may place other route pieces), `pendingGains` (production still to be chosen),
+  `awardActive(award)` (switch off longest route / largest force). Base helpers: `isLandHex`,
+  `isLandVertex`, `blockerAllowed`, `hexAllowsPiece`, `freeRouteAvailable`, `lastSetupRound`, `advanceAfterRoute`.
+  Phase `freeRoads` may carry `only: 'road' | 'ship'`. An action wrapper may return undefined when the action
+  it wraps is not in the game (e.g. tidelands wraps `sh:chase` only when strongholds is played).
+- Strongholds resumes another ruleset's `ext` window after its own pending choices.
+- Ruleset `tidelands` (`createGame({ rulesets: ['base', 'tidelands'], options: { scenario } })`, with
+  strongholds `['base', 'strongholds', 'tidelands']`): rules in docs/RULES_TIDELANDS.md. New actions:
+  `tl:buildShip{e}` `tl:moveShip{from,to}` `tl:moveCorsair{hex}` `tl:gold{bag}` `tl:placeHarbor{kind,e}`
+  `tl:stealSilk{target}` `tl:claimWonder{wonder}` `tl:buildWonder` `tl:arm`, and with strongholds
+  `sh:chase{v, piece: 'corsair'}`. View: `PlayerView.ext.tidelands`
+  (mist stacks and reserved reward cards are hidden).

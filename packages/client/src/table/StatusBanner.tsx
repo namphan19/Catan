@@ -8,7 +8,7 @@ import { playerColor, playerEmblem } from '../ui/colors';
 import { Emblem } from '../ui/Emblem';
 import type { TFn, NameFn } from './describe';
 
-type PendingPick = 'placeSettlement' | 'placeRoad' | 'buildCity' | 'moveBlocker' | null;
+type PendingPick = 'placeSettlement' | 'placeRoad' | 'buildCity' | 'moveBlocker' | 'tl:buildShip' | null;
 
 /** The player the table is waiting for right now (read from the phase, never computed). */
 export function actorOf(view: PlayerView): PlayerId | null {
@@ -84,6 +84,9 @@ export function statusOf(view: PlayerView, legal: Action[], pending: PendingPick
   if (pending === 'placeSettlement') return mine(t('status_pickSettlement'), true);
   if (pending === 'placeRoad') return mine(t('status_pickRoad'), true);
   if (pending === 'buildCity') return mine(t('status_pickCity'), true);
+  if (pending === 'tl:buildShip') return mine(t('status_pickShip'), true);
+  if (has('tl:gold')) return mine(t('tl_goldHint'));
+  if (has('tl:placeHarbor') && ph.k === 'ext') return mine(t('tl_harborWindow'));
   if (has('confirmTrade')) return mine(t('status_confirm'));
   if (has('cancelTrade')) {
     const tr = view.trade;

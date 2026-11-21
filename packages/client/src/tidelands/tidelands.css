@@ -1,0 +1,47 @@
+/* Tidelands expansion UI. Uses the tokens of ui/tokens.css (parchment, ink, gold, danger). */
+.tl-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  background: var(--parchment-dark);
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  font-size: 13px;
+  flex: 0 1 auto;
+  max-height: 60%;
+  min-height: 120px;
+  overflow-y: auto;
+}
+.tl-head {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0.03em;
+}
+.tl-desc,
+.tl-goal,
+.tl-info {
+  margin: 0;
+  line-height: 1.3;
+}
+.tl-goal { font-weight: 700; }
+.tl-muted { color: var(--ink-soft); font-size: 12px; align-self: center; }
+.tl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.tl-actions .btn { padding: 3px 8px; font-size: 13px; }
+.tl-players { border-collapse: collapse; width: 100%; }
+.tl-players th { text-align: left; white-space: nowrap; padding: 2px 6px 2px 0; font-size: 12px; }
+.tl-players td { padding: 2px 0; font-size: 12px; }
+.tl-wonders { margin: 0; padding-left: 16px; font-size: 12px; }
+.tl-wonders li { display: flow-root; margin-bottom: 4px; }
+.tl-wonders li:has(.tl-wonder-art) { list-style: none; margin-left: -16px; }
+.tl-wonder-art { float: left; width: 30px; height: 42px; margin: 0 6px 2px 0; border-radius: 3px; }
+/* Placeholder marks on terrains without painted tiles yet (gold mine, mist, village). */
+.terrain-glyph {
+  fill: rgba(43, 36, 32, 0.75);
+  font-weight: 700;
+}
+.terrain-mist { stroke-dasharray: 6 4; }

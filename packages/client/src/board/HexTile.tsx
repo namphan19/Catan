@@ -13,7 +13,16 @@ const SQRT3 = Math.sqrt(3);
 /** Tile scale inside its cell: 1 = edge to edge; 0.94 leaves a ~6 px seam at SIZE 56. */
 export const TILE_GAP = 0.94;
 
+/** Placeholder marks drawn on terrains that have no painted tile yet (tidelands). */
+const PLACEHOLDER_GLYPH: Record<string, string> = { goldmine: '◆', mist: '?', village: '⌂' };
+
 export function HexTile({ hex, producing }: { hex: Hex; producing?: boolean }) {
+  // Sea hexes inside a scenario map look like the sea frame around the island.
+  if (hex.terrain === 'sea') return <SeaTile q={hex.q} r={hex.r} />;
+  return <LandTile hex={hex} producing={producing} />;
+}
+
+function LandTile({ hex, producing }: { hex: Hex; producing?: boolean }) {
   const { t } = useI18n();
   const painted = art2dUrl('terrain', hex.terrain);
   const path = useAssets([painted])[painted] ? painted : null;
@@ -47,14 +56,29 @@ export function HexTile({ hex, producing }: { hex: Hex; producing?: boolean }) {
             </g>
           </>
         ) : (
-          <polygon
-            points={hexPoints(hex.q, hex.r)}
-            fill={TERRAIN_COLORS[hex.terrain] ?? 'var(--waste)'}
-            stroke="var(--ink)"
-            strokeWidth={2}
-          >
-            <title>{t(terrainKey(hex.terrain))}</title>
-          </polygon>
+          <>
+            <polygon
+              points={hexPoints(hex.q, hex.r)}
+              fill={TERRAIN_COLORS[hex.terrain] ?? 'var(--waste)'}
+              stroke="var(--ink)"
+              strokeWidth={2}
+              className={`terrain-${hex.terrain}`}
+            >
+              <title>{t(terrainKey(hex.terrain))}</title>
+            </polygon>
+            {PLACEHOLDER_GLYPH[hex.terrain] && (
+              <text
+                x={c.x}
+                y={c.y + (hex.token != null ? -SIZE * 0.42 : SIZE * 0.14)}
+                className="terrain-glyph"
+                textAnchor="middle"
+                fontSize={SIZE * (hex.terrain === 'mist' ? 0.8 : 0.42)}
+                pointerEvents="none"
+              >
+                {PLACEHOLDER_GLYPH[hex.terrain]}
+              </text>
+            )}
+          </>
         )}
         {producing && <polygon className="hex-produced" points={hexPoints(hex.q, hex.r)} />}
       </g>

@@ -3,10 +3,9 @@
 // hidden). In the paired phase (5-6 players) player 2 may play one card (5-6 p.3).
 import type { Action, Resume } from '../../types';
 import type { ActionDef, Ctx } from '../../ruleset/types';
-import { legalRoadSpots } from '../../board/graph';
 import { bagAdd, bagSub, bagTotal } from '../../bag';
 import { canAfford, pay } from './build';
-import { cost, err, expect, player, resumePhase, setPhase, updateLargestForce } from './helpers';
+import { cost, err, expect, freeRouteAvailable, player, resumePhase, setPhase, updateLargestForce } from './helpers';
 
 type A<T extends string> = Extract<Action, { t: T }>;
 
@@ -54,8 +53,7 @@ export const playCard: ActionDef = {
       return err('WRONG_PHASE', 'Only a guard may be played before rolling.');
     const rs = rules.config.resources;
     if (a.card === 'freeRoads') {
-      if (p.supply.road <= 0 || legalRoadSpots(graph, state.pieces, a.player).length === 0)
-        return err('NO_ROAD_SPOT', 'You have nowhere to build a road.');
+      if (!freeRouteAvailable(ctx, a.player)) return err('NO_ROAD_SPOT', 'You have nowhere to build a road.');
     }
     if (a.card === 'harvest') {
       // D19: with 0 cards in the bank harvest cannot be played (the card is not wasted).
@@ -98,9 +96,10 @@ export const playCard: ActionDef = {
       return;
     }
     if (a.card === 'freeRoads') {
-      const left = Math.min(rules.config.freeRoadsCount, p.supply.road);
+      // Ships (an extension piece) also count as free road-like pieces.
+      const left = Math.min(rules.config.freeRoadsCount, p.supply.road + (p.supply.ship ?? 0));
       ctx.emit({ e: 'cardPlayed', player: a.player, card: a.card });
-      if (left > 0 && legalRoadSpots(graph, state.pieces, a.player).length) {
+      if (left > 0 && freeRouteAvailable(ctx, a.player)) {
         const inPaired = state.phase.k === 'paired';
         setPhase(
           ctx,

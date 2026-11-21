@@ -2,6 +2,9 @@
 export const vi: Record<string, string> = {
   appTitle: 'Boschtan',
   appSubtitle: 'Trò chơi hex — dựng làng, thương lượng, mở rộng',
+  menu: 'Menu',
+  sheet_open: 'Bảng & nhật ký',
+  sheet_close: 'Đóng',
   langToggle: 'Tiếng Anh',
 
   // Home screen

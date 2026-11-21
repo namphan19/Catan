@@ -72,6 +72,16 @@ export function Lobby({ room, onReady, onStart, onLeave, onKick, onAddBot, onLan
       </Panel>
 
       <Panel title={t('lobby_seats', { n: room.seats.length, m: room.playerCount })} className="home-panel">
+        {(room.options?.expansion || room.options?.tidelands) && (
+          <p className="lobby-exp" data-testid="lobby-expansions">
+            {[
+              room.options.expansion ? `${t('exp_label')}: ${t('sh_title')}` : null,
+              room.options.tidelands ? `${t('tl_name')}: ${t(`sc_${room.options.tidelands}`)}` : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
+        )}
         <ul className="lobby-seats">
           {Array.from({ length: room.playerCount }, (_, i) => {
             const seatId = `p${i + 1}`;

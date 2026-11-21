@@ -3,9 +3,9 @@
 import type { Page, ConsoleMessage, Locator } from '@playwright/test';
 import * as path from 'path';
 
-/** Repo-root docs/qa/screenshots (tablet shots go in a "tablet" subfolder). */
+/** Repo-root docs/qa/screenshots (tablet and mobile shots go in a subfolder of that name). */
 export function shotPath(name: string, project: string): string {
-  const rel = project === 'tablet' ? path.join('tablet', name) : name;
+  const rel = project === 'tablet' || project === 'mobile' ? path.join(project, name) : name;
   return path.resolve(__dirname, '..', '..', '..', 'docs', 'qa', 'screenshots', rel);
 }
 

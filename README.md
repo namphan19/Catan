@@ -12,6 +12,7 @@ pnpm install
 pnpm test                 # all unit tests (engine)
 pnpm typecheck            # every package
 pnpm fuzz                 # 50 random full games with invariant checks (~6 min); pnpm fuzz 5 = quick
+pnpm fuzz 12 0 tidelands  # sea expansion, all scenarios (or tidelands:<scenario>, both = with strongholds)
 pnpm dev                  # hot-seat dev client at http://localhost:5173
 pnpm --filter @hexgame/client build
 ```
@@ -26,6 +27,8 @@ packages/engine/            pure rules engine (no UI, no network, no Date/Math.r
   src/board/                axial coordinates, layouts, generation, graph helpers, longest route
   src/ruleset/              Ruleset hook interface + composition pipeline
   src/rules/base/           base ruleset: config, build, turn, trade, cards, hooks
+  src/rules/strongholds/    expansion "Strongholds" (docs/RULES_STRONGHOLDS.md)
+  src/rules/tidelands/      expansion "Tidelands": sea maps, cogs, corsair, 9 scenarios (docs/RULES_TIDELANDS.md)
   test/                     vitest: board, rules scenarios, engine (purity, replay, redaction)
   fuzz/randomGame.ts        random-game fuzzer with invariants
 packages/client/            React + Vite hot-seat dev client (SVG board, legal-action buttons, log)

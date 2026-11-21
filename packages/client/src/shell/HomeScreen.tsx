@@ -1,6 +1,7 @@
 // Home screen: a hand-drawn chart on the guild-hall desk. New hot-seat game, the old
 // logbook (load a saved game) and the online gate all live on one parchment sheet.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { SCENARIOS, SCENARIO_IDS } from '@hexgame/engine';
 import { useI18n } from '../i18n';
 import { Button } from '../ui/Button';
 import { Emblem } from '../ui/Emblem';
@@ -12,7 +13,7 @@ type SeatKind = 'human' | BotLevel;
 
 export interface HomeScreenProps {
   /** `bots[i]` is the bot level of seat i, or null for a human seat. */
-  onNew: (seed: string, names: string[], expansion: boolean, bots: (BotLevel | null)[]) => void;
+  onNew: (seed: string, names: string[], setup: GameSetup, bots: (BotLevel | null)[]) => void;
   onLoad: (text: string) => void;
   onOnline: (fresh?: boolean) => void;
   onLangToggle: () => void;
@@ -103,12 +104,40 @@ function ScrollIcon() {
   );
 }
 
+/** Engine rulesets chosen on the home screens. */
+export interface GameSetup {
+  strongholds: boolean;
+  /** Tidelands scenario id, or null when the sea expansion is off. */
+  tidelands: string | null;
+}
+
+/** Tidelands scenario picker; scenarios that do not combine with strongholds are disabled then. */
+export function ScenarioSelect({ id, value, onChange, strongholds }: { id?: string; value: string; onChange: (v: string) => void; strongholds: boolean }) {
+  const { t } = useI18n();
+  useEffect(() => {
+    if (value && strongholds && !SCENARIOS[value]?.strongholds) onChange('');
+  }, [value, strongholds, onChange]);
+  return (
+    <select id={id} value={value} onChange={(e) => onChange(e.target.value)} data-testid="scenario-select">
+      <option value="">{t('tl_off')}</option>
+      {SCENARIO_IDS.map((sc) => (
+        <option key={sc} value={sc} disabled={strongholds && !SCENARIOS[sc].strongholds} title={t(`sc_${sc}_desc`)}>
+          {t(`sc_${sc}`)}
+          {strongholds && !SCENARIOS[sc].strongholds ? ` — ${t('tl_combineNo')}` : ''}
+          {strongholds && SCENARIOS[sc].strongholdsFit ? ` — ${t(SCENARIOS[sc].strongholdsFit === 'good' ? 'tl_fitGood' : 'tl_fitHarder')}` : ''}
+        </option>
+      ))}
+    </select>
+  );
+}
+
 export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: HomeScreenProps) {
   const { t } = useI18n();
   const [count, setCount] = useState(3);
   const [names, setNames] = useState<string[]>(['', '', '', '', '', '']);
   const [seed, setSeed] = useState('boschtan');
   const [expansion, setExpansion] = useState(false);
+  const [scenario, setScenario] = useState('');
   const [logText, setLogText] = useState('');
   const [kinds, setKinds] = useState<SeatKind[]>(['human', 'human', 'human', 'human', 'human', 'human']);
   const seats = kinds.slice(0, count);
@@ -197,7 +226,7 @@ export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: Hom
                     if (k !== 'human') return `🤖 ${t('bot_name', { n: i + 1, level: t(`bot_${k}`) })}`;
                     return n.trim() || t('player', { n: i + 1 });
                   }),
-                  expansion,
+                  { strongholds: expansion, tidelands: scenario || null },
                   seats.map((k) => (k === 'human' ? null : k)),
                 );
               }}
@@ -226,6 +255,13 @@ export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: Hom
                   />
                   <span>{t('exp_enable')}</span>
                 </label>
+              </div>
+
+              <div className="ledger-field">
+                <label htmlFor="home-scenario">{t('tl_scenario')}</label>
+                <span className="select-wrap">
+                  <ScenarioSelect id="home-scenario" value={scenario} onChange={setScenario} strongholds={expansion} />
+                </span>
               </div>
 
               <div className="ledger-field">

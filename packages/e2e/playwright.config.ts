@@ -19,15 +19,29 @@ export default defineConfig({
     trace: 'retain-on-failure',
     ...devices['Desktop Chrome'],
     viewport: { width: 1440, height: 900 },
+    // Machines whose preinstalled Chromium does not match this Playwright version can point at it.
+    ...(process.env.PW_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH } } : {}),
   },
   projects: [
     {
       name: 'desktop',
+      testIgnore: /mobile\.spec\.ts/,
       use: { viewport: { width: 1440, height: 900 } },
     },
     {
       name: 'tablet',
+      testIgnore: /mobile\.spec\.ts/,
       use: { viewport: { width: 1024, height: 768 } },
+    },
+    // Phone layout (table/mobile.css): touch, 390 x 844 portrait; the spec turns it to landscape
+    // itself. Only mobile.spec.ts runs here (the desktop specs assume the desktop table).
+    {
+      name: 'mobile',
+      testMatch: /mobile\.spec\.ts/,
+      use: {
+        ...devices['Pixel 7'],
+        viewport: { width: 390, height: 844 },
+      },
     },
   ],
   webServer: {
