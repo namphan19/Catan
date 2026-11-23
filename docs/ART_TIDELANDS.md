@@ -22,8 +22,10 @@ once it has loaded and keeps the simple vector placeholder as the fallback, so a
 | `terrain/goldmine.webp` | t-goldmine | terrain | ochre rocky hills, mine entrance, gold veins | gold hexes (drop-in) |
 | `terrain/mist.webp` | t-mist | terrain | sea veiled by drifting mist | undiscovered hexes (drop-in) |
 | `terrain/village.webp` | t-village | terrain | sandy islet, three huts, drying silk, jetty | weavers' villages (drop-in) |
-| `piece/cog.webp` | p-cog | piece, tinted | plain hull block, one mast, square sail | cogs (SeaExtras) |
-| `piece/warship.webp` | p-warship | piece, tinted | the cog with a small crenellated block on the stern | warships, Corsair Coves |
+| `piece/cog-top.webp` | p-cog-top | piecetop, tinted | the cog seen from straight above: almond hull, sail block across it, bow left | cogs on the board (SeaExtras), rotated along the edge like a road |
+| `piece/warship-top.webp` | p-warship-top | piecetop, tinted | the top-down cog with a crenellated block on the stern | warships on the board, Corsair Coves |
+| `piece/cog.webp` | p-cog | piece, tinted | plain hull block, one mast, square sail (three-quarter view) | cost card icon (a rotated side view looked skewed on the board - PO 2026-11-23) |
+| `piece/warship.webp` | p-warship | piece, tinted | the cog with a small crenellated block on the stern | not used on the board any more (kept) |
 | `piece/corsair.webp` | p-corsair | piece, own colours | black hull, crimson sail | corsair and corsair fleet (fleet adds a ☠ token) |
 | `piece/fort.webp` | p-fort | piece, own colours | squat crenellated round block on a rock | corsair forts (+ lair count token) |
 | `piece/landing.webp` | p-landing | piece, tinted | pole on a disc base with a notched pennant | landing flags |
@@ -38,4 +40,3 @@ once it has loaded and keeps the simple vector placeholder as the fallback, so a
 | Suggested file | Placeholder now | Content |
 |---|---|---|
 | `ui/scenario-<id>.webp` × 9 | scenario name + one-line text | small storybook vignette per scenario for the picker |
-| cog icon for the cost card | ⛵ emoji | could reuse `piece/cog.webp` |

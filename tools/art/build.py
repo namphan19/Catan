@@ -18,7 +18,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SRC = os.path.join(ROOT, 'data', 'raw', 'tripo', 'out')
 DST = os.path.join(ROOT, 'packages', 'client', 'public', 'assets', 'art2d')
-TINTED = {'settlement', 'city', 'warden', 'caravan', 'cog', 'warship', 'landing'}  # player-coloured at runtime
+TINTED = {'settlement', 'city', 'warden', 'caravan', 'cog', 'warship', 'cog-top', 'warship-top', 'landing'}  # player-coloured at runtime
 # Mirrored so every building is seen from the same side as the settlement (long face left,
 # end face right) - PO: pieces looked rotated in two directions.
 MIRROR = {'city'}

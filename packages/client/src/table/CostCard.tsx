@@ -21,15 +21,19 @@ function readOpen(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(min-width: 1181px)').matches;
 }
 
-const ROWS: Array<{ item: string; key: string; piece?: 'road' | 'settlement' | 'city' }> = [
+const ROWS: Array<{ item: string; key: string; piece?: 'road' | 'settlement' | 'city' | 'ship' }> = [
   { item: 'road', key: 'side_costsRoad', piece: 'road' },
-  { item: 'ship', key: 'cost_ship' },
+  { item: 'ship', key: 'cost_ship', piece: 'ship' },
   { item: 'settlement', key: 'side_costsSettlement', piece: 'settlement' },
   { item: 'city', key: 'side_costsCity', piece: 'city' },
   { item: 'card', key: 'side_costsCard' },
 ];
 
-export function CostCard({ view }: { view: PlayerView }) {
+/**
+ * `picking`: a board pick is armed (spots are lit). The card folds for that time so it never covers a
+ * lit spot (sea maps reach into the bottom-right corner on laptop screens); the saved choice is kept.
+ */
+export function CostCard({ view, picking = false }: { view: PlayerView; picking?: boolean }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(readOpen);
   const me = view.players.find((p) => p.id === view.viewer);
@@ -37,6 +41,7 @@ export function CostCard({ view }: { view: PlayerView }) {
   const color = view.viewer ? playerColor(view.viewer) : 'var(--ink-soft)';
 
   const toggle = () => {
+    if (picking) return; // folded only for the pick; the saved choice comes back after it
     const next = !open;
     setOpen(next);
     try {
@@ -46,16 +51,17 @@ export function CostCard({ view }: { view: PlayerView }) {
     }
   };
 
+  const shown = open && !picking;
   return (
-    <section className={open ? 'cost-card' : 'cost-card collapsed'} aria-label={t('side_costs')}>
-      <button type="button" className="cost-card-head" aria-expanded={open} onClick={toggle} title={t('cost_toggle')}>
+    <section className={shown ? 'cost-card' : 'cost-card collapsed'} aria-label={t('side_costs')}>
+      <button type="button" className="cost-card-head" aria-expanded={shown} onClick={toggle} title={t('cost_toggle')}>
         <UiIcon name="build" size={16} />
         <span>{t('side_costs')}</span>
         <span className="cost-card-caret" aria-hidden="true">
-          {open ? '▾' : '▸'}
+          {shown ? '▾' : '▸'}
         </span>
       </button>
-      {open && (
+      {shown && (
         <>
           <ul className="cost-rows">
             {ROWS.map(({ item, key, piece }) => {
@@ -74,7 +80,7 @@ export function CostCard({ view }: { view: PlayerView }) {
               return (
                 <li key={item} className={can ? 'cost-row can' : 'cost-row'} title={label} aria-label={label}>
                   <span className="cost-icon">
-                    {piece ? <PieceIcon kind={piece} color={color} size={18} /> : item === 'ship' ? <span style={{ color }}>⛵</span> : <UiIcon name="card" size={18} />}
+                    {piece ? <PieceIcon kind={piece} color={color} size={18} /> : <UiIcon name="card" size={18} />}
                   </span>
                   <span className="cost-name">
                     {t(key)}

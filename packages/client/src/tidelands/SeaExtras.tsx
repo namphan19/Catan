@@ -19,23 +19,32 @@ function useIcon(name: string | undefined): string | null {
   return ok ? url : null;
 }
 
-/** A cog: hull + sail, rotated along its edge (placeholder art). */
+/**
+ * A cog lying on its edge like a road (PO request): a top-down piece (art2d/piece/cog-top, seen from
+ * straight above, bow to the left) rotated to the edge and centred on it, so it sits in the seam
+ * without the skew a rotated side-view sprite had. The angle is folded into (-90, 90].
+ */
 function Cog({ graph, e, owner, war }: { graph: Graph; e: EdgeId; owner: PlayerId; war?: boolean }) {
   const g = edgeGeom(graph, e);
   const s = SIZE * 0.36;
-  const angle = ((g.angle % 180) + 180) % 180; // keep the sail upright-ish
+  const a = ((g.angle % 180) + 180) % 180;
+  const angle = a > 90 ? a - 180 : a;
   const color = playerColor(owner);
-  const painted = useSprite(war ? 'warship' : 'cog');
+  const name = war ? 'warship-top' : 'cog-top';
+  const painted = useSprite(name);
   if (painted) {
-    const w = SIZE * 0.66;
+    const w = g.len * 0.86; // hull length along the edge; the sprite keeps its aspect inside the box
+    // Shadow on the outer group so it keeps falling downwards whatever the hull's rotation.
     return (
       <g className={`tl-cog${war ? ' tl-warship' : ''}`} transform={`translate(${g.mid.x} ${g.mid.y})`} data-owner={owner} pointerEvents="none" style={SHADOW}>
-        <Sprite name={war ? 'warship' : 'cog'} x={-w / 2} y={-w * 0.62} width={w} height={w} owner={owner} />
+        <g transform={`rotate(${angle})`}>
+          <Sprite name={name} x={-w / 2} y={-w / 2} width={w} height={w} owner={owner} />
+        </g>
       </g>
     );
   }
   return (
-    <g className={`tl-cog${war ? ' tl-warship' : ''}`} transform={`translate(${g.mid.x} ${g.mid.y}) rotate(${angle > 90 ? angle - 180 : angle})`} data-owner={owner} pointerEvents="none">
+    <g className={`tl-cog${war ? ' tl-warship' : ''}`} transform={`translate(${g.mid.x} ${g.mid.y}) rotate(${angle})`} data-owner={owner} pointerEvents="none">
       <path
         d={`M ${-s} ${-s * 0.05} L ${s} ${-s * 0.05} L ${s * 0.65} ${s * 0.42} L ${-s * 0.65} ${s * 0.42} Z`}
         fill={war ? '#2b2420' : color}

@@ -43,10 +43,20 @@ export function UiIcon({ name, size = 18 }: { name: UiIconName; size?: number })
  * the same multiply filter (art2d/piece), and the road as the board's flat bar. Falls back to
  * the vector piece art while the sprite is loading or missing.
  */
-export function PieceIcon({ kind, color, size = 18 }: { kind: 'road' | 'settlement' | 'city'; color: string; size?: number }) {
+export function PieceIcon({ kind, color, size = 18 }: { kind: 'road' | 'settlement' | 'city' | 'ship'; color: string; size?: number }) {
   const fid = `pi-tint-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
-  const sprite = art2dUrl('piece', kind === 'road' ? 'settlement' : kind);
+  const sprite = art2dUrl('piece', kind === 'road' ? 'settlement' : kind === 'ship' ? 'cog' : kind);
   const loaded = useAssets([sprite])[sprite];
+  if (kind === 'ship' && !loaded) {
+    // Tidelands cog while the sprite loads (or is missing): the board's vector cog in miniature.
+    return (
+      <svg className="pieceicon" width={size} height={size} viewBox="-12 -14 24 24" style={{ color }} aria-hidden="true">
+        <path d="M -10 0 L 10 0 L 6.5 5 L -6.5 5 Z" fill="currentColor" stroke="#3B2F2F" strokeWidth={1.3} />
+        <line x1={0} y1={0} x2={0} y2={-12} stroke="#3B2F2F" strokeWidth={1.3} />
+        <path d="M 0 -11.5 L 7.5 -3 L 0 -3 Z" fill="#f4ead2" stroke="#3B2F2F" strokeWidth={1.1} />
+      </svg>
+    );
+  }
   if (kind === 'road') {
     // Same bar as board/Piece.tsx Road: player colour, ink outline, light top / dark bottom strip.
     const w = Math.round(size * 1.5);

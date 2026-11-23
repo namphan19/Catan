@@ -16,6 +16,7 @@ style() {
   case "$1" in
     terrain) echo "Seamless top-down orthographic view of a hand-painted tabletop miniature diorama. Soft warm afternoon light from the upper left, gentle ambient occlusion, gouache and watercolor texture, rich but slightly muted storybook palette. Bold, readable large shapes and one clearly dominant colour so it still reads when shown small. The scene fills the entire square frame edge to edge: no border, no frame, no hexagon outline, no text, no people, no UI." ;;
     piece) echo "Single minimalist wooden board game piece made of smooth plain geometric shapes with gently rounded edges: no surface details, no windows, no doors, no bricks, no tiles, no texture, no ornaments. Painted entirely in plain matte off-white, seen from a three-quarter view from above (about 40 degrees), centered, filling about 80 percent of the frame, isolated on a fully transparent background, soft studio light from the upper left, no ground, no cast shadow, no base plate, no text." ;;
+    piecetop) echo "Single minimalist wooden board game piece made of smooth plain geometric shapes with gently rounded edges: no surface details, no planks, no ropes, no texture, no ornaments. Painted entirely in plain matte off-white. Seen from directly above in a strict top-down orthographic view (90 degrees, looking straight down, no perspective, no tilt), its long axis exactly horizontal, centered, filling about 85 percent of the frame width, isolated on a fully transparent background, soft studio light from the upper left, no ground, no cast shadow, no base plate, no text." ;;
     piecec) echo "Single minimalist board game piece made of smooth plain geometric shapes with gently rounded edges: no small details, no texture, no ornaments, seen from a three-quarter view from above (about 40 degrees), centered, filling about 80 percent of the frame, isolated on a fully transparent background, soft studio light from the upper left, no ground, no cast shadow, no base plate, no text." ;;
     icon) echo "Single game icon object made of a few smooth plain chunky shapes with gently rounded edges, bold simple silhouette that stays readable at 20 pixels, strong clear colour, seen from a three-quarter view from above, centered, filling 90 percent of the frame, isolated on a fully transparent background, soft studio light from the upper left, no ground, no cast shadow, no text, no small details." ;;
     card) echo "Storybook gouache illustration for a board game card, warm soft light, rich but slightly muted palette, one clear central subject with bold readable silhouette that still reads when shown very small, simple soft background. Full bleed: no border, no frame, no card outline, no text, no letters, no numbers." ;;
@@ -25,7 +26,7 @@ style() {
 gen() {
   local name="$1" kind="$2" size="$3" prompt="$4"
   local bg=() full
-  [ "$kind" = piece ] || [ "$kind" = piecec ] || [ "$kind" = icon ] && bg=(-p background=transparent -p output_format=png)
+  [ "$kind" = piece ] || [ "$kind" = piecetop ] || [ "$kind" = piecec ] || [ "$kind" = icon ] && bg=(-p background=transparent -p output_format=png)
   full="$prompt $(style "$kind")"
   local run="data/raw/tripo/runs/$name"
   rm -rf "$run"; mkdir -p "$run"
