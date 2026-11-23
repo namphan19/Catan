@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "boschtan": {
+      "command": "node",
+      "args": ["node_modules/tsx/dist/cli.mjs", "packages/agent-mcp/src/main.ts"],
+      "env": {
+        "BOSCHTAN_URL": "https://boschtan-server.onrender.com",
+        "BOSCHTAN_NAME": "Claude"
+      }
+    }
+  }
+}

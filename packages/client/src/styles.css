@@ -656,6 +656,14 @@ button {
   animation: hl 1.2s ease-in-out infinite alternate;
 }
 
+.hl-chosen {
+  /* the piece the chooser already picked (e.g. the cog being moved): it stays put until the target is chosen */
+  fill: none;
+  stroke: var(--danger);
+  stroke-width: 4;
+  stroke-dasharray: 7 5;
+}
+
 @keyframes hl {
   from {
     opacity: 0.55;

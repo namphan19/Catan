@@ -1,7 +1,8 @@
 # Boschtan - notes for Claude
 
 Hex board game (base game + "Strongholds" and "Tidelands" (sea) expansions, playable together), pnpm monorepo: `packages/engine` (rules),
-`packages/server` (rooms, WebSocket), `packages/client` (React, 2D SVG board), `packages/e2e` (Playwright).
+`packages/server` (rooms, WebSocket), `packages/client` (React, 2D SVG board), `packages/e2e` (Playwright),
+`packages/agent-mcp` (MCP server `boschtan` in `.mcp.json`: an AI agent joins a room as a normal player; see its README).
 The user is the PO. The old agent-team workflow (opencode agents, dashboard, autoheal) and the 3D board
 are retired and kept only in `archive/` (see `archive/README.md`); do not restore them unless asked.
 

@@ -16,6 +16,7 @@ dist/
 coverage/
 data/rooms/
 data/server.log
+data/agent-mcp/
 test-results/
 playwright-report/
 

@@ -28,7 +28,8 @@ export function PassDeviceCover({ name, playerId, onReady }: PassDeviceCoverProp
     <div className="cover" role="dialog" aria-modal="true" aria-label={t('cover_title')}>
       <div className="cover-card" style={{ borderColor: playerColor(playerId) }}>
         <p className="cover-title">{t('cover_title')}</p>
-        <p className="cover-name" style={{ color: playerColor(playerId) }}>
+        {/* ink text: the emblem and the card border carry the seat colour (ivory p3 is unreadable on parchment) */}
+        <p className="cover-name">
           <Emblem id={playerEmblem(playerId)} size={40} color={playerColor(playerId)} />
           {name}
         </p>

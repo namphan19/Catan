@@ -334,6 +334,10 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
         else if (v.startsWith('e:')) picks.edges.add(v);
         else picks.hexes.add(v);
       }
+      // A moving piece settled earlier (picked, or the only one that can move): mark where it stands now.
+      const from = choice?.cands.map((a) => (a as { from?: unknown }).from);
+      if (from?.length && typeof from[0] === 'string' && /^[ve]:/.test(from[0]) && from.every((f) => f === from[0]))
+        picks.chosen = new Set([from[0]]);
       return picks;
     }
     if (!pending) return EMPTY_HIGHLIGHTS;
@@ -379,6 +383,16 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
       : null;
 
   const winner = view.winner ? view.players.find((p) => p.id === view.winner) : undefined;
+  // Why the game ended: VP by default; Great Works can end on a finished wonder, Silk on empty villages,
+  // both below the VP target, so "reached 6 victory points" would read like a bug.
+  const winVP = winner?.vp ?? winner?.publicVP ?? 0;
+  const winWonder = view.winner && tl?.works ? Object.keys(tl.works.claims).find((w) => tl.works!.claims[w] === view.winner) : undefined;
+  const winReason =
+    winWonder && (tl?.works?.levels[view.winner ?? ''] ?? 0) >= 4
+      ? t('tl_winWonder', { wonder: t(`wonder_${winWonder}`), n: winVP })
+      : tl?.silk && winVP < view.init.vpToWin
+        ? t('tl_winSilk', { n: winVP })
+        : t('winner_vp', { n: winVP });
 
   return (
     <div className="table" data-sheet={sheetOpen ? 'open' : undefined}>
@@ -440,7 +454,10 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
               📜 {t('sheet_open')}
             </button>
           )}
-          <CostCard view={view} />
+          <CostCard
+            view={view}
+            picking={highlights.vertices.size + highlights.edges.size + highlights.hexes.size > 0}
+          />
           {sh && <AdvanceHand view={view} sh={sh} legal={legal} onStart={startChoice} />}
           <ToastStack toasts={toasts} />
           {boardOverlay}
@@ -603,14 +620,13 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
         <div className="winner-overlay" role="status" aria-live="polite">
           <div className="winner-card">
             <p className="winner-title">
-              🏆 {t('winner_title', { name: name(view.winner) })}
+              {t('winner_title', { name: name(view.winner) })}
             </p>
             <p className="winner-vp">
               <Emblem id={playerEmblem(view.winner)} size={28} color={playerColor(view.winner)} />
-              <span style={{ color: playerColor(view.winner) }}>
-                {name(view.winner)}
-              </span>{' '}
-              {t('winner_vp', { n: winner?.vp ?? winner?.publicVP ?? 0 })}
+              {/* ink text: the emblem carries the seat colour (ivory p3 is unreadable on the card) */}
+              <span>{name(view.winner)}</span>{' '}
+              {winReason}
             </p>
             <div className="dialog-actions">
               {onExport && (

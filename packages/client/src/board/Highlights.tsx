@@ -7,6 +7,8 @@ export interface Highlights {
   vertices: Set<string>;
   edges: Set<string>;
   hexes: Set<string>;
+  /** Spots already settled by the staged chooser (e.g. the cog being moved): drawn as a dashed ring. */
+  chosen?: Set<string>;
 }
 
 export const EMPTY_HIGHLIGHTS: Highlights = { vertices: new Set(), edges: new Set(), hexes: new Set() };
@@ -27,6 +29,10 @@ export function HighlightsLayer({ hl, graph }: { hl: Highlights; graph: Graph })
         const p = vertexPos(v as VertexId);
         return <circle key={`v${v}`} cx={p.x} cy={p.y} r={SIZE * 0.22} className="hl-vertex" />;
       })}
+      {[...(hl.chosen ?? [])].map((id) => {
+        const p = id.startsWith('e:') ? edgeMid(graph, id as EdgeId) : id.startsWith('v:') ? vertexPos(id as VertexId) : null;
+        return p ? <circle key={`c${id}`} cx={p.x} cy={p.y} r={SIZE * 0.32} className="hl-chosen" /> : null;
+      })}
     </g>
   );
 }
@@ -36,6 +42,11 @@ function parseHexQ(id: string): number {
 }
 function parseHexR(id: string): number {
   return Number(id.slice(2).split(',')[1]);
+}
+
+function edgeMid(graph: Graph, e: EdgeId): { x: number; y: number } {
+  const g = edgeGeom(graph, e);
+  return { x: (g.a.x + g.b.x) / 2, y: (g.a.y + g.b.y) / 2 };
 }
 
 function edgeLine(graph: Graph, e: EdgeId): { x1: number; y1: number; x2: number; y2: number } {

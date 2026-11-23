@@ -1,0 +1,18 @@
+{
+  "mcp": {
+    "servers": {
+      "boschtan": {
+        "type": "local",
+        "command": [
+          "node",
+          "node_modules/tsx/dist/cli.mjs",
+          "packages/agent-mcp/src/main.ts"
+        ],
+        "environment": {
+          "BOSCHTAN_URL": "https://boschtan-server.onrender.com",
+          "BOSCHTAN_NAME": "OpenCode"
+        }
+      }
+    }
+  }
+}

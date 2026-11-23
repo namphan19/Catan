@@ -119,7 +119,8 @@ export function TidelandsPanel({ view, tl, legal, onPick, onStart, onAction }: P
             }
             return (
               <tr key={p.id}>
-                <th scope="row" style={{ color: playerColor(p.id) }}>
+                {/* ink text: a light seat colour (ivory p3) is unreadable on parchment; the emblem carries the colour */}
+                <th scope="row">
                   <Emblem id={playerEmblem(p.id)} size={14} color={playerColor(p.id)} /> {name(p.id)}
                 </th>
                 <td>{bits.join(' · ')}</td>
@@ -138,8 +139,8 @@ export function TidelandsPanel({ view, tl, legal, onPick, onStart, onAction }: P
                 <WonderArt id={w} />
                 <b>{t(`wonder_${w}`)}</b> — {t(`wneed_${WONDER_NEEDS[w]}`)} ·{' '}
                 {owner ? (
-                  <span style={{ color: playerColor(owner) }}>
-                    {name(owner)} {t('tl_level', { n: tl.works!.levels[owner] ?? 0 })}
+                  <span>
+                    <Emblem id={playerEmblem(owner)} size={12} color={playerColor(owner)} /> {name(owner)} {t('tl_level', { n: tl.works!.levels[owner] ?? 0 })}
                   </span>
                 ) : (
                   <span className="tl-muted">{t('tl_free')}</span>
