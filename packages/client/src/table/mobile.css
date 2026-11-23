@@ -81,10 +81,12 @@
   }
 
   .topbar-info {
+    display: block;
     min-width: 0;
     overflow: hidden;
     font-size: 0.76rem;
     text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .topbar .btn-help {
