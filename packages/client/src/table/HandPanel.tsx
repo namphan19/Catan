@@ -95,8 +95,13 @@ export function HandPanel({ view }: { view: PlayerView }) {
                 aria-label={label}
               >
                 <ResourceArt res={r} />
+                {/* Phones show the small icon + count in one dock row (mobile.css); wider
+                    screens keep the painted card. */}
+                <span className="res-card-icon" aria-hidden="true">
+                  <ResourceIcon res={r} size={20} />
+                </span>
                 <span className="res-card-name">{t(resKey(r))}</span>
-                {n > 0 && <span className="res-card-count">{n}</span>}
+                <span className={`res-card-count${n === 0 ? ' is-zero' : ''}`}>{n}</span>
                 {d && (
                   <span key={d.key} className={d.n > 0 ? 'res-delta plus' : 'res-delta minus'} aria-hidden="true">
                     {d.n > 0 ? `+${d.n}` : d.n}

@@ -89,15 +89,20 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
    bottom-right, game under the zoom buttons, unread counter), and "Let a bot play for me" (AFK: a
    'normal' stand-in bot plays the seat until "I'm back"; the others get a popup).
 3. Hot-seat: "Pass the device to <name>" cover between actors so hands stay hidden.
-4. Phone layout (2026-11-21; CSS in src/table/mobile.css, e2e project "mobile"):
-   - portrait (<= 640 px wide): top bar with turn + "?" + a menu (shell buttons, language); players in one
-     grid row (small portrait + name, VP, hand / cards / guards; pieces left dropped); board fills the middle (pinch zoom with
-     two fingers, drag to pan); hand as small cards; one row of equal action buttons (icon over short label).
-   - landscape (<= 520 px tall): board on the left at full height, right column with top bar, players
-     (two per row, pieces left back), hand and actions.
+4. Phone layout (2026-11-23; CSS in src/table/mobile.css, e2e project "mobile"):
+   - portrait (<= 640 px wide): top bar with the turn in a dark chip + "?" + a menu (shell buttons,
+     language); players in one grid row of colour tiles (seat-colour band with portrait + VP, the full
+     name under it, hand / cards / guards; five or six players use three per row, pieces left dropped);
+     board fills the middle (pinch zoom with two fingers, drag to pan) with a round zoom rail top-left;
+     hand as a compact icon dock (every resource keeps its slot, count + "+N" pulse); one row of equal
+     action buttons with the primary Roll / End turn button pinned on the right (the rest scroll
+     sideways).
+   - landscape (<= 520 px tall): board on the left at full height, right column with top bar, the same
+     player tiles (three per row at five or six players), the icon hand dock and the actions; event
+     toasts stack in the free space above the actions instead of covering the board.
    - the side column (Strongholds and Tidelands panels; the base game has none) is a sheet behind the
-     "Bảng mở rộng" button (bottom sheet in portrait, from the right in landscape); picking an action
-     in a panel closes it so the board is in view.
+     "Bảng mở rộng" button (a content-height bottom sheet in portrait, from the right in landscape);
+     picking an action in a panel closes it so the board is in view.
 
 ## Interaction rules
 - The UI never decides legality: buttons, highlights and dialogs come from getLegalActions; disabled

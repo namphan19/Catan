@@ -83,6 +83,9 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
 
   return (
     <div className="actionbar" role="toolbar" aria-label={t('appTitle')}>
+      {/* Phones: this strip scrolls sideways while the primary button stays pinned on the right.
+          Wider screens use display: contents, so the groups stay direct flex children. */}
+      <div className="act-strip">
       <div className="act-group act-build">
         <Button
           disabled={!has('placeRoad')}
@@ -170,6 +173,7 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
             ✖ {t('act_cancelOffer')}
           </Button>
         )}
+      </div>
       </div>
 
       <div className="act-group act-primary">

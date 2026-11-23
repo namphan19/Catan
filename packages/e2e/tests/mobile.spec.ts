@@ -69,6 +69,31 @@ test('portrait: setup and first roll fit one screen, all players and buttons vis
   expect(errors()).toEqual([]);
 });
 
+test('portrait: six players stack as two rows of three, names readable', async ({ page }, testInfo) => {
+  const errors = captureErrors(page);
+  await page.goto('/');
+  await page.getByLabel(VI.players).selectOption('6');
+  await page.getByLabel(VI.seed).fill('e2e-mobile-six');
+  await page.getByRole('button', { name: VI.start }).click();
+  await confirmCover(page);
+  await expectFitsScreen(page);
+
+  const seats = page.locator('.seat-strip .seat');
+  await expect(seats).toHaveCount(6);
+  // Five or six players: three tiles per row, so every name still fits a full line.
+  const boxes = await seats.evaluateAll((els) =>
+    els.map((e) => {
+      const r = e.getBoundingClientRect();
+      return { top: Math.round(r.top), w: Math.round(r.width) };
+    }),
+  );
+  expect(new Set(boxes.map((b) => b.top)).size).toBe(2);
+  for (const b of boxes) expect(b.w).toBeGreaterThan(100);
+  await clearHover(page);
+  await page.screenshot({ path: shotPath('mobile-six.png', testInfo.project.name) });
+  expect(errors()).toEqual([]);
+});
+
 test('portrait: the menu holds the shell buttons; the base game has no side sheet', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await loadFixture(page, 'city-game.json');

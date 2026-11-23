@@ -755,6 +755,11 @@
   box-shadow: none;
 }
 
+/* Compact phone dock: the icon replaces the painted card (mobile.css). */
+.res-card-icon {
+  display: none;
+}
+
 .res-card-art {
   display: block;
   width: 60px;
@@ -817,6 +822,12 @@
   font-size: 0.85rem;
   font-weight: 700;
   line-height: 1;
+}
+
+/* An empty resource keeps its slot in the phone dock ("0"); on wide screens the dimmed
+   card already says it. */
+.res-card-count.is-zero {
+  display: none;
 }
 
 .res-card.changed {
@@ -931,6 +942,12 @@
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
+}
+
+/* Phones turn this into a sideways-scrolling strip (mobile.css); elsewhere it must not
+   change the flex layout of the bar. */
+.act-strip {
+  display: contents;
 }
 
 .act-primary .btn {
