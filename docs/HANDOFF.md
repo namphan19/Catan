@@ -5,7 +5,7 @@ For: the next tech lead session (Claude) or any developer picking this up. Read 
 
 ## 1. What this is
 Boschtan: an original web board game (hex-tile settlement/trading genre, own name, own medieval art) for
-3-6 players, self-hosted by the PO for colleagues on the company network. Private, non-commercial.
+2-6 players, self-hosted by the PO for colleagues on the company network. Private, non-commercial.
 Mechanics follow the PO's official rulebooks in `docs/*.pdf` (git-ignored, never commit or quote them);
 our own rules text is `docs/RULES.md`. Never reuse names, text, art or look of the commercial game.
 

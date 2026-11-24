@@ -85,11 +85,11 @@ describe('setup: 3 players (RULES.md 4, D1)', () => {
     }
   });
 
-  it('createGame refuses fewer than 3 or more than 6 players (API.md)', () => {
-    // API.md createGame: 3-6 players (RULES.md does not define 2-player games).
-    expect(() => newGame(2)).toThrow();
+  it('createGame refuses fewer than 2 or more than 6 players (API.md)', () => {
+    // API.md createGame: 2-6 players (RULES.md 1: 2 players play the standard board, rules unchanged).
+    expect(() => newGame(1)).toThrow();
     expect(() => newGame(7)).toThrow();
-    expect(() => newGame(3)).not.toThrow();
+    expect(() => newGame(2)).not.toThrow();
     expect(() => newGame(6)).not.toThrow();
   });
 

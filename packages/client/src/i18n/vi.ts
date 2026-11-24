@@ -27,7 +27,7 @@ export const vi: Record<string, string> = {
   home_intro: 'Chọn số người, đặt tên cho từng ghế rồi gieo một hạt giống mới.',
   home_randomSeed: 'Đổi ngẫu nhiên',
   home_atlasCaption: 'Hải đồ Boschtan',
-  home_footerNote: 'Bàn 3–6 người · hải đồ 19 hoặc 30 ô',
+  home_footerNote: 'Bàn 2–6 người · hải đồ 19 hoặc 30 ô',
   home_tip: 'Mẹo: 6 và 8 cho nhiều tài nguyên nhất — nhưng cũng dễ bị cướp nhất.',
 
   // Shell strip
@@ -273,6 +273,9 @@ export const vi: Record<string, string> = {
 
   // Short action-bar labels (compact/tablet layout); full labels stay in the tooltip.
   act_roll_s: 'Gieo',
+  cheat_pick: 'Chọn xúc xắc',
+  cheat_pickTip: 'Bấm để chọn mặt viên này (? = ngẫu nhiên)',
+  cheat_unlocked: 'Đã mở khóa xúc xắc vàng: chọn xúc xắc cạnh nút Gieo trước mỗi lần gieo.',
   act_settlement_s: 'Làng',
   act_road_s: 'Đường',
   act_city_s: 'Thành phố',
@@ -425,6 +428,8 @@ export const vi: Record<string, string> = {
   err_BAD_HEX: 'Ô hex không hợp lệ.',
   err_BAD_TARGET: 'Đích không hợp lệ.',
   err_BAD_VERTEX: 'Đỉnh không hợp lệ.',
+  err_DICE_LOCKED: 'Bạn không thể chọn xúc xắc.',
+  err_BAD_DICE: 'Hãy chọn hai viên xúc xắc từ 1 đến 6.',
   err_AFK_ACTIVE: 'Bot đang chơi thay bạn; bấm "Tôi đã quay lại" trước.',
   err_BAD_CHAT: 'Tin nhắn phải dài 1 đến 300 ký tự.',
   err_CHAT_RATE: 'Bạn gửi tin nhắn nhanh quá, đợi vài giây nhé.',

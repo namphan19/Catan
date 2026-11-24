@@ -58,6 +58,7 @@ describe('board geometry', () => {
 
 describe('board generation', () => {
   it.each([
+    [2, 'standard'],
     [3, 'standard'],
     [4, 'standard'],
     [5, 'large'],

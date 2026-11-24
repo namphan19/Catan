@@ -1,10 +1,15 @@
 /* Phone layouts for the game table (loaded last, after table.css and home.css).
    Two disjoint layouts, plus the rules they share:
-   - portrait  (max-width: 640px) and (min-height: 521px): top bar, players in a grid, board,
-     hand row, one row of action buttons; the side column is a bottom sheet.
+   - portrait  (max-width: 640px) and (min-height: 521px): top bar, one row of player tiles,
+     board, a one-row resource dock, and one row of actions with the primary button pinned on
+     the right; the side column is a bottom sheet.
    - landscape (max-height: 520px) and (max-width: 1000px): board on the left at full height,
      a right column with top bar, players, hand and actions; the side column slides in from the right.
-   Wider screens keep the desktop / tablet table untouched. */
+   Wider screens keep the desktop / tablet table untouched.
+
+   Player-facing choices (PO 2026-11-23, from phone-game references): every player is a colour
+   band tile with a readable name, the hand is a compact icon dock instead of painted cards, and
+   Roll / End turn is a large button that never scrolls away. */
 
 /* ---------- Desktop defaults for the phone-only controls ---------- */
 .topbar-menu-btn,
@@ -37,16 +42,18 @@
   /* No double-tap zoom delay on the controls. */
   .btn,
   .tab,
-  .res-card {
+  .res-card,
+  .seat {
     touch-action: manipulation;
   }
 
-  /* Top bar: turn label + info, help, and a menu with the shell buttons and the language. */
+  /* Top bar: one compact row. The turn sits in a dark chip, so "whose turn" is the first
+     thing the eye finds; shell info follows and truncates. */
   .topbar {
     position: relative;
     z-index: 50;
     gap: 6px;
-    padding: 2px 6px;
+    padding: 3px 8px;
   }
 
   .game-title {
@@ -54,22 +61,38 @@
   }
 
   .topbar-left {
-    gap: 8px;
+    align-items: center;
+    gap: 6px;
   }
 
   .turn-label {
-    font-size: 0.9rem;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 9px;
+    border: 1px solid var(--ink);
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--parchment);
+    font-size: 0.8rem;
+    line-height: 1.5;
     white-space: nowrap;
   }
 
   .topbar-info {
-    font-size: 0.8rem;
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.76rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .topbar .btn-help {
     order: 0;
-    width: 32px;
-    min-height: 32px;
+    width: 30px;
+    min-height: 30px;
   }
 
   .topbar-menu-wrap {
@@ -81,10 +104,10 @@
   .topbar .topbar-menu-btn {
     display: inline-flex;
     justify-content: center;
-    width: 36px;
-    min-height: 32px;
+    width: 34px;
+    min-height: 30px;
     padding: 0;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
   }
 
   .topbar-menu {
@@ -120,25 +143,33 @@
     font-size: 1rem;
   }
 
-  /* Board overlays: smaller, and out of each other's way. */
+  /* Board overlays: round buttons on a rail at the left (finger-sized, out of the board's
+     way), the dice in a neat card top-right, the cost list a folded pill at the bottom. */
   .board-zoom {
-    left: 6px;
-    top: 6px;
-    gap: 3px;
+    left: 8px;
+    top: 8px;
+    gap: 5px;
   }
 
   .board-zoom .btn {
-    min-height: 32px;
-    width: 32px;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
     padding: 0;
     justify-content: center;
+    border-radius: 50%;
+    background: rgba(243, 233, 210, 0.94);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+    font-size: 1rem;
   }
 
   .dice-box {
-    top: 6px;
-    right: 6px;
-    padding: 4px 6px;
-    border-radius: 8px;
+    top: 8px;
+    right: 8px;
+    padding: 4px 7px;
+    border-radius: 10px;
+    background: rgba(243, 233, 210, 0.94);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
   }
 
   .dice-roll {
@@ -160,14 +191,17 @@
   }
 
   .cost-card {
-    right: 6px;
-    bottom: 6px;
+    right: 8px;
+    bottom: 8px;
+    border-radius: 999px;
+    background: rgba(243, 233, 210, 0.9);
     font-size: 0.8rem;
-    max-width: calc(100% - 12px);
+    max-width: calc(100% - 16px);
   }
 
   .cost-card-head {
-    padding: 4px 8px;
+    padding: 3px 10px;
+    border-radius: 999px;
     font-size: 0.85rem;
   }
 
@@ -176,46 +210,57 @@
   }
 
   .board-hint {
-    top: 6px;
-    left: 46px;
-    right: 116px;
+    top: 8px;
+    left: 50px;
+    right: 118px;
     max-width: none;
     transform: none;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 4px 8px;
-    padding: 4px 8px;
-    font-size: 0.82rem;
+    gap: 3px 8px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.8rem;
     line-height: 1.25;
   }
 
   .board-hint .btn,
   .sh-pickbar .btn {
-    min-height: 30px;
-    padding: 2px 10px;
-    font-size: 0.85rem;
-  }
-
-  .toast-stack {
-    left: 6px;
-    bottom: 48px;
-    max-width: calc(100% - 12px);
-  }
-
-  .toast {
-    padding: 4px 10px;
+    min-height: 28px;
+    padding: 1px 10px;
     font-size: 0.82rem;
   }
 
-  /* The side column (log, trade, expansion panels) becomes a sheet over the board. */
+  /* Toasts: slim chips at the bottom of the board, above the cost pill and the sheet toggle. */
+  .toast-stack {
+    left: 8px;
+    right: 8px;
+    bottom: 44px;
+    max-width: none;
+    align-items: flex-start;
+    gap: 3px;
+  }
+
+  .toast {
+    max-width: 100%;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+
+  /* The side column (expansion panels) becomes a sheet over the board. */
   .sheet-toggle {
     display: inline-flex;
+    align-items: center;
+    gap: 4px;
     position: absolute;
-    left: 6px;
-    bottom: 6px;
+    left: 8px;
+    bottom: 8px;
     z-index: 7;
     min-height: 34px;
-    padding: 3px 10px;
+    padding: 3px 12px;
+    border-radius: 999px;
     font-size: 0.85rem;
     background: rgba(243, 233, 210, 0.96);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
@@ -258,8 +303,13 @@
     overflow: visible;
   }
 
-  /* Player cards: portrait + name + VP on top, hand / cards / guards below (pieces left are
-     dropped on a phone). */
+  /* Player tiles: a seat-colour band with the portrait and the VP, the name in full on its
+     own line, and the card counts under it. One row of tiles for up to four players, three
+     per row for five or six. */
+  .seat-strip {
+    border-bottom-width: 2px;
+  }
+
   .seat-strip .seats,
   .seat-strip .seats-compact {
     grid-auto-flow: row;
@@ -274,7 +324,10 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .seat-strip .seats[data-n='3'],
+  .seat-strip .seats[data-n='3'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .seat-strip .seats[data-n='5'],
   .seat-strip .seats[data-n='6'] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -282,65 +335,71 @@
 
   .seat,
   .seats-compact .seat {
-    border-left-width: 4px;
-    border-radius: 6px;
-    padding: 2px 3px;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid var(--ink);
+    border-radius: 8px;
+    padding: 0 0 1px;
+    background: var(--parchment);
+    /* the tile is re-laid out below; the desktop container queries must not fire */
+    container-type: normal;
   }
 
-  .seat.acting {
-    box-shadow: 0 0 0 2px var(--gold);
+  /* The colour band behind the portrait and the VP: the seat is readable at a glance, and the
+     portrait ring is the same colour, like the phone-game references. */
+  .seat::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 30px;
+    z-index: 0;
+    background: var(--seat);
+    border-bottom: 1px solid var(--ink);
   }
 
-  /* Portrait card layout (table.css) folded for phones: a small portrait + name and the VP on
-     one line, the card stats under it; the piece row keeps only the awards. The portrait itself
-     tells the seats apart, so the emblem badge is dropped at this size. */
   .seat .seat-grid {
-    grid-template-columns: minmax(0, 1fr) auto;
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    grid-template-rows: 30px auto auto;
     grid-template-areas:
-      'id head'
-      'cards cards'
-      'assets assets';
-    column-gap: 3px;
+      'av head'
+      'name name'
+      'cards cards';
+    align-items: center;
+    column-gap: 1px;
   }
 
+  /* The avatar and the name leave their column, so the name can use the full tile width. */
   .seat .seat-id {
-    flex-direction: row;
-    justify-content: flex-start;
-    gap: 3px;
-    max-width: none;
-    padding-right: 0;
-    border-right: 0;
+    display: contents;
+  }
+
+  .seat .seat-avatar {
+    grid-area: av;
+    justify-self: start;
+    padding-left: 2px;
   }
 
   .seat .seat-avatar .avatar {
-    width: 20px !important;
-    height: 20px !important;
-    border-width: 1px;
+    width: 26px !important;
+    height: 26px !important;
+    border: 2px solid var(--parchment);
+    box-shadow: 0 0 0 1px var(--ink);
   }
 
-  .seat.acting .avatar {
-    box-shadow: 0 0 0 1px var(--ink), 0 0 0 2px var(--gold);
-  }
-
+  /* The portrait and the colour band already tell the seat; the badge only crowds it. */
   .seat-emblem {
     display: none;
   }
 
-  .seat .seat-assets {
-    padding-left: 0;
-    border-left: 0;
-  }
-
-  .seat-assets:not(:has(.seat-award)) {
-    display: none;
-  }
-
-  .seat-head {
+  .seat .seat-head {
+    grid-area: head;
+    justify-content: flex-end;
     min-height: 0;
-  }
-
-  .seat-name {
-    font-size: 0.82rem;
+    padding-right: 5px;
+    gap: 2px;
   }
 
   .seat-you,
@@ -350,13 +409,10 @@
     display: none;
   }
 
-  .seat.me .seat-name {
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  .seat-vp {
+  .seat .seat-vp {
+    margin-left: 0;
     gap: 1px;
+    color: var(--seat-text, var(--ink));
   }
 
   .seat-vp svg {
@@ -366,14 +422,53 @@
 
   .seat-vp strong {
     font-size: 1rem;
+    color: var(--seat-text, var(--ink));
+    text-shadow: none;
+  }
+
+  .seat .seat-name {
+    grid-area: name;
+    width: 100%;
+    padding: 1px 2px 0;
+    text-align: center;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    font-weight: 700;
+  }
+
+  .seat.me .seat-name {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* The active player: a gold ring (a shape, not colour alone) and a lifted tile. */
+  .seat.acting {
+    background: #fbf5e4;
+    box-shadow:
+      0 0 0 2px var(--gold),
+      0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .seat.acting .avatar {
+    box-shadow: 0 0 0 1px var(--ink), 0 0 0 3px var(--gold);
+  }
+
+  .seat.acting .seat-name {
+    font-weight: 800;
   }
 
   .seat-stats,
   .seats-compact .seat-stats {
-    gap: 1px 4px;
+    gap: 0 5px;
     margin-top: 0;
     min-height: 0;
-    font-size: 0.74rem;
+    font-size: 0.68rem;
+  }
+
+  .seat .seat-cards {
+    grid-area: cards;
+    justify-content: center;
+    padding: 1px 0 0;
   }
 
   .seat-stats .stat {
@@ -386,17 +481,38 @@
     height: 12px;
   }
 
-  .seat-award {
-    width: 16px;
-    height: 16px;
+  /* Awards sit in the tile's corner, so the counts stay centred. */
+  .seat .seat-assets {
+    position: absolute;
+    right: 2px;
+    bottom: 1px;
+    z-index: 2;
+    padding-left: 0;
+    border-left: 0;
   }
 
-  /* Hand: small cards, no titles (the counts are on the cards). */
+  .seat-assets:not(:has(.seat-award)) {
+    display: none;
+  }
+
+  .seat-award {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Hand: a compact icon dock (name and painted card stay for wide screens). Every resource
+     keeps its slot, empty ones dimmed with a 0; a "+N" floats up when a count changes. */
   .hand {
+    flex-wrap: nowrap;
+    align-items: center;
     gap: 8px;
-    padding-top: 7px;
-    padding-right: 8px;
-    overflow-x: auto;
+    padding: 4px 6px;
+    overflow: auto hidden;
+    scrollbar-width: none;
+  }
+
+  .hand::-webkit-scrollbar {
+    display: none;
   }
 
   .hand-title,
@@ -405,77 +521,154 @@
   }
 
   .hand-group {
-    gap: 0;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .hand-group + .hand-group {
+    padding-left: 8px;
+    border-left: 1px solid rgba(59, 47, 47, 0.25);
   }
 
   .hand-res,
   .dev-cards {
-    gap: 6px;
+    align-items: center;
+    gap: 3px;
   }
 
-  .res-card,
-  .res-card-art {
-    width: 42px;
+  .res-card {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    width: auto;
+    padding: 1px 6px 1px 4px;
+    border: 1px solid rgba(59, 47, 47, 0.4);
+    border-radius: 999px;
+    background: rgba(243, 233, 210, 0.9);
   }
 
-  .res-card-fallback {
-    width: 42px;
-    height: 59px;
+  .res-card.empty {
+    opacity: 0.5;
   }
 
+  .res-card-art,
+  .res-card-fallback,
   .res-card-name {
     display: none;
   }
 
+  .res-card-icon {
+    display: inline-flex;
+  }
+
   .res-card-count {
-    top: -6px;
-    right: -6px;
-    min-width: 18px;
-    height: 18px;
-    font-size: 0.72rem;
+    position: static;
+    display: inline;
+    min-width: 0;
+    height: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .res-card-count.is-zero {
+    display: inline;
+    color: var(--ink-soft);
+    font-weight: 400;
   }
 
   .res-delta {
-    font-size: 0.95rem;
+    top: -6px;
+    left: 60%;
+    font-size: 0.9rem;
   }
 
+  /* Development cards stay painted but turn into mini chips next to the resources. */
   .dev-card {
-    width: 46px;
+    flex-direction: row;
+    align-items: center;
+    gap: 3px;
+    width: auto;
+    padding: 1px 6px 1px 3px;
+    border: 1px solid rgba(59, 47, 47, 0.4);
+    border-radius: 999px;
+    background: rgba(243, 233, 210, 0.9);
   }
 
   .dev-card img,
   .dev-card-blank {
-    width: 30px;
-    height: 42px;
+    width: 18px;
+    height: 25px;
+    border-radius: 3px;
+    box-shadow: none;
   }
 
   .dev-card-name {
-    min-height: 0;
-    font-size: 0.55rem;
+    display: none;
   }
 
-  /* Action bar: one row of equal buttons, icon over a short label; extra buttons (play a
-     card, cancel an offer) make it scroll sideways. */
+  .dev-card-new {
+    top: -3px;
+    right: -2px;
+    padding: 0 3px;
+    font-size: 0.5rem;
+  }
+
+  /* Action bar: the secondary buttons (build, buy, trade) scroll sideways in their own strip;
+     the primary Roll / End turn button is pinned on the right, full height, never scrolling. */
   .actionbar {
     flex: none;
+    display: flex;
     flex-wrap: nowrap;
-    justify-content: flex-start;
+    align-items: stretch;
+    gap: 5px;
+    overflow: hidden;
+  }
+
+  .act-strip {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: stretch;
     gap: 4px;
-    overflow-x: auto;
+    overflow: auto hidden;
+    overscroll-behavior-x: contain;
     scrollbar-width: none;
   }
 
-  .act-group {
+  .act-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* The dice pickers lead the scrolling strip so they stay in view at 320 px. */
+  .actionbar .act-strip .die-pick {
+    order: -1;
+    width: 38px;
+    min-width: 38px;
+    height: auto;
+    padding: 0;
+    justify-content: center;
+    font-size: 1.35rem;
+  }
+
+  .act-strip .act-group {
     display: contents;
   }
 
-  .actionbar > .act-group > .btn,
-  .actionbar > .act-group > .tipwrap {
-    flex: 1 1 0;
+  .act-strip > .btn,
+  .act-strip > .tipwrap {
+    flex: 0 0 auto;
     min-width: 46px;
   }
 
-  .actionbar .tipwrap > .btn {
+  .act-strip > .tipwrap > .btn {
     width: 100%;
   }
 
@@ -484,37 +677,51 @@
     flex-direction: column;
     justify-content: flex-start;
     gap: 2px;
-    min-height: 50px;
-    padding: 5px 3px 3px;
-    font-size: 0.72rem;
+    min-height: 54px;
+    padding: 4px 2px 3px;
+    font-size: 0.68rem;
     line-height: 1.1;
     text-align: center;
     white-space: normal;
   }
 
-  .actionbar .btn-play {
-    min-width: 92px;
+  .act-strip .btn-play {
+    min-width: 84px;
   }
 
-  .actionbar .badge {
+  .act-strip .btn .badge {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: 1px;
+    right: 1px;
     margin: 0;
   }
 
-  .act-primary .btn,
-  .actionbar .act-primary .btn {
-    min-height: 50px;
-    padding: 3px 8px;
-    font-size: 0.88rem;
-    font-weight: 700;
+  .actionbar > .act-primary {
+    flex: 0 0 auto;
+    display: block;
   }
 
   .actionbar > .act-primary > .btn,
   .actionbar > .act-primary > .tipwrap {
-    flex: 0 0 auto;
-    min-width: 72px;
+    flex: none;
+    width: 74px;
+    height: 100%;
+  }
+
+  .actionbar > .act-primary .btn {
+    justify-content: center;
+    gap: 1px;
+    min-height: 54px;
+    padding: 2px 4px;
+    border-radius: 12px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    box-shadow: 0 3px 0 rgba(59, 47, 47, 0.55);
+  }
+
+  .actionbar > .act-primary .btn .uiicon {
+    width: 22px;
+    height: 22px;
   }
 
   .actionbar .lbl-full {
@@ -567,7 +774,8 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: 72%;
+    height: auto;
+    max-height: 72%;
     border-width: 2px 0 0;
     border-radius: 12px 12px 0 0;
     transform: translateY(105%);
@@ -614,13 +822,7 @@
     grid-area: seats;
   }
 
-  /* Wider cards than in portrait: two per row, pieces left are back. */
-  .seat-strip .seats,
-  .seat-strip .seats-compact,
-  .seat-strip .seats[data-n] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
+  /* Same tiles as portrait; five or six players still need a second row. */
   .seat-strip .seats[data-n='5'],
   .seat-strip .seats[data-n='6'] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -633,17 +835,16 @@
   .hand {
     grid-area: hand;
     min-height: 0;
+    align-items: center;
     flex-wrap: wrap;
     align-content: flex-start;
-    align-items: flex-start;
-    overflow: hidden auto;
-    padding: 9px 8px 4px;
+    padding: 6px 8px;
     background: var(--parchment-dark);
   }
 
-  .res-card,
-  .res-card-art {
-    width: 46px;
+  .hand-res,
+  .dev-cards {
+    flex-wrap: wrap;
   }
 
   .actionbar {
@@ -666,29 +867,62 @@
   }
 
   .board-hint {
-    right: 110px;
+    right: 112px;
+  }
+
+  /* Landscape has a wide empty area between the hand dock and the actions: the event toasts
+     live there instead of covering the board. */
+  .toast-stack {
+    position: fixed;
+    top: auto;
+    left: auto;
+    right: 0;
+    bottom: calc(74px + env(safe-area-inset-bottom));
+    width: min(46vw, 400px);
+    max-width: none;
+    align-items: stretch;
+    padding: 0 10px;
+    pointer-events: none;
+  }
+
+  .toast {
+    border-radius: 8px;
   }
 }
 
-/* ---------- Small phones (360 px class): seven buttons still fit in one row ---------- */
+/* ---------- Small phones (360 px class) ---------- */
 @media (max-width: 380px) {
-  .actionbar > .act-group > .btn,
-  .actionbar > .act-group > .tipwrap {
-    min-width: 38px;
+  .seat-strip .seats,
+  .seat-strip .seats-compact {
+    gap: 3px;
+    padding: 4px;
+  }
+
+  .seat .seat-name {
+    font-size: 0.68rem;
+  }
+
+  .seat-stats,
+  .seats-compact .seat-stats {
+    gap: 0 3px;
+    font-size: 0.64rem;
   }
 
   .actionbar .btn {
-    font-size: 0.68rem;
+    font-size: 0.64rem;
+  }
+
+  .act-strip > .btn,
+  .act-strip > .tipwrap {
+    min-width: 42px;
   }
 
   .actionbar > .act-primary > .btn,
   .actionbar > .act-primary > .tipwrap {
-    min-width: 60px;
+    width: 66px;
   }
 
-  .act-primary .btn,
-  .actionbar .act-primary .btn {
-    padding: 3px 5px;
-    font-size: 0.8rem;
+  .actionbar > .act-primary .btn {
+    font-size: 0.7rem;
   }
 }

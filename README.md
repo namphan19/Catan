@@ -1,6 +1,6 @@
 # Boschtan
 
-Boschtan is an original hex-tile settlement and trading board game for 3-6 players, for private play with friends.
+Boschtan is an original hex-tile settlement and trading board game for 2-6 players, for private play with friends.
 Milestone 1: monorepo, pure rules engine (base game incl. the 5-6 player extra build phase), tests, fuzzer
 and a hot-seat dev client. Networking, bots, an advanced expansion ruleset and polished UI come later.
 Names and theme are placeholders until the PO decides (see `docs/RULES_DECISIONS.md`).

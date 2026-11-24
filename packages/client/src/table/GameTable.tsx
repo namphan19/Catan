@@ -58,13 +58,21 @@ export interface GameTableProps {
   barActions?: ReactNode;
   /** Extra floating UI inside the board area (online chat bubble). */
   boardOverlay?: ReactNode;
+  /** The viewer unlocked the dice cheat: the action bar lets them choose their dice before rolling. */
+  diceCheat?: boolean;
 }
 
-export function GameTable({ view, legal, onAction, events, validate, errors, onExport, onHome, botSeats, barInfo, barActions, boardOverlay }: GameTableProps) {
+export function GameTable({ view, legal, onAction, events, validate, errors, onExport, onHome, botSeats, barInfo, barActions, boardOverlay, diceCheat }: GameTableProps) {
   const { t } = useI18n();
   const name = useName();
   const check = validate ?? (() => ({ ok: true } as Validation));
   const [toasts, pushToast] = useToasts();
+  // Dice cheat just unlocked (not on a reload that already had it): say where the dice choice is.
+  const cheatSeen = useRef(diceCheat);
+  useEffect(() => {
+    if (diceCheat && !cheatSeen.current) pushToast({ text: t('cheat_unlocked'), kind: 'gold' });
+    cheatSeen.current = diceCheat;
+  }, [diceCheat, pushToast, t]);
   const reveals = useReveals();
   const pushReveal = reveals.push;
   const [pending, setPending] = useState<Pending>(null);
@@ -528,6 +536,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
             setTradeOpen(tab);
           }}
           onOpenCards={(c) => setCardOpen(c)}
+          diceCheat={diceCheat}
         />
       </div>
 

@@ -23,7 +23,7 @@ redacted data (getPlayerView / getEventsView).
 | type | fields | when |
 |---|---|---|
 | hello | name (1-24 chars), sessionToken? | first message on every connection |
-| createRoom | playerCount 3-6, options? { largeTableMode?, vpToWin?, expansion?: 'strongholds' } | lobby; creator becomes host. With the expansion 5-6 players always use paired mode |
+| createRoom | playerCount 2-6, options? { largeTableMode?, vpToWin?, expansion?: 'strongholds' } | lobby; creator becomes host. With the expansion 5-6 players always use paired mode |
 | joinRoom | code (5 chars A-Z0-9 without O/0/I/1) | lobby |
 | leaveRoom | - | lobby (before start); after start the seat is kept for reconnect |
 | setReady | ready: boolean | lobby |
@@ -31,7 +31,7 @@ redacted data (getPlayerView / getEventsView).
 | kick | seat | host only, lobby only (before start): frees that seat and closes its connection with code KICKED (also removes a bot) |
 | addBot | level: 'easy' \| 'normal' \| 'hard' \| 'expert' | host only, lobby only: fills the next free seat with a server-side bot (always ready; named "Bot", "Bot 2", ...) |
 | setAvatar | avatar: 'star' \| 'leaf' \| 'wave' \| 'sun' \| 'flame' \| 'shield' \| null | lobby only: picks the sender's portrait, first come first served - one another seat holds is refused with AVATAR_TAKEN (plus a fresh `room`); null drops it. At startGame every seat without one (bots too) gets a free portrait in seat order; restored rooms are filled the same way |
-| chat | text: 1-300 chars after trimming, no control characters (BAD_CHAT) | lobby or game: relayed to everyone in the room, the sender too. Max 5 lines per 10 s per connection (CHAT_RATE) |
+| chat | text: 1-300 chars after trimming, no control characters (BAD_CHAT) | lobby or game: relayed to everyone in the room, the sender too. Max 5 lines per 10 s per connection (CHAT_RATE). The dice cheat code (engine `DICE_CHEAT_CODE`, matched ignoring case, accents and spaces) is never relayed: it unlocks the sender's seat (persisted) and only the sender's `room` copy says `diceCheat: true` |
 | setAfk | afk: boolean | in game (not after the win): `true` hands the sender's seat to a stand-in 'normal' bot while they are away, `false` takes it back. Everyone in the room gets an `afk` notice; while the bot plays, the sender's own actions are refused with AFK_ACTIVE. Repeating the current value only resyncs `room` |
 | action | action: Action (engine format; `player` must equal the sender's seat) | in game |
 | requestState | - | after reconnect / when the client is unsure |
@@ -40,7 +40,7 @@ redacted data (getPlayerView / getEventsView).
 | type | fields |
 |---|---|
 | welcome | sessionToken, name |
-| room | code, hostSeat, playerCount, options, seats: [{ seat: "p1".., name, connected, ready, bot?: level, afk?: true, avatar?: id }], you: seat or null, started |
+| room | code, hostSeat, playerCount, options, seats: [{ seat: "p1".., name, connected, ready, bot?: level, afk?: true, avatar?: id }], you: seat or null, started, diceCheat?: true (only in my own copy, see chat) |
 | state | view: PlayerView (getPlayerView for the receiver), legal: Action[] (getLegalActions for the receiver), seq (log length) |
 | events | events: GameEvent[] (getEventsView for the receiver), seq |
 | chat | message: { id (grows per room), seat, name (at send time), avatar? (at send time), text, at (server epoch ms) } |

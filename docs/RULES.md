@@ -8,7 +8,8 @@ picks a theme. Every interpretation or choice that is not obvious is logged in `
 - **Resources (5):** timber, clay, fiber, grain, stone.
 - **Terrains:** forest -> timber, claypit -> clay, meadow -> fiber, field -> grain, quarry -> stone,
   waste -> nothing.
-- **Boards:** standard (19 hexes, 3-4 players), large (30 hexes, 5-6 players). See `docs/BOARD.md`.
+- **Boards:** standard (19 hexes, 2-4 players), large (30 hexes, 5-6 players). Two players play the
+  standard board with every rule unchanged (D23). See `docs/BOARD.md`.
 - **Number tokens:** 2-12 without 7 on every producing hex (standard 18, large 28). 6 and 8 ("hot")
   are never on adjacent hexes.
 - **Harbors on the coast:** generic 3:1 or specific 2:1 for one resource (standard 9, large 11).

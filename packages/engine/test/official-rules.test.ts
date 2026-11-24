@@ -87,6 +87,33 @@ describe('D1: the first player (base p.5: highest roll starts; engine: RNG pick 
     expect(s.phase.k).toBe('preRoll');
     expect(s.turn).toMatchObject({ n: 1, current: 'p1' });
   });
+
+  it('2 players: standard board, snake setup p2 p1 p1 p2, turns alternate', () => {
+    let s = newGame(2, 'duo-setup', { firstPlayer: 'p2' });
+    expect(s.board.layout).toBe('standard');
+    expect(s.init.extraBuild).toBe(false);
+    const order = ['p2', 'p1', 'p1', 'p2'];
+    while (s.phase.k === 'setup') {
+      const who = order[s.phase.idx];
+      if (s.phase.step === 'settlement') {
+        const g = graphOf(s);
+        const v = g.vertices.find((x) => validateAction(s, { t: 'placeSettlement', player: who, v: x }).ok)!;
+        s = act(s, { t: 'placeSettlement', player: who, v });
+      } else {
+        s = act(s, getLegalActions(s, who).find((a) => a.t === 'placeRoad')!);
+      }
+    }
+    expect(s.turn).toMatchObject({ n: 1, current: 'p2' });
+    for (const p of s.players) expect(Object.values(s.pieces.buildings).filter((b) => b.owner === p.id)).toHaveLength(2);
+    s = act(s, { t: 'roll', player: 'p2' });
+    while (s.phase.k !== 'main') {
+      const who = s.players.map((p) => p.id).find((id) => getLegalActions(s, id).length)!;
+      s = act(s, getLegalActions(s, who)[0]);
+    }
+    s = act(s, { t: 'endTurn', player: 'p2' });
+    expect(s.phase.k).toBe('preRoll');
+    expect(s.turn.current).toBe('p1');
+  });
 });
 
 describe('five-six p.3: paired players (D8/D9/D11)', () => {

@@ -1,7 +1,7 @@
 // Hot-seat shell: hides the table behind a "pass the device" cover whenever the acting
 // viewer changes, keeps the export-log feature, and provides player names.
 import { useEffect, useRef, useState } from 'react';
-import type { Action, GameEvent, PlayerId, PlayerView, Validation } from '@hexgame/engine';
+import { DICE_CHEAT_CODE, normalizeCheat, type Action, type GameEvent, type PlayerId, type PlayerView, type Validation } from '@hexgame/engine';
 import { useI18n } from '../i18n';
 import { NamesProvider, useName } from './names';
 import { PassDeviceCover } from './PassDeviceCover';
@@ -46,6 +46,26 @@ function ShellInner({ names, view, legal, onAction, events, validate, errors, ex
   const [exportOpen, setExportOpen] = useState(false);
   const [exportText, setExportText] = useState('');
   const prevViewer = useRef<string | null | undefined>(undefined);
+  // Dice cheat (no chat at a shared device): typing the code anywhere outside a text field unlocks
+  // choosing the dice for the player whose view is shown.
+  const [cheaters, setCheaters] = useState<readonly PlayerId[]>([]);
+  const typed = useRef('');
+  const viewerRef = useRef(view.viewer);
+  viewerRef.current = view.viewer;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (e.key.length !== 1 || el?.closest('input, textarea, select, [contenteditable="true"]')) return;
+      typed.current = normalizeCheat(typed.current + e.key).slice(-DICE_CHEAT_CODE.length);
+      const who = viewerRef.current;
+      if (typed.current === DICE_CHEAT_CODE && who) {
+        typed.current = '';
+        setCheaters((c) => (c.includes(who) ? c : [...c, who]));
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // Cover whenever the acting viewer changes (including the first reveal after a new game).
   useEffect(() => {
@@ -113,6 +133,7 @@ function ShellInner({ names, view, legal, onAction, events, validate, errors, ex
           }}
           onHome={onHome}
           botSeats={botSeats}
+          diceCheat={!!view.viewer && cheaters.includes(view.viewer)}
         />
       </div>
       {exportOpen && (

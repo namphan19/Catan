@@ -12,7 +12,7 @@ import { moveCorsair } from './corsair';
 import { emptyVillages, initSilk, produceSilk, silkFinalWinner, silkOf, stealSilk } from './silk';
 import { buildWonder, claimWonder, initWorks, worksWinner } from './works';
 import { armCard, attackFort, covesOf, covesWinner, initCoves, placeCovesStart, reachedFort, robAnyone, sailFleet } from './coves';
-import { resolveRoll } from '../base/turn';
+import { resolveRoll, withChosen } from '../base/turn';
 import { chaseAction } from './chase';
 import { randInt } from '../../rng';
 import { goldAround, goldClaims, goldWindowAfter, oweGold, takeGold } from './gold';
@@ -261,7 +261,7 @@ export const tidelandsRuleset: Ruleset = {
             }
             return;
           }
-          const dice = rules.call('rollDice', ctx, []);
+          const dice = withChosen(rules.call('rollDice', ctx, []), a);
           state.turn.roll = dice;
           ctx.emit({ e: 'rolled', player: a.player, dice, sum: dice.reduce((x, y) => x + y, 0) });
           s.fleetBonus = sailFleet(ctx, dice);
