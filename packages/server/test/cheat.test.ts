@@ -1,6 +1,6 @@
 // Dice cheat: the code sent in chat is never relayed; it unlocks choosing the dice for that seat only.
 import { afterEach, describe, expect, it } from 'vitest';
-import type { Action, PlayerView } from '@hexgame/engine';
+import { DICE_CHEAT_CODE, type Action, type PlayerView } from '@hexgame/engine';
 import type { ServerHandle } from '../src/main';
 import { lastOf, start, startRoom, type Player, type RoomMsg, type StateMsg } from './helpers';
 
@@ -49,13 +49,13 @@ describe('dice cheat', () => {
     roller.client.send({ type: 'action', action: { t: 'roll', player: seat, dice: [3, 3] } });
     await roller.client.error('DICE_LOCKED');
 
-    roller.client.send({ type: 'chat', text: 'Xúc xắc vàng' });
+    roller.client.send({ type: 'chat', text: ` ${DICE_CHEAT_CODE.toUpperCase()} ` });
     const mine = (await roller.client.next((m) => m.type === 'room' && !!m.diceCheat)) as RoomMsg;
     expect(mine.you).toBe(seat);
     // Nobody else sees the code line or the unlock.
     other.client.send({ type: 'chat', text: 'hi' });
     await other.client.next((m) => m.type === 'chat' && m.message.text === 'hi');
-    expect(other.client.inbox.some((x) => x.msg.type === 'chat' && /x[uú]c/i.test(x.msg.message.text))).toBe(false);
+    expect(other.client.inbox.some((x) => x.msg.type === 'chat' && x.msg.message.text !== 'hi')).toBe(false);
     expect(other.client.inbox.some((x) => x.msg.type === 'room' && x.msg.diceCheat)).toBe(false);
 
     const seq = latest(other).seq;

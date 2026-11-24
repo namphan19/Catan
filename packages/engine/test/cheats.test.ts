@@ -1,7 +1,7 @@
 // Dice cheat: a roll may carry the roller's chosen production dice (who may send it is the server's call).
 import { describe, expect, it } from 'vitest';
 import {
-  createGame, getLegalActions, getPlayerView, isDiceCheat, replay, validateAction,
+  DICE_CHEAT_CODE, createGame, getLegalActions, getPlayerView, isDiceCheat, normalizeCheat, replay, validateAction,
   type Action, type GameState, type ShState,
 } from '../src';
 import { act, blankGame } from './helpers';
@@ -17,9 +17,13 @@ function preRoll(rulesets: string[], options?: Record<string, unknown>): GameSta
 
 describe('dice cheat', () => {
   it('recognises the code however it is typed', () => {
-    expect(isDiceCheat('xucxacvang')).toBe(true);
-    expect(isDiceCheat('  Xúc xắc VÀNG! ')).toBe(true);
-    expect(isDiceCheat('xuc xac')).toBe(false);
+    const code = DICE_CHEAT_CODE;
+    expect(isDiceCheat(code)).toBe(true);
+    // Upper case, spaces and punctuation around and inside it do not matter.
+    expect(isDiceCheat(`  ${code.toUpperCase().split('').join(' ')}! `)).toBe(true);
+    expect(isDiceCheat(code.slice(0, -1))).toBe(false);
+    expect(isDiceCheat(`${code}x`)).toBe(false);
+    expect(normalizeCheat('  Xúc xắc ĐỎ! ')).toBe('xucxacdo'); // accents dropped
     expect(isDiceCheat('')).toBe(false);
   });
 

@@ -1,6 +1,7 @@
 // Dice cheat in a local game: typing the code unlocks two die pickers next to Roll; the roll uses them.
 // Shared by dice-cheat.spec.ts (desktop, tablet) and dice-cheat-mobile.spec.ts (phone).
 import { expect, type Page } from '@playwright/test';
+import { DICE_CHEAT_CODE } from '../../engine/src/cheats';
 import { VI, actionButton, captureErrors, clearHover, playSetupUntilRoll, shotPath } from './helpers';
 
 export async function diceCheatFlow(page: Page, project: string): Promise<void> {
@@ -16,7 +17,7 @@ export async function diceCheatFlow(page: Page, project: string): Promise<void> 
 
   // Locked: no pickers.
   await expect(page.locator('.die-pick')).toHaveCount(0);
-  await page.keyboard.type('xucxacvang');
+  await page.keyboard.type(DICE_CHEAT_CODE);
   await expect(page.getByText('Đã mở khóa xúc xắc vàng', { exact: false })).toBeVisible();
   const dice = page.locator('.die-pick');
   await expect(dice).toHaveCount(2);
