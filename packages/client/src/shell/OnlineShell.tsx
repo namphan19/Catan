@@ -80,6 +80,7 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
           seats: msg.seats,
           you: msg.you,
           started: msg.started,
+          ...(msg.diceCheat ? { diceCheat: true } : {}),
         };
         setRoom(info);
         setNotice(null);
@@ -364,6 +365,7 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
                 onAction={sendAction}
                 events={events}
                 errors={errors}
+                diceCheat={!!room.diceCheat}
                 onHome={leaveRoom}
                 botSeats={botSeats}
                 boardOverlay={

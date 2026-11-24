@@ -38,6 +38,8 @@ const KNOWN_CODES = new Set([
   'NOT_IN_GAME',
   'IMPERSONATION',
   'AFK_ACTIVE',
+  'DICE_LOCKED',
+  'BAD_DICE',
   'BAD_CHAT',
   'CHAT_RATE',
   'AVATAR_TAKEN',

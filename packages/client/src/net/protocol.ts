@@ -51,6 +51,8 @@ export type ServerMsg =
       seats: RoomSeat[];
       you: string | null;
       started: boolean;
+      /** Only in my own copy: I sent the dice cheat code, so my rolls may carry chosen `dice`. */
+      diceCheat?: true;
     }
   | { type: 'state'; view: unknown; legal: unknown[]; seq: number }
   | { type: 'events'; events: unknown[]; seq: number }
@@ -101,6 +103,8 @@ export interface RoomInfo {
   /** My seat id ("p1"...) or null. */
   you: string | null;
   started: boolean;
+  /** I unlocked choosing my dice (cheat code in chat). */
+  diceCheat?: boolean;
 }
 
 /** 5 chars, A-Z0-9 without O/0/I/1 — same alphabet as the server (CODE_RE). */

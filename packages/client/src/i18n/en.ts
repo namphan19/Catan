@@ -257,6 +257,9 @@ export const en: Record<string, string> = {
 
   // Short action-bar labels (compact/tablet layout); full labels stay in the tooltip.
   act_roll_s: 'Roll',
+  cheat_pick: 'Choose your dice',
+  cheat_pickTip: 'Click to choose this die (? = random)',
+  cheat_unlocked: 'Golden dice unlocked: choose your dice next to Roll before each roll.',
   act_settlement_s: 'Town',
   act_road_s: 'Road',
   act_city_s: 'City',
@@ -409,6 +412,8 @@ export const en: Record<string, string> = {
   err_BAD_HEX: 'Invalid hex.',
   err_BAD_TARGET: 'Invalid target.',
   err_BAD_VERTEX: 'Invalid vertex.',
+  err_DICE_LOCKED: 'You cannot choose the dice.',
+  err_BAD_DICE: 'Choose two dice values from 1 to 6.',
   err_AFK_ACTIVE: `A bot is playing for you; click "I'm back" first.`,
   err_BAD_CHAT: 'A message must be 1 to 300 characters long.',
   err_CHAT_RATE: 'You are sending messages too fast; wait a few seconds.',

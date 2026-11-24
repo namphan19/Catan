@@ -6,6 +6,7 @@ import { bagTotal } from '../../bag';
 import { randInt } from '../../rng';
 import { setPhase } from '../base/helpers';
 import { resolveRoll } from '../base/turn';
+import { chosenDice } from '../../cheats';
 import { SH, SH_ID, type Track } from './config';
 import { drawCard } from './ops';
 import { autoResolve } from './resolve';
@@ -138,7 +139,7 @@ export function rollAction(prev: ActionDef | undefined): ActionDef {
       const { state, rules } = ctx;
       const s = sh(state);
       const rolled = rules.call('rollDice', ctx, []);
-      const dice = s.fixedDice ?? rolled.slice(0, 2);
+      const dice = chosenDice(a) ?? s.fixedDice ?? rolled.slice(0, 2);
       s.fixedDice = null;
       const face = SH.eventFaces[rolled[2] ?? randInt(state.rng, SH.eventFaces.length)];
       state.turn.roll = dice;

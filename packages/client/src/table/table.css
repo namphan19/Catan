@@ -950,6 +950,26 @@
   display: contents;
 }
 
+/* Dice cheat: two die pickers just before Roll. */
+.act-dice {
+  gap: 4px;
+}
+
+.actionbar .die-pick {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 9px;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.actionbar .die-pick.set {
+  background: var(--gold);
+}
+
 .act-primary .btn {
   min-height: 48px;
   padding: 0.5em 1.3em;

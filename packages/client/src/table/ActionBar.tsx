@@ -23,6 +23,8 @@ interface ActionBarProps {
   setPending: (p: Pending) => void;
   onOpenTrade: (tab: 'bank' | 'players') => void;
   onOpenCards: (card: 'harvest' | 'claim') => void;
+  /** Dice cheat unlocked: two die pickers next to Roll (? = random) set the roll's `dice`. */
+  diceCheat?: boolean;
 }
 
 const PLACEHOLDER = { v: 'v:0,0,N', e: 'e:0,0,NE', hex: 'h:0,0' };
@@ -40,7 +42,7 @@ function useCompact(): boolean {
   return compact;
 }
 
-export function ActionBar({ view, legal, onAction, validate, pending, setPending, onOpenTrade, onOpenCards }: ActionBarProps) {
+export function ActionBar({ view, legal, onAction, validate, pending, setPending, onOpenTrade, onOpenCards, diceCheat }: ActionBarProps) {
   const { t } = useI18n();
   const compact = useCompact();
   const me = (view.viewer ?? 'p1') as PlayerId;
@@ -67,6 +69,17 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
   const tipOf = (tt: string, fullKey: string): string | undefined => reason(tt) ?? (compact ? t(fullKey) : undefined);
 
   const send = (a: Action) => onAction(a);
+
+  /** Dice cheat: the chosen face of each production die (null = random); reset after each roll. */
+  const [pick, setPick] = useState<(number | null)[]>([null, null]);
+  const cycle = (i: number) => setPick((p) => p.map((v, j) => (j !== i ? v : v === null ? 1 : v === 6 ? null : v + 1)));
+  const rollNow = () => {
+    if (diceCheat && pick.some((v) => v !== null)) {
+      const dice = pick.map((v) => v ?? 1 + Math.floor(Math.random() * 6)) as [number, number];
+      send({ t: 'roll', player: me, dice });
+    } else send({ t: 'roll', player: me });
+    setPick([null, null]);
+  };
   const toggle = (p: Exclude<Pending, null>) => setPending(pending === p ? null : p);
 
   const playable = [...new Set(legal.filter((a) => a.t === 'playCard').map((a) => (a as { card: string }).card))];
@@ -174,6 +187,23 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
           </Button>
         )}
       </div>
+
+      {diceCheat && has('roll') && (
+        <div className="act-group act-dice" role="group" aria-label={t('cheat_pick')}>
+          {pick.map((v, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`btn btn-ghost die-pick${v === null ? '' : ' set'}`}
+              title={t('cheat_pickTip')}
+              aria-label={`${t('cheat_pick')} ${i + 1}: ${v ?? '?'}`}
+              onClick={() => cycle(i)}
+            >
+              {v ?? '?'}
+            </button>
+          ))}
+        </div>
+      )}
       </div>
 
       <div className="act-group act-primary">
@@ -192,7 +222,7 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
             className={has('roll') ? 'pulse' : undefined}
             disabled={!has('roll')}
             tip={tipOf('roll', 'act_roll')}
-            onClick={() => send({ t: 'roll', player: me })}
+            onClick={rollNow}
           >
             <UiIcon name="roll" size={20} /> {label('act_roll', 'act_roll_s')}
           </Button>

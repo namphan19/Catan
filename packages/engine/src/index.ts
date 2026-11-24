@@ -1,6 +1,7 @@
 export * from './types';
 export * from './engine';
 export * from './view';
+export * from './cheats';
 export * from './bag';
 export { seedRng, nextU32, randInt, shuffle } from './rng';
 export * from './board/coords';

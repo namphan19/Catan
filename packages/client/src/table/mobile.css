@@ -647,6 +647,17 @@
     display: none;
   }
 
+  /* The dice pickers lead the scrolling strip so they stay in view at 320 px. */
+  .actionbar .act-strip .die-pick {
+    order: -1;
+    width: 38px;
+    min-width: 38px;
+    height: auto;
+    padding: 0;
+    justify-content: center;
+    font-size: 1.35rem;
+  }
+
   .act-strip .act-group {
     display: contents;
   }

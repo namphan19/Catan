@@ -89,6 +89,8 @@ export type ServerMsg =
       }[];
       you: string | null;
       started: boolean;
+      /** Only in my own copy: I sent the dice cheat code, so my rolls may carry chosen `dice`. */
+      diceCheat?: true;
     }
   | { type: 'state'; view: unknown; legal: unknown[]; seq: number }
   | { type: 'events'; events: unknown[]; seq: number }

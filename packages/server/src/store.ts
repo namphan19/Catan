@@ -15,6 +15,8 @@ export interface PersistedSeat {
   afk?: boolean;
   /** The seat's portrait (rooms saved before avatars existed have none; restore assigns one). */
   avatar?: AvatarId;
+  /** The player unlocked choosing their dice (cheat code in chat). */
+  diceCheat?: boolean;
 }
 
 export interface PersistedRoom {
@@ -104,7 +106,8 @@ function isPersistedSeat(s: PersistedSeat): boolean {
     /^[0-9a-f]{64}$/.test(s.tokenHash) &&
     (s.bot === undefined || isBotLevel(s.bot)) &&
     (s.afk === undefined || typeof s.afk === 'boolean') &&
-    (s.avatar === undefined || isAvatar(s.avatar))
+    (s.avatar === undefined || isAvatar(s.avatar)) &&
+    (s.diceCheat === undefined || typeof s.diceCheat === 'boolean')
   );
 }
 
