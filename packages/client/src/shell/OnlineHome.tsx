@@ -1,4 +1,4 @@
-// Online home: pick a display name, create a room (3-6 players, 5-6 mode, VP target) or
+// Online home: pick a display name, create a room (2-6 players, 5-6 mode, VP target) or
 // join one by its 5-character code. A share link (?room=CODE) pre-fills the join code.
 import { useState } from 'react';
 import { ScenarioSelect } from './HomeScreen';
@@ -92,7 +92,7 @@ export function OnlineHome({ name, onName, onCreate, onJoin, online, onBack, onL
           <label>
             {t('online_players')}
             <select value={count} onChange={(e) => setCount(Number(e.target.value))}>
-              {[3, 4, 5, 6].map((n) => (
+              {[2, 3, 4, 5, 6].map((n) => (
                 <option key={n} value={n}>
                   {n}
                 </option>

@@ -15,6 +15,8 @@ export interface PersistedSeat {
   afk?: boolean;
   /** The seat's portrait (rooms saved before avatars existed have none; restore assigns one). */
   avatar?: AvatarId;
+  /** The player unlocked choosing their dice (cheat code in chat). */
+  diceCheat?: boolean;
 }
 
 export interface PersistedRoom {
@@ -85,7 +87,7 @@ function isPersistedRoom(v: unknown): v is PersistedRoom {
   if (typeof r.code !== 'string' || !CODE_RE.test(r.code)) return false;
   if (typeof r.hostSeat !== 'string' || !/^p[1-6]$/.test(r.hostSeat)) return false;
   if (typeof r.playerCount !== 'number' || !Number.isInteger(r.playerCount)) return false;
-  if (r.playerCount < 3 || r.playerCount > 6) return false;
+  if (r.playerCount < 2 || r.playerCount > 6) return false;
   if (!Array.isArray(r.seats) || r.seats.length !== r.playerCount) return false;
   if (!r.seats.every((s) => s && isPersistedSeat(s))) return false;
   if (Number(r.hostSeat.slice(1)) - 1 >= r.playerCount) return false;
@@ -104,7 +106,8 @@ function isPersistedSeat(s: PersistedSeat): boolean {
     /^[0-9a-f]{64}$/.test(s.tokenHash) &&
     (s.bot === undefined || isBotLevel(s.bot)) &&
     (s.afk === undefined || typeof s.afk === 'boolean') &&
-    (s.avatar === undefined || isAvatar(s.avatar))
+    (s.avatar === undefined || isAvatar(s.avatar)) &&
+    (s.diceCheat === undefined || typeof s.diceCheat === 'boolean')
   );
 }
 

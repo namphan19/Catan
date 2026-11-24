@@ -8,7 +8,7 @@ import { baseConfig, type PlayerView } from '@hexgame/engine';
 import { useI18n } from '../i18n';
 import { useAvatar, useName } from '../shell/names';
 import { assetUrl } from '../board/assets';
-import { playerColor, playerEmblem } from '../ui/colors';
+import { playerColor, playerEmblem, playerInk } from '../ui/colors';
 import { Emblem } from '../ui/Emblem';
 import { Avatar } from '../ui/Avatar';
 import { GuardIcon, HandIcon, PieceIcon, StarIcon, UiIcon } from '../ui/Icon';
@@ -49,7 +49,7 @@ export function PlayerCards({ view }: { view: PlayerView }) {
             key={p.id}
             role="listitem"
             className={`seat${p.id === view.viewer ? ' me' : ''}${acting ? ' acting' : ''}`}
-            style={{ '--seat': color } as React.CSSProperties}
+            style={{ '--seat': color, '--seat-text': playerInk(p.id) } as React.CSSProperties}
           >
             <div className="seat-grid">
             <div className="seat-id">

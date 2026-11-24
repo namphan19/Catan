@@ -4,6 +4,7 @@ import type { Action, Bag, Phase, PlayerId } from '../../types';
 import type { ActionDef, ApplyCtx, Ctx } from '../../ruleset/types';
 import { bagAdd, bagHas, bagSub, bagToList, bagTotal, bagValid } from '../../bag';
 import { randInt } from '../../rng';
+import { chosenDice } from '../../cheats';
 import {
   blockerAllowed, err, expect, handSize, nextSeat, player, releaseNewCards, resumePhase, setPhase, startTurn, subBags,
 } from './helpers';
@@ -52,13 +53,22 @@ export function resolveRoll(ctx: ApplyCtx): { sum: number; gains: Record<PlayerI
   return { sum, gains };
 }
 
+/** The rolled dice with the first two (production) replaced by the roller's chosen ones, if any.
+ *  The dice are still rolled first so the RNG stream (and so replays) stays the same either way. */
+export function withChosen(rolled: number[], a: Action): number[] {
+  const pick = chosenDice(a);
+  return pick ? [...pick, ...rolled.slice(2)] : rolled;
+}
+
 export const roll: ActionDef = {
   validate(ctx, a) {
+    if ((a as { dice?: unknown }).dice !== undefined && !chosenDice(a))
+      return err('BAD_DICE', 'Choose two dice values from 1 to 6.');
     return expect(ctx.state, a, ['preRoll']);
   },
   apply(ctx, a) {
     const { state, rules } = ctx;
-    const dice = rules.call('rollDice', ctx, []);
+    const dice = withChosen(rules.call('rollDice', ctx, []), a);
     state.turn.roll = dice;
     ctx.emit({ e: 'rolled', player: a.player, dice, sum: dice.reduce((s, d) => s + d, 0) });
     resolveRoll(ctx);

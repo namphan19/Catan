@@ -70,8 +70,8 @@ const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
 export function createGame(opts: CreateGameOptions): GameState {
   const { seed, playerCount } = opts;
-  if (!Number.isInteger(playerCount) || playerCount < 3 || playerCount > 6)
-    throw new Error('playerCount must be 3..6');
+  if (!Number.isInteger(playerCount) || playerCount < 2 || playerCount > 6)
+    throw new Error('playerCount must be 2..6');
   const rulesetIds = opts.rulesets ?? ['base'];
   if (rulesetIds[0] !== 'base') throw new Error('the base ruleset must come first');
   const rules = getRules(rulesetIds);

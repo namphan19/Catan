@@ -28,6 +28,7 @@ Change a decision by editing the config/hook and the test that pins it.
 | D20 | Trade responses | Responders may accept, decline or counter, and change their answer until the offer is confirmed (base p.7). Replaces the earlier one-answer rule. Repeating the identical answer is rejected (`SAME_RESPONSE`, 2026-11-17: it only flooded the log). At most 5 answers per responder per offer (`ANSWER_LIMIT`, 2026-11-17 playtest: an endless accept/decline toggle stalled clients). | review-fixes | lead (official, replaces PO D20) |
 | D21 | Extension limits (known) | New board shapes need a LayoutId entry; new playable cards are registered via config (playableCards) and new force-type cards via awards.largestForce.cards. | - | lead |
 | D22 | Strongholds expansion | Separate ruleset `strongholds`; its interpretations are the S-numbers in docs/RULES_STRONGHOLDS.md (S1/S2: icon-only costs and die faces need a PO check). | strongholds.test.ts | lead |
+| D23 | Two players | 2-player games use the standard board and the unchanged base rules (snake setup p1 p2 p2 p1, normal 7 flow, player trades with the one opponent). With the expansions: Tidelands uses its 3-player map, Corsair Coves drops relic cards as for 3 players; Strongholds unchanged. No extra balance rules (PO chose "just open 2 seats"). | board: 2 players standard layout; official-rules: 2 players snake; bot/sim: 2-player games | PO |
 
 ## Open questions for the PO
 1. Theme and names (resources, terrains, cards) - placeholders are used everywhere. Game title: **Boschtan** (PO, 2026-11-13).

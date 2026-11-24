@@ -1,4 +1,4 @@
-// End-to-end: three ws clients play a scripted full game by choosing legal actions until a
+// End-to-end: three (and two) ws clients play a scripted full game by choosing legal actions until a
 // winner. vpToWin is lowered so the game finishes well within the time budget.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { shutdown, start, startRoom, type Player } from './helpers';
@@ -51,8 +51,8 @@ function prng(seed: number): () => number {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 describe('full game', () => {
-  it('three clients play a complete game to a winner through the server', async () => {
-    players = await startRoom(url, 3, { vpToWin: 3 });
+  it.each([3, 2])('%i clients play a complete game to a winner through the server', async (n) => {
+    players = await startRoom(url, n, { vpToWin: 3 });
     const deadline = Date.now() + 50_000;
     const actedSeq = new Map(players.map((p) => [p.name, -1]));
     const rngs = players.map((_, i) => prng(1000 + i));

@@ -1,5 +1,5 @@
 // Redacted views. The server must only ever send these, never a raw GameState.
-import type { Bag, CardId, GameEvent, GameInit, GameState, PlayerId } from './types';
+import type { Action, Bag, CardId, GameEvent, GameInit, GameState, PlayerId } from './types';
 import { bagTotal } from './bag';
 import { makeCtx, victoryPoints } from './engine';
 
@@ -36,6 +36,12 @@ export interface PlayerView {
 
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
+/** A roll with chosen dice (dice cheat) looks like a normal roll to everyone but the roller, even after the game. */
+function hideChosen(a: Action): Action {
+  const { dice: _dice, ...rest } = a as Action & { dice?: unknown };
+  return rest as Action;
+}
+
 /**
  * View for one player (or a spectator with null). Hidden: the seed and RNG state (they would reveal
  * the deck order and future dice), the deck order, other players' hands and cards (counts only),
@@ -53,9 +59,9 @@ export function getPlayerView(state: GameState, viewer: PlayerId | null): Player
   const ctx = makeCtx(state);
   const ext = ctx.rules.views(ctx, viewer);
   // Logged actions may hold private choices of extension rulesets; reveal all once the game is over.
-  const log = state.winner
-    ? state.log
-    : state.log.map((l) => ({ ...l, action: ctx.rules.redactAction(l.action, viewer) })); // roll/gains are public
+  const log = (
+    state.winner ? state.log : state.log.map((l) => ({ ...l, action: ctx.rules.redactAction(l.action, viewer) })) // roll/gains are public
+  ).map((l) => (l.action.t === 'roll' && 'dice' in l.action && l.action.player !== viewer ? { ...l, action: hideChosen(l.action) } : l));
   return clone({
     ...(Object.keys(ext).length ? { ext } : {}),
     viewer,

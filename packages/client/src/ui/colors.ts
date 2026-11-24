@@ -36,6 +36,24 @@ export function playerEmblem(id: string): string {
   return SEAT_EMBLEMS[(seatIndex(id) - 1) % SEAT_EMBLEMS.length] ?? 'sun';
 }
 
+/**
+ * Text colour that reads on a band painted in the seat colour (phones put the player's name
+ * on it): white or ink, whichever contrasts more with the seat. WCAG relative luminance, so
+ * the choice follows the palette instead of a hand-kept list.
+ */
+export function playerInk(id: string): string {
+  const hex = PLAYER_HEX[`p${seatIndex(id)}`] ?? '#6b5b4e';
+  const channel = (i: number) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  const seat = 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+  const ink = 0.036; // --ink #3b2f2f
+  const onWhite = 1.05 / (seat + 0.05);
+  const onInk = (seat + 0.05) / (ink + 0.05);
+  return onInk > onWhite ? 'var(--ink)' : '#fff';
+}
+
 /** Terrain fill colours for the fallback board (and resource chips). */
 export const TERRAIN_COLORS: Record<string, string> = {
   forest: 'var(--forest)',

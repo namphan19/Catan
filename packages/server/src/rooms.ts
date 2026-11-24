@@ -15,6 +15,7 @@ import {
   getEventsView,
   getLegalActions,
   getPlayerView,
+  isDiceCheat,
   replay,
   validateAction,
   type Action,
@@ -59,6 +60,8 @@ interface RoomPlayer {
   afk?: boolean;
   /** Portrait picked in the lobby (unique per room); seats without one get a free one at start. */
   avatar?: AvatarId;
+  /** The player sent the dice cheat code in chat: their rolls may carry chosen dice. Known only to them. */
+  diceCheat?: boolean;
 }
 
 /** Give every seat without a portrait a free one, in seat order (game start, restored rooms). */
@@ -268,6 +271,7 @@ export class Hub {
           ...(s.bot ? { bot: s.bot } : {}),
           ...(s.afk && !s.bot ? { afk: true } : {}),
           ...(s.avatar ? { avatar: s.avatar } : {}),
+          ...(s.diceCheat && !s.bot ? { diceCheat: true } : {}),
         }));
         // Drop duplicates a hand-edited file might carry, then fill the gaps.
         const seen = new Set<AvatarId>();
@@ -622,6 +626,16 @@ export class Hub {
     }
     rec.chatTimes.push(now);
     const sender = room.players[idx];
+    // The dice cheat code is never shown to the room: it unlocks choosing my dice, told only to me.
+    if (isDiceCheat(msg.text)) {
+      if (!sender.diceCheat) {
+        sender.diceCheat = true;
+        console.log(`[room] ${room.code} ${rec.seat} unlocked the dice cheat`);
+        this.persist(room);
+      }
+      for (const r of this.connsInRoom(room)) if (r.seat === rec.seat) r.conn.send({ type: 'room', ...this.roomMsg(room, r) });
+      return;
+    }
     const message: ChatMessage = {
       id: ++room.chatSeq,
       seat: seatOf(idx),
@@ -732,6 +746,11 @@ export class Hub {
     }
     if (room.players[Number(rec.seat.slice(1)) - 1]?.afk) {
       this.error(rec.conn, msg.reqId, 'AFK_ACTIVE', 'A stand-in bot plays your seat; take it back first.');
+      return;
+    }
+    if ((msg.action as { t?: unknown }).t === 'roll' && (msg.action as { dice?: unknown }).dice !== undefined
+      && !room.players[Number(rec.seat.slice(1)) - 1]?.diceCheat) {
+      this.error(rec.conn, msg.reqId, 'DICE_LOCKED', 'You cannot choose the dice.');
       return;
     }
     const v = validateAction(game.state, msg.action as Action);
@@ -967,6 +986,7 @@ export class Hub {
       })),
       you: rec.seat,
       started: room.started,
+      ...(rec.seat && room.players[Number(rec.seat.slice(1)) - 1]?.diceCheat ? { diceCheat: true } : {}),
     };
   }
 
@@ -1007,6 +1027,7 @@ export class Hub {
         ...(s.bot ? { bot: s.bot } : {}),
         ...(s.afk ? { afk: true } : {}),
         ...(s.avatar ? { avatar: s.avatar } : {}),
+        ...(s.diceCheat ? { diceCheat: true } : {}),
       })),
       init: room.game.state.init,
       actions: room.game.actions,
@@ -1034,7 +1055,7 @@ function safeName(name: string): string {
  */
 function isRestorable(p: PersistedRoom): boolean {
   if (!CODE_RE.test(p.code)) return false;
-  if (!Number.isInteger(p.playerCount) || p.playerCount < 3 || p.playerCount > 6) return false;
+  if (!Number.isInteger(p.playerCount) || p.playerCount < 2 || p.playerCount > 6) return false;
   if (p.seats.length !== p.playerCount) return false;
   const hostIdx = Number(p.hostSeat.slice(1)) - 1;
   return Number.isInteger(hostIdx) && hostIdx >= 0 && hostIdx < p.playerCount;

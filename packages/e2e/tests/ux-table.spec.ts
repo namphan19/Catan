@@ -129,6 +129,9 @@ test('cost card collapses and remembers it; quick help opens and closes', async 
   await page.goto('/');
   await page.evaluate(() => localStorage.setItem('boschtan.costs', 'open'));
   await startGame(page, '4', 'e2e-ux');
+  // The card folds while the board asks for a pick (since 2026-11-23), so play the setup out
+  // before checking the saved "open" choice.
+  await playSetupUntilRoll(page);
 
   const card = page.locator('.cost-card');
   await expect(card.locator('.cost-row')).toHaveCount(4);
@@ -138,6 +141,7 @@ test('cost card collapses and remembers it; quick help opens and closes', async 
 
   // A new page load (new game) keeps it collapsed.
   await startGame(page, '4', 'e2e-ux');
+  await playSetupUntilRoll(page);
   await expect(page.locator('.cost-card')).toBeVisible();
   await expect(page.locator('.cost-card .cost-row')).toHaveCount(0);
   await page.locator('.cost-card-head').click();

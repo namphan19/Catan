@@ -71,9 +71,9 @@ const seaFrom = (s: GameState, g: Graph, v: VertexId, not: EdgeId[] = []) =>
   g.vertexEdges[v].find((e) => !not.includes(e) && seaSide(s, g, e) && !landSide(s, g, e) && !s.pieces.roads[e] && !s.pieces.ships?.[e]);
 
 describe('tidelands: scenarios and maps', () => {
-  it('every scenario creates a board for 3 to 6 players with its own VP target', () => {
+  it('every scenario creates a board for 2 to 6 players with its own VP target', () => {
     for (const id of SCENARIO_IDS) {
-      for (const n of [3, 4, 5, 6]) {
+      for (const n of [2, 3, 4, 5, 6]) {
         const s = createGame({ seed: `m-${id}-${n}`, playerCount: n, rulesets: ['base', 'tidelands'], options: { scenario: id } });
         const sc = SCENARIOS[id];
         expect(s.init.layout).toBe(sc.maps[n >= 5 ? '56' : n === 4 ? '4' : '3']);

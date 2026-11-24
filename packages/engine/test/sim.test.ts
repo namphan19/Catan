@@ -46,11 +46,11 @@ function lockstep(seed: string, players: number, rulesets: string[], maxActions 
 }
 
 describe('sim mode', () => {
-  it.each([3, 4, 5, 6])('matches the real engine move by move (%i players, base)', (n) => {
+  it.each([2, 3, 4, 5, 6])('matches the real engine move by move (%i players, base)', (n) => {
     expect(lockstep(`sim-base-${n}`, n, ['base'])).toBeGreaterThan(50);
   }, 120_000);
 
-  it.each([4, 5])('matches the real engine move by move (%i players, strongholds)', (n) => {
+  it.each([2, 4, 5])('matches the real engine move by move (%i players, strongholds)', (n) => {
     expect(lockstep(`sim-sh-${n}`, n, ['base', 'strongholds'])).toBeGreaterThan(50);
   }, 120_000);
 

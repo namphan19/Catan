@@ -15,7 +15,7 @@ Server in ra các link, ví dụ `network: http://10.185.71.226:8080/`. Gửi li
 Tắt server: Ctrl+C (ván đang chơi được lưu trước khi tắt).
 
 ## 3. Chơi
-- Người tạo phòng: nhập tên -> "Tạo phòng" -> chọn số người (3-6) -> gửi mã phòng 5 ký tự hoặc link
+- Người tạo phòng: nhập tên -> "Tạo phòng" -> chọn số người (2-6) -> gửi mã phòng 5 ký tự hoặc link
   `http://<máy>:8080/?room=MÃ` cho mọi người.
 - Mọi người vào, bấm "Sẵn sàng"; chủ phòng bấm "Bắt đầu". Chủ phòng có thể đuổi người trước khi bắt đầu.
 - Rớt mạng hoặc tải lại trang: mở lại cùng trình duyệt là vào lại đúng ghế.
