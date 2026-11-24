@@ -6,7 +6,7 @@ no `Date`/`Math.random`. State is plain JSON. Types: `packages/engine/src/types.
 ## Functions
 | Function | Purpose |
 |---|---|
-| `createGame({ seed, playerCount, layout?, rulesets?, vpToWin?, extraBuild?, options? })` | New game. 3-6 players (ids `p1..pN`); 5-6 default to the large layout and paired turns. `rulesets` defaults to `['base']`. `options` are ruleset options kept in `init.options` (e.g. `{ scenario: 'firstLandfall' }` for tidelands). |
+| `createGame({ seed, playerCount, layout?, rulesets?, vpToWin?, extraBuild?, options? })` | New game. 2-6 players (ids `p1..pN`); 2-4 use the standard layout; 5-6 default to the large layout and paired turns. `rulesets` defaults to `['base']`. `options` are ruleset options kept in `init.options` (e.g. `{ scenario: 'firstLandfall' }` for tidelands). |
 | `validateAction(state, action)` | `{ ok: true }` or `{ ok: false, code, message }` (codes like `NOT_YOUR_TURN`, `WRONG_PHASE`, `DISTANCE_RULE`, `CANNOT_AFFORD`). |
 | `applyAction(state, action)` | `{ state, events }`; never mutates the input; throws `IllegalActionError(code)` if invalid; appends `{ seq, action, roll?, gains? }` to `state.log` (`roll` = dice of a roll action, `gains` = public production it caused; both shown in player views). |
 | `getLegalActions(state, playerId)` | Concrete legal actions. Open-ended spaces are sampled: offers = all 1-for-1 offers, discards = up to 5000 combinations (validateAction is the authority). |

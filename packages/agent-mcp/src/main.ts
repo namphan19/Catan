@@ -172,7 +172,7 @@ server.registerTool(
   {
     description: 'Create a new room (you become host). Share the code with the other players.',
     inputSchema: {
-      playerCount: z.number().int().min(3).max(6),
+      playerCount: z.number().int().min(2).max(6),
       vpToWin: z.number().int().min(3).max(30).optional(),
       strongholds: z.boolean().optional().describe('Play with the Strongholds expansion'),
       tidelands: z.string().optional().describe(`Tidelands (sea) scenario id: ${SCENARIO_IDS.join(', ')}`),

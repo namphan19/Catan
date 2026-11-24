@@ -173,8 +173,8 @@ function parseHello(msg: Record<string, unknown>, reqId?: string): ClientMsg {
 
 function parseCreateRoom(msg: Record<string, unknown>, reqId?: string): ClientMsg {
   const playerCount = msg.playerCount;
-  if (typeof playerCount !== 'number' || !Number.isInteger(playerCount) || playerCount < 3 || playerCount > 6)
-    throwErr('BAD_MESSAGE', 'playerCount must be an integer between 3 and 6.');
+  if (typeof playerCount !== 'number' || !Number.isInteger(playerCount) || playerCount < 2 || playerCount > 6)
+    throwErr('BAD_MESSAGE', 'playerCount must be an integer between 2 and 6.');
   const out: { type: 'createRoom'; playerCount: number; options?: RoomOptions; reqId?: string } = {
     type: 'createRoom',
     playerCount,

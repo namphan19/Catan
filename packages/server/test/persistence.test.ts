@@ -54,8 +54,10 @@ describe('RoomStore.loadAll validation', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hexgame-store-'));
     try {
       write(dir, 'ABCDE.json', validRoom());
+      const duo = createGame({ seed: 'seed-2', playerCount: 2 });
+      write(dir, 'DUWAB.json', validRoom({ code: 'DUWAB', playerCount: 2, seats: validRoom().seats.slice(0, 2), init: duo.init }));
       const store = new RoomStore(dir);
-      expect(store.loadAll()).toHaveLength(1);
+      expect(store.loadAll()).toHaveLength(2);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -66,7 +68,7 @@ describe('RoomStore.loadAll validation', () => {
     try {
       write(dir, 'notjson.json', 'this is { not json');
       write(dir, 'traversal.json', validRoom({ code: '../evil' }));
-      write(dir, 'fewplayers.json', validRoom({ playerCount: 2, seats: validRoom().seats.slice(0, 2) }));
+      write(dir, 'fewplayers.json', validRoom({ playerCount: 1, seats: validRoom().seats.slice(0, 1) }));
       write(dir, 'toomany.json', validRoom({ playerCount: 7, seats: [...validRoom().seats] }));
       write(dir, 'seatmismatch.json', validRoom({ seats: validRoom().seats.slice(0, 2) }));
       write(dir, 'badhash.json', validRoom({ seats: validRoom().seats.map((s) => ({ ...s, tokenHash: 'zz' })) }));
@@ -128,7 +130,7 @@ describe('Hub.restore validation', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hexgame-restore2-'));
     try {
       write(dir, 'traversal.json', validRoom({ code: '../evil' }));
-      write(dir, 'badcount.json', validRoom({ playerCount: 2, seats: validRoom().seats.slice(0, 2) }));
+      write(dir, 'badcount.json', validRoom({ playerCount: 1, seats: validRoom().seats.slice(0, 1) }));
       const hub = new Hub({ store: new RoomStore(dir) });
       expect(hub.restore()).toBe(0);
       const { conn, sent } = fakeConn(hub);

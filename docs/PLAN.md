@@ -4,7 +4,7 @@ Owner (PO): the user. Tech lead: Claude. Workers: opencode agents per role in `t
 
 ## 1. Goal
 A web-based multiplayer implementation of an **original** hex-tile settlement/trading game (our own name,
-theme, rules text and art; not a copy of any commercial game) for 3-6 players, private use with friends.
+theme, rules text and art; not a copy of any commercial game) for 2-6 players, private use with friends.
 Later: an original "advanced" expansion ruleset that plugs into the same engine without rewrites.
 
 ## 2. Scope
@@ -63,7 +63,7 @@ decision. Server: host adds bots in the lobby (`addBot`), bots move after `botDe
 The expansion is only played with generic scores for "sh:*" actions (step 5).
 M4 step 2 (2026-11-17): sim mode `packages/engine/src/sim/` - `toSim`/`cloneSim` (hand-written deep copy, no
 log), `simApply` (same rule code as applyAction, in place, no copy, no log), `simLegal` (skips player trades),
-`simActors`. test/sim.test.ts runs real and sim engines in lockstep (base 3-6 players, strongholds 4-5, all
+`simActors`. test/sim.test.ts runs real and sim engines in lockstep (base 2-6 players, strongholds 2/4/5, all
 actions incl. trades) and requires identical states and legal lists after every move. Engine speedups that keep
 results identical: placeRoad.validate uses roadConnects (was O(edges^2)), legal() returns early when the cost
 or phase check must fail, road/settlement spot scans only look near the player's network, getLegalActions

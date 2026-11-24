@@ -1034,7 +1034,7 @@ function safeName(name: string): string {
  */
 function isRestorable(p: PersistedRoom): boolean {
   if (!CODE_RE.test(p.code)) return false;
-  if (!Number.isInteger(p.playerCount) || p.playerCount < 3 || p.playerCount > 6) return false;
+  if (!Number.isInteger(p.playerCount) || p.playerCount < 2 || p.playerCount > 6) return false;
   if (p.seats.length !== p.playerCount) return false;
   const hostIdx = Number(p.hostSeat.slice(1)) - 1;
   return Number.isInteger(hostIdx) && hostIdx >= 0 && hostIdx < p.playerCount;

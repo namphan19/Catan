@@ -94,6 +94,24 @@ test('portrait: six players stack as two rows of three, names readable', async (
   expect(errors()).toEqual([]);
 });
 
+test('portrait: two players share one row, the page fits the screen', async ({ page }, testInfo) => {
+  const errors = captureErrors(page);
+  await page.goto('/');
+  await page.getByLabel(VI.players).selectOption('2');
+  await page.getByLabel(VI.seed).fill('e2e-mobile-duo');
+  await page.getByRole('button', { name: VI.start }).click();
+  await confirmCover(page);
+  await expectFitsScreen(page);
+
+  const seats = page.locator('.seat-strip .seat');
+  await expect(seats).toHaveCount(2);
+  const tops = await seats.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
+  expect(new Set(tops).size).toBe(1);
+  await clearHover(page);
+  await page.screenshot({ path: shotPath('mobile-two.png', testInfo.project.name) });
+  expect(errors()).toEqual([]);
+});
+
 test('portrait: the menu holds the shell buttons; the base game has no side sheet', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await loadFixture(page, 'city-game.json');

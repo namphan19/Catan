@@ -85,7 +85,7 @@ function isPersistedRoom(v: unknown): v is PersistedRoom {
   if (typeof r.code !== 'string' || !CODE_RE.test(r.code)) return false;
   if (typeof r.hostSeat !== 'string' || !/^p[1-6]$/.test(r.hostSeat)) return false;
   if (typeof r.playerCount !== 'number' || !Number.isInteger(r.playerCount)) return false;
-  if (r.playerCount < 3 || r.playerCount > 6) return false;
+  if (r.playerCount < 2 || r.playerCount > 6) return false;
   if (!Array.isArray(r.seats) || r.seats.length !== r.playerCount) return false;
   if (!r.seats.every((s) => s && isPersistedSeat(s))) return false;
   if (Number(r.hostSeat.slice(1)) - 1 >= r.playerCount) return false;

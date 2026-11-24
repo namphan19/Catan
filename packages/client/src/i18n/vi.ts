@@ -27,7 +27,7 @@ export const vi: Record<string, string> = {
   home_intro: 'Chọn số người, đặt tên cho từng ghế rồi gieo một hạt giống mới.',
   home_randomSeed: 'Đổi ngẫu nhiên',
   home_atlasCaption: 'Hải đồ Boschtan',
-  home_footerNote: 'Bàn 3–6 người · hải đồ 19 hoặc 30 ô',
+  home_footerNote: 'Bàn 2–6 người · hải đồ 19 hoặc 30 ô',
   home_tip: 'Mẹo: 6 và 8 cho nhiều tài nguyên nhất — nhưng cũng dễ bị cướp nhất.',
 
   // Shell strip

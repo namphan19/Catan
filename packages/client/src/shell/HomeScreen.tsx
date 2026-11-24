@@ -235,7 +235,7 @@ export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: Hom
                 <label htmlFor="home-count">{t('home_players')}</label>
                 <span className="select-wrap">
                   <select id="home-count" value={count} onChange={(e) => setCount(Number(e.target.value))}>
-                    {[3, 4, 5, 6].map((n) => (
+                    {[2, 3, 4, 5, 6].map((n) => (
                       <option key={n} value={n}>
                         {n}
                       </option>

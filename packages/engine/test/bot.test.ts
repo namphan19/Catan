@@ -1,4 +1,4 @@
-// Heuristic bot: every decision is legal, games finish for 3-6 players and with the expansion, and
+// Heuristic bot: every decision is legal, games finish for 2-6 players and with the expansion, and
 // the bot clearly beats random play. Uses the arena from fuzz/botArena.ts.
 import { describe, expect, it } from 'vitest';
 import {
@@ -7,7 +7,7 @@ import {
 import { playArenaGame, type Policy } from '../fuzz/botArena';
 
 describe('heuristic bot', () => {
-  it.each([3, 4, 5, 6])('finishes all-bot games with %i players without illegal moves', (n) => {
+  it.each([2, 3, 4, 5, 6])('finishes all-bot games with %i players without illegal moves', (n) => {
     const seats: Policy[] = ['hard', 'normal', 'easy', 'hard', 'normal', 'easy'].slice(0, n) as Policy[];
     for (const seed of ['b1', 'b2']) {
       const r = playArenaGame(`${seed}-${n}`, seats);
@@ -23,6 +23,19 @@ describe('heuristic bot', () => {
       expect(r.invalid).toBe(0);
     }
   }, 60_000);
+
+  it('finishes 2-player games with each expansion', () => {
+    const setups: Array<[string[], Record<string, unknown>?]> = [
+      [['base', 'strongholds']],
+      [['base', 'tidelands'], { scenario: 'firstLandfall' }],
+      [['base', 'strongholds', 'tidelands'], { scenario: 'firstLandfall' }],
+    ];
+    for (const [rulesets, options] of setups) {
+      const r = playArenaGame(`duo-${rulesets.join('+')}`, ['hard', 'normal'], rulesets, 20000, options);
+      expect(r.winner).toBeDefined();
+      expect(r.invalid).toBe(0);
+    }
+  }, 120_000);
 
   it('beats random players', () => {
     let wins = 0;

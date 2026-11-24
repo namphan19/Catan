@@ -36,9 +36,9 @@ export function initCoves(state: GameState): CovesState {
     c.war[id] = 0;
     c.lairs[id] = LAIRS;
   });
-  // No blocker in this scenario; 3 players play without relic cards, larger tables use them as guards.
+  // No blocker in this scenario; 2-3 players play without relic cards, larger tables use them as guards.
   state.board.blocker = '';
-  state.bank.deck = state.players.length === 3
+  state.bank.deck = state.players.length <= 3
     ? state.bank.deck.filter((x) => x !== 'relic')
     : state.bank.deck.map((x) => (x === 'relic' ? 'guard' : x));
   return c;

@@ -26,7 +26,7 @@ export const en: Record<string, string> = {
   home_intro: 'Choose the table, name each seat, then sow a new seed.',
   home_randomSeed: 'Randomise',
   home_atlasCaption: 'The Boschtan chart',
-  home_footerNote: '3–6 players · 19 or 30-hex charts',
+  home_footerNote: '2–6 players · 19 or 30-hex charts',
   home_tip: 'Tip: 6 and 8 produce the most — and attract the robber most.',
 
   strip_export: 'Export log',
