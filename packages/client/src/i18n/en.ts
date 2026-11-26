@@ -57,6 +57,7 @@ export const en: Record<string, string> = {
 
   player: 'Player {n}',
   seat_list: 'Players',
+  playerDetails: 'Player details',
   you: 'You',
   turnTag: 'playing',
   waitingFor: 'Waiting for {name}…',

@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { useI18n } from '../i18n';
 
 interface DialogProps {
   title: string;
@@ -11,11 +12,14 @@ interface DialogProps {
    * and usable) - for answers to someone else's trade offer.
    */
   docked?: boolean;
+  /** Optional layout hook for specialised sheets (for example the mobile player details). */
+  className?: string;
 }
 
 /** Modal dialog: role=dialog, aria-modal, Esc closes unless locked, initial focus inside. */
-export function Dialog({ title, children, locked, onClose, docked }: DialogProps) {
+export function Dialog({ title, children, locked, onClose, docked, className }: DialogProps) {
   const boxRef = useRef<HTMLDivElement>(null);
+  const { t } = useI18n();
 
   // The listener must stay registered across re-renders: callers pass a fresh `onClose`
   // on every render, and re-subscribing while another Esc listener re-renders the parent
@@ -45,12 +49,12 @@ export function Dialog({ title, children, locked, onClose, docked }: DialogProps
         if (!docked && !locked && e.target === e.currentTarget) onClose?.();
       }}
     >
-      <div className="dialog" role="dialog" aria-modal={docked ? 'false' : 'true'} aria-label={title} ref={boxRef}>
+      <div className={`dialog${className ? ` ${className}` : ''}`} role="dialog" aria-modal={docked ? 'false' : 'true'} aria-label={title} ref={boxRef}>
         <div className="dialog-head">
           <h2>{title}</h2>
           {!locked && (
-            <button type="button" className="btn btn-icon" onClick={onClose} aria-label="Đóng">
-              ✕
+            <button type="button" className="btn btn-icon" onClick={onClose} aria-label={t('dlg_close')}>
+              <span aria-hidden="true">✕</span>
             </button>
           )}
         </div>
