@@ -2,7 +2,7 @@
 // the base config; the "you can pay this" marks only compare the viewer's hand with the
 // cost bag for display — whether a build is actually allowed still comes from getLegalActions.
 import { useState } from 'react';
-import { TL, baseConfig, type PlayerView } from '@hexgame/engine';
+import { HL, TL, baseConfig, type PlayerView } from '@hexgame/engine';
 import { useI18n, resKey, RESOURCE_ORDER } from '../i18n';
 import { playerColor } from '../ui/colors';
 import { ResourceIcon } from '../ui/ResourceIcon';
@@ -102,7 +102,14 @@ export function CostCard({ view, picking = false }: { view: PlayerView; picking?
               );
             })}
           </ul>
-          <p className="cost-note">{t('cost_bank', { r: baseConfig.bankRate })}</p>
+          {view.ext?.highlands ? (
+            <>
+              <p className="cost-note">{t('cost_bank', { r: HL.bankRate })}</p>
+              <p className="cost-note">{t('hl_costNote')}</p>
+            </>
+          ) : (
+            <p className="cost-note">{t('cost_bank', { r: baseConfig.bankRate })}</p>
+          )}
         </>
       )}
     </section>

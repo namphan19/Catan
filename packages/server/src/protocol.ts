@@ -11,6 +11,8 @@ export interface RoomOptions {
   /** Play with the Tidelands (sea) expansion: the scenario id. Combines with strongholds where the
    *  scenario allows it (5-6 players: paired mode only). */
   tidelands?: string;
+  /** Play the Highlands expansion (tribes rise and decline, 2-4 players): the map mode. Plays alone. */
+  highlands?: 'variable' | 'starter';
 }
 
 /** Engine ruleset list and options for room options (base first). */
@@ -18,11 +20,17 @@ export function gameSetup(o: RoomOptions): { rulesets: string[]; options?: Recor
   const rulesets = ['base'];
   if (o.expansion) rulesets.push(o.expansion);
   if (o.tidelands) rulesets.push('tidelands');
+  if (o.highlands) return { rulesets: ['base', 'highlands'], options: { map: o.highlands } };
   return { rulesets, ...(o.tidelands ? { options: { scenario: o.tidelands } } : {}) };
 }
 
 /** Why these options cannot make a game (null = fine). Shared by the parser and the room store. */
-export function optionsProblem(o: RoomOptions): string | null {
+export function optionsProblem(o: RoomOptions, playerCount?: number): string | null {
+  if (o.highlands !== undefined) {
+    if (o.highlands !== 'variable' && o.highlands !== 'starter') return "options.highlands must be 'variable' or 'starter'.";
+    if (o.expansion || o.tidelands) return 'Highlands is played alone.';
+    if (playerCount !== undefined && playerCount > 4) return 'Highlands is for 2-4 players.';
+  }
   if (o.expansion !== undefined && o.expansion !== 'strongholds') return "options.expansion must be 'strongholds'.";
   if (o.tidelands !== undefined) {
     const sc = typeof o.tidelands === 'string' ? SCENARIOS[o.tidelands] : undefined;
@@ -202,7 +210,9 @@ function parseCreateRoom(msg: Record<string, unknown>, reqId?: string): ClientMs
     if (expansion !== undefined) clean.expansion = expansion as 'strongholds';
     const tide = options.tidelands;
     if (tide !== undefined) clean.tidelands = tide as string;
-    const problem = optionsProblem(clean);
+    const high = options.highlands;
+    if (high !== undefined) clean.highlands = high as 'variable' | 'starter';
+    const problem = optionsProblem(clean, playerCount);
     if (problem) throwErr('BAD_MESSAGE', problem);
     out.options = clean;
   }

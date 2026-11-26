@@ -177,12 +177,14 @@ function GameApp() {
   const onNew = useCallback(
     (seed: string, playerNames: string[], setup: GameSetup = { strongholds: false, tidelands: null }, seatBots: (BotLevel | null)[] = []) => {
       try {
-        const rulesets = ['base', ...(setup.strongholds ? ['strongholds'] : []), ...(setup.tidelands ? ['tidelands'] : [])];
+        const rulesets = setup.highlands
+          ? ['base', 'highlands']
+          : ['base', ...(setup.strongholds ? ['strongholds'] : []), ...(setup.tidelands ? ['tidelands'] : [])];
         const s = createGame({
           seed,
           playerCount: playerNames.length,
           ...(rulesets.length > 1 ? { rulesets } : {}),
-          ...(setup.tidelands ? { options: { scenario: setup.tidelands } } : {}),
+          ...(setup.highlands ? { options: { map: setup.highlands } } : setup.tidelands ? { options: { scenario: setup.tidelands } } : {}),
         });
         const nm: Record<PlayerId, string> = {};
         const bt: Record<PlayerId, BotLevel> = {};

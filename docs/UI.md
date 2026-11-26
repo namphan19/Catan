@@ -91,18 +91,22 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
 3. Hot-seat: "Pass the device to <name>" cover between actors so hands stay hidden.
 4. Phone layout (2026-11-23; CSS in src/table/mobile.css, e2e project "mobile"):
    - portrait (<= 640 px wide): top bar with the turn in a dark chip + "?" + a menu (shell buttons,
-     language); players in one grid row of colour tiles (seat-colour band with portrait + VP, the full
-     name under it, hand / cards / guards; five or six players use three per row, pieces left dropped);
+     language); 2-4 players share one grid row of compact colour tiles (seat-colour band with portrait,
+     hand badge and VP, readable name under it). Five or six players use one shallow swipe/snap rail;
+      tapping any tile opens its public details in a bottom sheet (VP progress, hand / development
+      cards / guards, pieces left, awards).
      board fills the middle (pinch zoom with two fingers, drag to pan) with a round zoom rail top-left;
-     hand as a compact icon dock (every resource keeps its slot, count + "+N" pulse); one row of equal
-     action buttons with the primary Roll / End turn button pinned on the right (the rest scroll
-     sideways).
+     hand as a compact icon dock (every base resource keeps its slot, count + "+N" pulse); secondary
+     actions scroll sideways while the primary Roll / End turn button stays pinned on the right.
+     Utility controls have 44 px hit areas and fixed bars respect safe-area insets.
    - landscape (<= 520 px tall): board on the left at full height, right column with top bar, the same
-     player tiles (three per row at five or six players), the icon hand dock and the actions; event
+     player tiles (five or six players use the swipeable rail), the icon hand dock and the actions; event
      toasts stack in the free space above the actions instead of covering the board.
    - the side column (Strongholds and Tidelands panels; the base game has none) is a sheet behind the
      "Bảng mở rộng" button (a content-height bottom sheet in portrait, from the right in landscape);
-     picking an action in a panel closes it so the board is in view.
+     the open sheet has a board backdrop and closes with its button, Esc or a backdrop tap; picking an
+      action in a panel closes it so the board is in view. Strongholds advance cards sit above the
+      utility pills so they cannot cover the sheet toggle or cost button.
 
 ## Interaction rules
 - The UI never decides legality: buttons, highlights and dialogs come from getLegalActions; disabled
@@ -121,7 +125,7 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
 
 ## Component structure (packages/client/src)
 ui/ (tokens.css, Button, Panel, Dialog, Toast, Tooltip), board/ (Board, HexTile, Token, Harbor, Piece,
-Highlights), board3d/ (Board3D, terrain, decor, pieces3d, strongholds3d), table/ (GameTable, TopBar, PlayerCards,
+Highlights), board3d/ (Board3D, terrain, decor, pieces3d, strongholds3d), table/ (GameTable, TopBar, PlayerCards, PlayerDialog,
 ActionBar, CostCard, HandPanel), strongholds/ (Panel, AdvanceHand, BoardExtras, ChoiceDialogs, chooser), dialogs/
 (DiscardDialog, StealDialog, TradeDialog, CardDialog), shell/ (HomeScreen, HomeMap, home.css, OnlineHome, Lobby,
 ChatBubble, HotseatShell, PassDeviceCover), ui/Avatar, i18n/. GameTable takes { view, legal, onAction, events } only, so the online

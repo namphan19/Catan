@@ -14,17 +14,21 @@ import { stagePrompt, valueLabel } from '../strongholds/labels';
 import { TidelandsPanel } from '../tidelands/TidelandsPanel';
 import { SeaExtras } from '../tidelands/SeaExtras';
 import { tlOf } from '../tidelands/view';
+import { HighlandsPanel } from '../highlands/HighlandsPanel';
+import { hlOf } from '../highlands/labels';
 import { getBoardGraph } from '../board/geom';
 import { useI18n, resKey } from '../i18n';
 import { useName } from '../shell/names';
 import { playerColor, playerEmblem } from '../ui/colors';
 import { Emblem } from '../ui/Emblem';
 import { Button } from '../ui/Button';
+import { UiIcon } from '../ui/Icon';
 import { ToastStack, useToasts } from '../ui/Toast';
 import { Board } from '../board/Board';
 import { EMPTY_HIGHLIGHTS, type Highlights } from '../board/Highlights';
 import { TopBar } from './TopBar';
 import { PlayerCards } from './PlayerCards';
+import { PlayerDialog } from './PlayerDialog';
 import { actorOf, statusOf } from './StatusBanner';
 import { DiceBox } from './DiceBox';
 import { CostCard } from './CostCard';
@@ -82,6 +86,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const [helpOpen, setHelpOpen] = useState(false);
   /** Phones: the side column (log, trade, expansion panels) is a bottom sheet, open or not. */
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [playerOpen, setPlayerOpen] = useState<PlayerId | null>(null);
   const [producing, setProducing] = useState<ReadonlySet<string> | undefined>(undefined);
   const phaseKey = view.phase.k;
 
@@ -94,6 +99,9 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   for (const r of ['timber', 'clay', 'fiber', 'grain', 'stone']) bankBase[r] = view.bank.hand[r] ?? 0;
   const silkSteals = useMemo(() => legal.filter((a) => a.t === 'tl:stealSilk'), [legal]);
 
+  // ---- Highlands expansion: tribes, goods and award powers -------------------------------------
+  const hl = hlOf(view);
+
   // ---- Strongholds expansion: a staged chooser that narrows the legal actions ------------------
   const sh = (view.ext?.strongholds ?? null) as StrongholdsView | null;
   const [choice, setChoice] = useState<{ cands: Action[]; title: string; mandatory: boolean } | null>(null);
@@ -103,12 +111,16 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   useEffect(() => {
     // A new legal list ends any running choice; a prompt addressed to the viewer starts one.
     const harborWindow = view.phase.k === 'ext' ? legal.filter((a) => a.t === 'tl:placeHarbor') : [];
+    // Highlands: a declined tribe's player founds the next tribe on a board spot (ends the turn).
+    const foundWindow = view.phase.k === 'ext' ? legal.filter((a) => a.t === 'hl:found') : [];
     setChoice(
       resolves.length > 0 && !bagPrompt
         ? { cands: resolves, title: t('shprompt_' + String(promptKind)), mandatory: true }
         : harborWindow.length > 0
           ? { cands: harborWindow, title: t('tl_harborWindow'), mandatory: true }
-          : null,
+          : foundWindow.length > 0
+            ? { cands: foundWindow, title: t('hl_foundWindow'), mandatory: true }
+            : null,
     );
     setRoadOrCog(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -253,7 +265,17 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   // A pick the phase itself demands (setup placement, moving the blocker, free roads) stays
   // armed: cancelling it would only leave the player without highlights.
   const mandatoryPick = phaseKey === 'setup' || phaseKey === 'moveBlocker' || phaseKey === 'freeRoads';
-  const dialogOpen = helpOpen || tradeOpen !== null || cardOpen !== null;
+  const dialogOpen = helpOpen || tradeOpen !== null || cardOpen !== null || playerOpen !== null;
+
+  // The phone utility sheet behaves like a modal panel: Esc and the board backdrop both close it.
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSheetOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [sheetOpen]);
 
   // Esc cancels a voluntary pending board selection (not while a dialog is using Esc).
   useEffect(() => {
@@ -395,8 +417,9 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   // both below the VP target, so "reached 6 victory points" would read like a bug.
   const winVP = winner?.vp ?? winner?.publicVP ?? 0;
   const winWonder = view.winner && tl?.works ? Object.keys(tl.works.claims).find((w) => tl.works!.claims[w] === view.winner) : undefined;
-  const winReason =
-    winWonder && (tl?.works?.levels[view.winner ?? ''] ?? 0) >= 4
+  const winReason = hl
+    ? t('hl_winCulture', { n: winVP })
+    : winWonder && (tl?.works?.levels[view.winner ?? ''] ?? 0) >= 4
       ? t('tl_winWonder', { wonder: t(`wonder_${winWonder}`), n: winVP })
       : tl?.silk && winVP < view.init.vpToWin
         ? t('tl_winSilk', { n: winVP })
@@ -408,7 +431,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
       {/* PO 2026-11-17: the players sit in one row on top (no status sentence any more); whose turn
           it is shows as the gold ring, what to do next as a pulsing Roll / End turn button. */}
       <div className="seat-strip">
-        <PlayerCards view={view} />
+        <PlayerCards view={view} onSelect={setPlayerOpen} />
       </div>
       <div className="table-main">
         <div className={sh ? 'board-area has-sh-hand' : 'board-area'}>
@@ -452,14 +475,15 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
           <DiceBox view={view} sh={sh} />
           {/* Phones only (mobile.css): the side column (expansion panels) becomes a bottom sheet
               behind this button. The base game has no side column since the log was removed. */}
-          {(sh || tl) && (
+          {(sh || tl || hl) && (
             <button
               type="button"
               className="btn sheet-toggle"
               aria-expanded={sheetOpen}
+              aria-controls="expansion-sheet"
               onClick={() => setSheetOpen((o) => !o)}
             >
-              📜 {t('sheet_open')}
+              <UiIcon name="sheet" size={16} /> {t('sheet_open')}
             </button>
           )}
           <CostCard
@@ -498,27 +522,50 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
             </div>
           )}
         </div>
-        {(sh || tl) && (
-          <aside className="sidecol">
-            <button type="button" className="btn btn-ghost sheet-close" onClick={() => setSheetOpen(false)}>
-              ✕ {t('sheet_close')}
-            </button>
-            {tl && (
-              <TidelandsPanel
-                view={view}
-                tl={tl}
-                legal={legal}
-                onPick={(p) => {
-                  setSheetOpen(false);
-                  setChoice(null);
-                  setPending(pending === p ? null : (p as 'tl:buildShip'));
-                }}
-                onStart={startChoice}
-                onAction={onAction}
-              />
-            )}
-            {sh && <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />}
-          </aside>
+        {(sh || tl || hl) && (
+          <>
+            <button
+              type="button"
+              className="sheet-backdrop"
+              aria-label={t('sheet_close')}
+              tabIndex={-1}
+              onClick={() => setSheetOpen(false)}
+            />
+            <aside className="sidecol" id="expansion-sheet" aria-label={t('sheet_open')}>
+              <button type="button" className="btn btn-ghost sheet-close" onClick={() => setSheetOpen(false)}>
+                <UiIcon name="close" size={16} /> {t('sheet_close')}
+              </button>
+              {tl && (
+                <TidelandsPanel
+                  view={view}
+                  tl={tl}
+                  legal={legal}
+                  onPick={(p) => {
+                    setSheetOpen(false);
+                    setChoice(null);
+                    setPending(pending === p ? null : (p as 'tl:buildShip'));
+                  }}
+                  onStart={startChoice}
+                  onAction={(a) => {
+                    setSheetOpen(false);
+                    onAction(a);
+                  }}
+                />
+              )}
+              {sh && <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />}
+              {hl && (
+                <HighlandsPanel
+                  view={view}
+                  hl={hl}
+                  legal={legal}
+                  onAction={(a) => {
+                    setSheetOpen(false);
+                    onAction(a);
+                  }}
+                />
+              )}
+            </aside>
+          </>
         )}
       </div>
       <div className="table-bottom">
@@ -624,6 +671,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
       )}
 
       {helpOpen && <HelpDialog view={view} onClose={() => setHelpOpen(false)} />}
+      {playerOpen && <PlayerDialog view={view} playerId={playerOpen} onClose={() => setPlayerOpen(null)} />}
 
       {view.winner && (
         <div className="winner-overlay" role="status" aria-live="polite">

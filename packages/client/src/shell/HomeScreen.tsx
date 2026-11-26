@@ -2,6 +2,7 @@
 // logbook (load a saved game) and the online gate all live on one parchment sheet.
 import { useEffect, useState } from 'react';
 import { SCENARIOS, SCENARIO_IDS } from '@hexgame/engine';
+import { HighlandsSelect, type HighlandsMap } from '../highlands/HighlandsSelect';
 import { useI18n } from '../i18n';
 import { Button } from '../ui/Button';
 import { Emblem } from '../ui/Emblem';
@@ -109,6 +110,8 @@ export interface GameSetup {
   strongholds: boolean;
   /** Tidelands scenario id, or null when the sea expansion is off. */
   tidelands: string | null;
+  /** Highlands map mode, or null when off (plays alone, 2-4 players). */
+  highlands?: HighlandsMap | null;
 }
 
 /** Tidelands scenario picker; scenarios that do not combine with strongholds are disabled then. */
@@ -138,6 +141,7 @@ export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: Hom
   const [seed, setSeed] = useState('boschtan');
   const [expansion, setExpansion] = useState(false);
   const [scenario, setScenario] = useState('');
+  const [highlands, setHighlands] = useState<HighlandsMap | ''>('');
   const [logText, setLogText] = useState('');
   const [kinds, setKinds] = useState<SeatKind[]>(['human', 'human', 'human', 'human', 'human', 'human']);
   const seats = kinds.slice(0, count);
@@ -226,7 +230,9 @@ export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: Hom
                     if (k !== 'human') return `🤖 ${t('bot_name', { n: i + 1, level: t(`bot_${k}`) })}`;
                     return n.trim() || t('player', { n: i + 1 });
                   }),
-                  { strongholds: expansion, tidelands: scenario || null },
+                  highlands
+                    ? { strongholds: false, tidelands: null, highlands }
+                    : { strongholds: expansion, tidelands: scenario || null },
                   seats.map((k) => (k === 'human' ? null : k)),
                 );
               }}
@@ -235,7 +241,7 @@ export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: Hom
                 <label htmlFor="home-count">{t('home_players')}</label>
                 <span className="select-wrap">
                   <select id="home-count" value={count} onChange={(e) => setCount(Number(e.target.value))}>
-                    {[2, 3, 4, 5, 6].map((n) => (
+                    {(highlands ? [2, 3, 4] : [2, 3, 4, 5, 6]).map((n) => (
                       <option key={n} value={n}>
                         {n}
                       </option>
@@ -250,7 +256,8 @@ export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: Hom
                   <input
                     id="home-expansion"
                     type="checkbox"
-                    checked={expansion}
+                    disabled={!!highlands}
+                    checked={expansion && !highlands}
                     onChange={(e) => setExpansion(e.target.checked)}
                   />
                   <span>{t('exp_enable')}</span>
@@ -260,7 +267,21 @@ export function HomeScreen({ onNew, onLoad, onOnline, onLangToggle, error }: Hom
               <div className="ledger-field">
                 <label htmlFor="home-scenario">{t('tl_scenario')}</label>
                 <span className="select-wrap">
-                  <ScenarioSelect id="home-scenario" value={scenario} onChange={setScenario} strongholds={expansion} />
+                  <ScenarioSelect id="home-scenario" value={highlands ? '' : scenario} onChange={setScenario} strongholds={expansion} />
+                </span>
+              </div>
+
+              <div className="ledger-field">
+                <label htmlFor="home-highlands">{t('hl_name')}</label>
+                <span className="select-wrap">
+                  <HighlandsSelect
+                    id="home-highlands"
+                    value={highlands}
+                    onChange={(v) => {
+                      setHighlands(v);
+                      if (v && count > 4) setCount(4);
+                    }}
+                  />
                 </span>
               </div>
 

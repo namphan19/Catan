@@ -112,3 +112,18 @@ Run: `pnpm install` / `pnpm test` / `pnpm typecheck` / `pnpm build` / `pnpm star
   rulebook's "Combining with Seafarers" page (docs/CN3087*.pdf p.12): VP +2, corsair after the first raid,
   wardens at sea and chasing the corsair, cog moves keep wardens connected, envoy on cogs, no caravan on gold
   (docs/RULES_TIDELANDS.md section 6). catan.com itself is blocked by the cloud sandbox's network policy.
+
+## 9. Update 2026-11-25: M6 "Highlands" standalone expansion (branch `feature/highlands`)
+- PO request: add the rise-and-decline-of-tribes standalone game as an expansion (plan first, then build).
+  Rulebook + almanac downloaded to `data/raw/inkas/` (git-ignored); names, wording and art are Boschtan's own.
+- Rules + H-decisions: docs/RULES_HIGHLANDS.md. Engine: `packages/engine/src/rules/highlands/` (config + map,
+  state, tribes, ruleset). Plays alone, 2-4 players; map option `variable` (default) or `starter`.
+- Client: `packages/client/src/highlands/` (panel with culture tracks and powers, goods/caravan dialog, picker
+  on the home screens); overgrown buildings drawn as faded pieces under SVG vines; placeholder terrain colours.
+- Verification: engine 25 highlands tests (309 total), server 89, e2e `highlands.spec.ts` (desktop + tablet),
+  fuzz `fuzz 30 100 highlands`, arenas easy/normal/hard/expert with 0 invalid bot actions.
+- Run locally: `fuzz 10 0 highlands`, `arena 8 hard,normal,normal highlands`; fixtures:
+  `packages/e2e/tools/gen-highlands-log.mts <midgame|found> <players> [map]`.
+- 2026-11-25 (PO): H7 follows the rulebook (any card before the roll); highlands bot strategy added
+  (docs/RULES_HIGHLANDS.md section 8: 88-95 % wins against the previous heuristic; other games unchanged).
+- Art: all 10 Highlands images done (PO, Tripo website). Open: PO playtest.

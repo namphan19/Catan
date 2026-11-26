@@ -24,3 +24,6 @@ export { tidelandsRuleset, type TidelandsView } from './rules/tidelands';
 export { TL, TL_ID, SEA, GOLD, MIST } from './rules/tidelands/config';
 export { SCENARIOS, SCENARIO_IDS, scenarioOf, seatKey, type Scenario } from './rules/tidelands/scenarios';
 export type { TlState } from './rules/tidelands/state';
+export { highlandsRuleset, type HighlandsView } from './rules/highlands';
+export { HL, HL_ID, GOODS, isGood, isRuin, RUIN, RUIN_CITY, JUNGLE, GROVE, FISHERY, FRAME as WILDS_TERRAIN } from './rules/highlands/config';
+export type { HlState, TribeState } from './rules/highlands/state';

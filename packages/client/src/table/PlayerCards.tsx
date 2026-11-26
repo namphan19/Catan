@@ -2,9 +2,10 @@
 // hand/card counts, guards played, pieces left, awards). Numbers come straight from the view.
 // Layout (PO 2026-11-19): portrait + name on the left, then the card stats (hand, cards, guards),
 // the piece stats (roads, settlements, cities, awards) and the victory points on one line when the
-// card is wide enough; a narrow card stacks the two stat groups (3:3) under the VP line.
+// card is wide enough; a narrow card stacks the two stat groups (3:3) under the VP line. Every
+// tile is a button: phones keep only avatar/VP/hand at a glance and open the full public details.
 import type { ReactNode } from 'react';
-import { baseConfig, type PlayerView } from '@hexgame/engine';
+import { baseConfig, type PlayerId, type PlayerView } from '@hexgame/engine';
 import { useI18n } from '../i18n';
 import { useAvatar, useName } from '../shell/names';
 import { assetUrl } from '../board/assets';
@@ -25,7 +26,7 @@ function Stat({ icon, n, label, warn, supply }: { icon: ReactNode; n: number; la
   );
 }
 
-export function PlayerCards({ view }: { view: PlayerView }) {
+export function PlayerCards({ view, onSelect }: { view: PlayerView; onSelect?: (id: PlayerId) => void }) {
   const { t } = useI18n();
   const name = useName();
   const avatar = useAvatar();
@@ -34,7 +35,7 @@ export function PlayerCards({ view }: { view: PlayerView }) {
   return (
     <div
       className={compact ? 'seats seats-compact' : 'seats'}
-      role="list"
+      role="group"
       aria-label={t('seat_list')}
       data-n={view.players.length}
     >
@@ -45,16 +46,23 @@ export function PlayerCards({ view }: { view: PlayerView }) {
         const overLimit = p.handCount > baseConfig.discardLimit;
         const acting = actors.includes(p.id);
         return (
-          <div
+          <button
             key={p.id}
-            role="listitem"
+            type="button"
             className={`seat${p.id === view.viewer ? ' me' : ''}${acting ? ' acting' : ''}`}
             style={{ '--seat': color, '--seat-text': playerInk(p.id) } as React.CSSProperties}
+            onClick={() => onSelect?.(p.id)}
+            aria-haspopup={onSelect ? 'dialog' : undefined}
+            aria-label={`${name(p.id)}. ${t('stat_vp', { n: vp, m: view.init.vpToWin })}. ${t('stat_hand')}: ${p.handCount}. ${t('stat_cards')}: ${p.cardCount}.${acting ? ` ${t('turnTag')}.` : ''}`}
           >
             <div className="seat-grid">
             <div className="seat-id">
               <span className="seat-avatar">
                 <Avatar id={avatar(p.id)} seat={p.id} size={compact ? 38 : 46} />
+                <span className={`seat-hand-badge${overLimit ? ' warn' : ''}`} aria-hidden="true">
+                  <HandIcon size={10} />
+                  {p.handCount}
+                </span>
                 {/* Emblem badge: the seat is never told apart by colour alone. */}
                 <span className="seat-emblem">
                   <Emblem id={playerEmblem(p.id)} size={12} color={color} />
@@ -116,7 +124,7 @@ export function PlayerCards({ view }: { view: PlayerView }) {
               ))}
             </div>
             </div>
-          </div>
+          </button>
         );
       })}
     </div>

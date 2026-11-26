@@ -54,6 +54,20 @@ test('portrait: setup and first roll fit one screen, all players and buttons vis
   const board = await box(page, '.board-area');
   const bar = await box(page, '.actionbar');
   expect(bar.y).toBeGreaterThanOrEqual(board.y + board.height - 1);
+  // Compact visuals still get finger-sized hit areas on the utility controls.
+  const measure = (els: HTMLElement[]) =>
+    els.map((e) => {
+      const r = e.getBoundingClientRect();
+      return { cls: e.className, w: Math.round(r.width), h: Math.round(r.height) };
+    });
+  const targets = [
+    ...(await page.locator('.topbar-menu-btn, .btn-help, .board-zoom .btn, .cost-card-head').evaluateAll(measure)),
+    ...(await page.locator('.actionbar button').evaluateAll(measure)),
+  ];
+  for (const target of targets) {
+    expect(target.w, target.cls).toBeGreaterThanOrEqual(44);
+    expect(target.h, target.cls).toBeGreaterThanOrEqual(44);
+  }
   await page.screenshot({ path: shotPath('mobile-setup.png', testInfo.project.name) });
 
   await playSetupUntilRoll(page);
@@ -69,7 +83,7 @@ test('portrait: setup and first roll fit one screen, all players and buttons vis
   expect(errors()).toEqual([]);
 });
 
-test('portrait: six players stack as two rows of three, names readable', async ({ page }, testInfo) => {
+test('portrait: six players share one swipeable rail, names readable', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await page.goto('/');
   await page.getByLabel(VI.players).selectOption('6');
@@ -80,15 +94,19 @@ test('portrait: six players stack as two rows of three, names readable', async (
 
   const seats = page.locator('.seat-strip .seat');
   await expect(seats).toHaveCount(6);
-  // Five or six players: three tiles per row, so every name still fits a full line.
+  // Five or six players keep one shallow rail; the last seat is reached by swiping, not by
+  // spending a second row of board height.
   const boxes = await seats.evaluateAll((els) =>
     els.map((e) => {
       const r = e.getBoundingClientRect();
       return { top: Math.round(r.top), w: Math.round(r.width) };
     }),
   );
-  expect(new Set(boxes.map((b) => b.top)).size).toBe(2);
+  expect(new Set(boxes.map((b) => b.top)).size).toBe(1);
   for (const b of boxes) expect(b.w).toBeGreaterThan(100);
+  await seats.last().scrollIntoViewIfNeeded();
+  await expect(seats.last()).toBeInViewport();
+  expect(await page.locator('.seat-strip .seats').evaluate((e) => e.scrollLeft)).toBeGreaterThan(0);
   await clearHover(page);
   await page.screenshot({ path: shotPath('mobile-six.png', testInfo.project.name) });
   expect(errors()).toEqual([]);
@@ -109,6 +127,40 @@ test('portrait: two players share one row, the page fits the screen', async ({ p
   expect(new Set(tops).size).toBe(1);
   await clearHover(page);
   await page.screenshot({ path: shotPath('mobile-two.png', testInfo.project.name) });
+  expect(errors()).toEqual([]);
+});
+
+test('portrait: a player tile opens public details in a bottom sheet', async ({ page }, testInfo) => {
+  const errors = captureErrors(page);
+  await page.goto('/');
+  await page.getByLabel(VI.seed).fill('e2e-mobile');
+  await page.getByRole('button', { name: VI.start }).click();
+  await confirmCover(page);
+
+  await page.locator('.seat-strip .seat').first().click();
+  const dialog = page.locator('.player-detail-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Người chơi 1' })).toBeVisible();
+  await expect(dialog.locator('.player-detail-stats')).toContainText('Thẻ tài nguyên trên tay');
+  await expect(dialog.locator('.player-detail-supply')).toContainText('Đường còn lại');
+  await expectFitsScreen(page);
+  await page.screenshot({ path: shotPath('mobile-player-details.png', testInfo.project.name) });
+  await dialog.locator('.dialog-head .btn-icon').click();
+  await expect(dialog).toBeHidden();
+  expect(errors()).toEqual([]);
+});
+
+test('portrait: the trade composer scrolls inside its dialog without widening the page', async ({ page }, testInfo) => {
+  const errors = captureErrors(page);
+  await loadFixture(page, 'city-game.json');
+  await page.locator('.act-trade .btn').nth(1).click();
+  const grid = page.locator('.trade-grid');
+  await expect(grid).toBeVisible();
+  await expectFitsScreen(page);
+  const body = await box(page, '.dialog-body');
+  expect(body.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  expect(await page.locator('.dialog-body').evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(true);
+  await page.screenshot({ path: shotPath('mobile-trade.png', testInfo.project.name) });
   expect(errors()).toEqual([]);
 });
 
@@ -143,7 +195,12 @@ test('portrait: the Tidelands sheet opens over the board, closes, and building a
   await expect(page.locator('.tl-panel')).toBeVisible();
   await page.waitForTimeout(300); // slide-in transition
   await page.screenshot({ path: shotPath('mobile-sheet.png', testInfo.project.name) });
-  await page.locator('.sheet-close').click();
+  await page.keyboard.press('Escape');
+  await expect(sheet).toBeHidden();
+
+  await page.locator('.sheet-toggle').click();
+  await expect(sheet).toBeVisible();
+  await page.locator('.sheet-backdrop').click({ position: { x: 12, y: 12 } });
   await expect(sheet).toBeHidden();
 
   await page.locator('.sheet-toggle').click();
@@ -180,5 +237,20 @@ test('landscape: board on the left at full height, controls on the right, sheet 
   await page.screenshot({ path: shotPath('mobile-landscape-sheet.png', testInfo.project.name) });
   await page.locator('.sheet-close').click();
   await expect(page.locator('.sidecol')).toBeHidden();
+  expect(errors()).toEqual([]);
+});
+
+test('narrow landscape: board and controls still fit without page overflow', async ({ page }, testInfo) => {
+  const errors = captureErrors(page);
+  await page.setViewportSize({ width: 568, height: 320 });
+  await loadFixture(page, 'strongholds-active.json');
+  await expectFitsScreen(page);
+
+  const board = await box(page, '.board-area');
+  const bar = await box(page, '.actionbar');
+  expect(board.height).toBeGreaterThanOrEqual(318);
+  expect(bar.x).toBeGreaterThanOrEqual(board.x + board.width - 1);
+  await clearHover(page);
+  await page.screenshot({ path: shotPath('mobile-narrow-landscape.png', testInfo.project.name) });
   expect(errors()).toEqual([]);
 });
