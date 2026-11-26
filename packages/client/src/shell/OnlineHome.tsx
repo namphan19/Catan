@@ -2,6 +2,7 @@
 // join one by its 5-character code. A share link (?room=CODE) pre-fills the join code.
 import { useState } from 'react';
 import { ScenarioSelect } from './HomeScreen';
+import { HighlandsSelect, type HighlandsMap } from '../highlands/HighlandsSelect';
 import type { RoomOptions } from '../net/protocol';
 import { isValidCode, normalizeCode } from './OnlineShell';
 import { useI18n } from '../i18n';
@@ -26,6 +27,7 @@ export function OnlineHome({ name, onName, onCreate, onJoin, online, onBack, onL
   const [vp, setVp] = useState('');
   const [expansion, setExpansion] = useState(false);
   const [scenario, setScenario] = useState('');
+  const [highlands, setHighlands] = useState<HighlandsMap | ''>('');
   const [code, setCode] = useState<string>(() => {
     const fromLink = new URLSearchParams(location.search).get('room') ?? '';
     return isValidCode(fromLink.toUpperCase()) ? fromLink.toUpperCase() : '';
@@ -38,9 +40,12 @@ export function OnlineHome({ name, onName, onCreate, onJoin, online, onBack, onL
     if (!canSubmit) return;
     const parsedVp = Number.parseInt(vp, 10);
     const options: RoomOptions = {};
-    if (count >= 5) options.largeTableMode = expansion || scenario ? 'paired' : mode;
-    if (expansion) options.expansion = 'strongholds';
-    if (scenario) options.tidelands = scenario;
+    if (highlands) options.highlands = highlands;
+    else {
+      if (count >= 5) options.largeTableMode = expansion || scenario ? 'paired' : mode;
+      if (expansion) options.expansion = 'strongholds';
+      if (scenario) options.tidelands = scenario;
+    }
     if (vp.trim() && Number.isInteger(parsedVp) && parsedVp >= 1 && parsedVp <= 100) options.vpToWin = parsedVp;
     onCreate(count, Object.keys(options).length ? options : undefined);
   };
@@ -92,7 +97,7 @@ export function OnlineHome({ name, onName, onCreate, onJoin, online, onBack, onL
           <label>
             {t('online_players')}
             <select value={count} onChange={(e) => setCount(Number(e.target.value))}>
-              {[2, 3, 4, 5, 6].map((n) => (
+              {(highlands ? [2, 3, 4] : [2, 3, 4, 5, 6]).map((n) => (
                 <option key={n} value={n}>
                   {n}
                 </option>
@@ -111,12 +116,22 @@ export function OnlineHome({ name, onName, onCreate, onJoin, online, onBack, onL
             </select>
           </label>
           <label className="exp-check">
-            <input type="checkbox" checked={expansion} onChange={(e) => setExpansion(e.target.checked)} />
+            <input type="checkbox" checked={expansion && !highlands} disabled={!!highlands} onChange={(e) => setExpansion(e.target.checked)} />
             {t('exp_enable')}
           </label>
           <label>
             {t('tl_scenario')}
-            <ScenarioSelect value={scenario} onChange={setScenario} strongholds={expansion} />
+            <ScenarioSelect value={highlands ? '' : scenario} onChange={setScenario} strongholds={expansion} />
+          </label>
+          <label>
+            {t('hl_name')}
+            <HighlandsSelect
+              value={highlands}
+              onChange={(v) => {
+                setHighlands(v);
+                if (v && count > 4) setCount(4);
+              }}
+            />
           </label>
           <label>
             {t('online_vp')}

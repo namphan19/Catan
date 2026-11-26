@@ -4,12 +4,13 @@ import { vi } from './vi';
 import { en } from './en';
 import { shEn, shVi } from '../strongholds/i18n';
 import { tlEn, tlVi } from '../tidelands/i18n';
+import { hlEn, hlVi } from '../highlands/i18n';
 
 export type Lang = 'vi' | 'en';
 
 const DICTS: Record<Lang, Record<string, string>> = {
-  vi: { ...vi, ...shVi, ...tlVi },
-  en: { ...en, ...shEn, ...tlEn },
+  vi: { ...vi, ...shVi, ...tlVi, ...hlVi },
+  en: { ...en, ...shEn, ...tlEn, ...hlEn },
 };
 
 export interface I18n {
@@ -63,7 +64,7 @@ export function cardKey(c: string): string {
   return ['guard', 'freeRoads', 'harvest', 'claim', 'relic'].includes(c) ? `card_${c}` : c;
 }
 export function terrainKey(tr: string): string {
-  return ['forest', 'claypit', 'meadow', 'field', 'quarry', 'waste', 'sea'].includes(tr)
+  return ['forest', 'claypit', 'meadow', 'field', 'quarry', 'waste', 'sea', 'jungle', 'grove', 'fishery', 'wilds'].includes(tr)
     ? `terrain_${tr}`
     : tr;
 }

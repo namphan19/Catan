@@ -109,11 +109,12 @@ export function Lobby({ room, onReady, onStart, onLeave, onKick, onAddBot, onAva
       )}
 
       <Panel title={t('lobby_seats', { n: room.seats.length, m: room.playerCount })} className="home-panel">
-        {(room.options?.expansion || room.options?.tidelands) && (
+        {(room.options?.expansion || room.options?.tidelands || room.options?.highlands) && (
           <p className="lobby-exp" data-testid="lobby-expansions">
             {[
               room.options.expansion ? `${t('exp_label')}: ${t('sh_title')}` : null,
               room.options.tidelands ? `${t('tl_name')}: ${t(`sc_${room.options.tidelands}`)}` : null,
+              room.options.highlands ? t(`hl_${room.options.highlands}`) : null,
             ]
               .filter(Boolean)
               .join(' · ')}

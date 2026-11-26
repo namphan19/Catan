@@ -80,3 +80,9 @@ view exposes it (the view drops `ext` entirely today).
   `tl:stealSilk{target}` `tl:claimWonder{wonder}` `tl:buildWonder` `tl:arm`, and with strongholds
   `sh:chase{v, piece: 'corsair'}`. View: `PlayerView.ext.tidelands`
   (mist stacks and reserved reward cards are hidden).
+- Ruleset `highlands` (`createGame({ rulesets: ['base', 'highlands'], options: { map: 'variable' | 'starter' } })`,
+  2-4 players, not with strongholds/tidelands): rules in docs/RULES_HIGHLANDS.md. Adds the goods `plume`, `herb`,
+  `fish` to `config.resources`, the building kinds `ruin` / `ruinCity` (a declined tribe; they produce), and the
+  actions `hl:found{v}` (in the `ext` window `hl:found`), `hl:goodsSet{get}`, `hl:caravan{give,get}`, `hl:recall`;
+  `placeSettlement` also builds over a ruin. `victoryPoints` = culture points (win at 11). View:
+  `PlayerView.ext.highlands` (the order of the second card stack is hidden).

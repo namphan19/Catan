@@ -136,8 +136,35 @@ export function Road({ edge, player, graph }: { edge: EdgeId; player: PlayerId; 
 export function Building({ v, kind, player }: { v: VertexId; kind: string; player: PlayerId }) {
   const color = playerColor(player);
   const p = vertexPos(v);
+  // Highlands: a building of a tribe in decline is the faded piece under green vines.
+  if (kind === 'ruin' || kind === 'ruinCity')
+    return (
+      <g className="piece-ruin" data-ruin={v}>
+        <g className="piece-ruin-body">
+          <Building v={v} kind={kind === 'ruinCity' ? 'city' : 'settlement'} player={player} />
+        </g>
+        <Thicket p={p} />
+      </g>
+    );
   if (kind === 'city') return <CityImage v={v} player={player} color={color} p={p} />;
   return <SettlementImage v={v} player={player} color={color} p={p} />;
+}
+
+/** Green vines over an overgrown building (Highlands). */
+function Thicket({ p }: { p: { x: number; y: number } }) {
+  const s = SIZE * 0.36;
+  // A leaf: two arcs from (x, y) to (x + 0.56 s, y).
+  const leaf = (x: number, y: number) =>
+    `M${x},${y} q${s * 0.28},${-s * 0.32} ${s * 0.56},0 q${-s * 0.28},${s * 0.32} ${-s * 0.56},0 Z`;
+  return (
+    <g className="piece-thicket" transform={`translate(${p.x} ${p.y})`} pointerEvents="none">
+      <path d={leaf(-s * 0.9, s * 0.35)} transform={`rotate(-25 ${-s * 0.6} ${s * 0.35})`} />
+      <path d={leaf(-s * 0.3, s * 0.55)} />
+      <path d={leaf(s * 0.3, s * 0.35)} transform={`rotate(25 ${s * 0.6} ${s * 0.35})`} />
+      <path d={leaf(-s * 0.55, -s * 0.15)} transform={`rotate(-50 ${-s * 0.3} ${-s * 0.15})`} />
+      <path d={leaf(s * 0.05, -s * 0.2)} transform={`rotate(40 ${s * 0.3} ${-s * 0.2})`} />
+    </g>
+  );
 }
 
 /** Pieces in the 2D board are 30% larger than the artist's nominal size (PO request). */

@@ -37,6 +37,15 @@ describe('heuristic bot', () => {
     }
   }, 120_000);
 
+  it('finishes highlands games at every level (2-4 players)', () => {
+    const lineups: Policy[][] = [['hard', 'normal'], ['expert', 'easy', 'random'], ['hard', 'normal', 'easy', 'expert']];
+    lineups.forEach((seats, i) => {
+      const r = playArenaGame(`hl-${i}`, seats, ['base', 'highlands'], 20000, { map: i % 2 ? 'starter' : 'variable' });
+      expect(r.winner).toBeDefined();
+      expect(r.invalid).toBe(0);
+    });
+  }, 120_000);
+
   it('beats random players', () => {
     let wins = 0;
     for (let i = 0; i < 8; i++) {

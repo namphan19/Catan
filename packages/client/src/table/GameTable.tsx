@@ -14,6 +14,8 @@ import { stagePrompt, valueLabel } from '../strongholds/labels';
 import { TidelandsPanel } from '../tidelands/TidelandsPanel';
 import { SeaExtras } from '../tidelands/SeaExtras';
 import { tlOf } from '../tidelands/view';
+import { HighlandsPanel } from '../highlands/HighlandsPanel';
+import { hlOf } from '../highlands/labels';
 import { getBoardGraph } from '../board/geom';
 import { useI18n, resKey } from '../i18n';
 import { useName } from '../shell/names';
@@ -97,6 +99,9 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   for (const r of ['timber', 'clay', 'fiber', 'grain', 'stone']) bankBase[r] = view.bank.hand[r] ?? 0;
   const silkSteals = useMemo(() => legal.filter((a) => a.t === 'tl:stealSilk'), [legal]);
 
+  // ---- Highlands expansion: tribes, goods and award powers -------------------------------------
+  const hl = hlOf(view);
+
   // ---- Strongholds expansion: a staged chooser that narrows the legal actions ------------------
   const sh = (view.ext?.strongholds ?? null) as StrongholdsView | null;
   const [choice, setChoice] = useState<{ cands: Action[]; title: string; mandatory: boolean } | null>(null);
@@ -106,12 +111,16 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   useEffect(() => {
     // A new legal list ends any running choice; a prompt addressed to the viewer starts one.
     const harborWindow = view.phase.k === 'ext' ? legal.filter((a) => a.t === 'tl:placeHarbor') : [];
+    // Highlands: a declined tribe's player founds the next tribe on a board spot (ends the turn).
+    const foundWindow = view.phase.k === 'ext' ? legal.filter((a) => a.t === 'hl:found') : [];
     setChoice(
       resolves.length > 0 && !bagPrompt
         ? { cands: resolves, title: t('shprompt_' + String(promptKind)), mandatory: true }
         : harborWindow.length > 0
           ? { cands: harborWindow, title: t('tl_harborWindow'), mandatory: true }
-          : null,
+          : foundWindow.length > 0
+            ? { cands: foundWindow, title: t('hl_foundWindow'), mandatory: true }
+            : null,
     );
     setRoadOrCog(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -408,8 +417,9 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   // both below the VP target, so "reached 6 victory points" would read like a bug.
   const winVP = winner?.vp ?? winner?.publicVP ?? 0;
   const winWonder = view.winner && tl?.works ? Object.keys(tl.works.claims).find((w) => tl.works!.claims[w] === view.winner) : undefined;
-  const winReason =
-    winWonder && (tl?.works?.levels[view.winner ?? ''] ?? 0) >= 4
+  const winReason = hl
+    ? t('hl_winCulture', { n: winVP })
+    : winWonder && (tl?.works?.levels[view.winner ?? ''] ?? 0) >= 4
       ? t('tl_winWonder', { wonder: t(`wonder_${winWonder}`), n: winVP })
       : tl?.silk && winVP < view.init.vpToWin
         ? t('tl_winSilk', { n: winVP })
@@ -465,7 +475,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
           <DiceBox view={view} sh={sh} />
           {/* Phones only (mobile.css): the side column (expansion panels) becomes a bottom sheet
               behind this button. The base game has no side column since the log was removed. */}
-          {(sh || tl) && (
+          {(sh || tl || hl) && (
             <button
               type="button"
               className="btn sheet-toggle"
@@ -512,7 +522,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
             </div>
           )}
         </div>
-        {(sh || tl) && (
+        {(sh || tl || hl) && (
           <>
             <button
               type="button"
@@ -543,6 +553,17 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
                 />
               )}
               {sh && <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />}
+              {hl && (
+                <HighlandsPanel
+                  view={view}
+                  hl={hl}
+                  legal={legal}
+                  onAction={(a) => {
+                    setSheetOpen(false);
+                    onAction(a);
+                  }}
+                />
+              )}
             </aside>
           </>
         )}

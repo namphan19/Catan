@@ -14,7 +14,11 @@ const SQRT3 = Math.sqrt(3);
 export const TILE_GAP = 0.94;
 
 /** Placeholder marks drawn on terrains that have no painted tile yet (tidelands). */
-const PLACEHOLDER_GLYPH: Record<string, string> = { goldmine: '◆', mist: '?', village: '⌂' };
+const PLACEHOLDER_GLYPH: Record<string, string> = {
+  goldmine: '◆', mist: '?', village: '⌂',
+  // Highlands (docs/ART_HIGHLANDS.md)
+  jungle: '🪶', grove: '🌿', fishery: '🐟', wilds: '🌴',
+};
 
 export function HexTile({ hex, producing }: { hex: Hex; producing?: boolean }) {
   // Sea hexes inside a scenario map look like the sea frame around the island.
@@ -72,7 +76,7 @@ function LandTile({ hex, producing }: { hex: Hex; producing?: boolean }) {
                 y={c.y + (hex.token != null ? -SIZE * 0.42 : SIZE * 0.14)}
                 className="terrain-glyph"
                 textAnchor="middle"
-                fontSize={SIZE * (hex.terrain === 'mist' ? 0.8 : 0.42)}
+                fontSize={SIZE * (hex.terrain === 'mist' ? 0.8 : hex.terrain === 'wilds' ? 0.7 : 0.42)}
                 pointerEvents="none"
               >
                 {PLACEHOLDER_GLYPH[hex.terrain]}

@@ -15,6 +15,7 @@ Later: an original "advanced" expansion ruleset that plugs into the same engine 
 | M3 | expansion ruleset `strongholds` as a separate module (hooks only): engine, server option, 2D + 3D client UI | built 2026-11-16 (see docs/RULES_STRONGHOLDS.md); 3D pieces added 2026-11-16; open: playtest |
 | UI | real web UI + original medieval art (docs/UI.md) | in progress |
 | M5 | expansion ruleset `tidelands` (sea maps, cogs, corsair, gold, 9 scenarios incl. 5-6 maps) alone or with strongholds: engine, bots, arena, server option, 2D client UI with placeholder art (docs/RULES_TIDELANDS.md, docs/ART_TIDELANDS.md) | built 2026-11-20; open: PO playtest, final art |
+| M6 | expansion ruleset `highlands` (rise and decline of three tribes, goods, overgrown buildings; standalone, 2-4 players): engine, fuzz, bots, server option, agent-mcp, 2D client UI with placeholder art (docs/RULES_HIGHLANDS.md, docs/ART_HIGHLANDS.md) | built 2026-11-25 (H7 per rulebook, highlands bot strategy); art done; open: PO playtest |
 | M4 | bots, goal: challenge strong human players. Steps: 1 heuristic bot + server bot seats + self-play arena; 2 fast bot engine (mutable state, checked against the real engine); 3 ISMCTS search on a worker with a time budget; 4 smart trading + weight tuning by self-play; 5 strongholds-aware bot | steps 1-3 built 2026-11-17 |
 
 PO 2026-11-13: web only, no bots, medieval style (own art), online play for colleagues.
