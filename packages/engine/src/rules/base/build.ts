@@ -97,8 +97,9 @@ export function advanceAfterRoute(ctx: ApplyCtx, ph: Phase, id: PlayerId): void 
     if (more)
       state.phase = {
         k: 'freeRoads', left, ...(ph.actor ? { actor: ph.actor } : {}), ...(ph.only ? { only: ph.only } : {}),
+        ...(ph.resume ? { resume: ph.resume } : {}),
       };
-    else setPhase(ctx, ph.actor ? resumePhase(state, 'paired') : { k: 'main' });
+    else setPhase(ctx, ph.actor ? resumePhase(state, 'paired') : resumePhase(state, ph.resume ?? 'main'));
   }
 }
 

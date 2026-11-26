@@ -1,4 +1,4 @@
-"""Turn the raw Tripo images (data/raw/tripo/out/*.png) into 2D game assets.
+"""Turn the raw Tripo images (data/raw/tripo/out/*.png, .jpg or .webp) into 2D game assets.
 
     python -I tools/art/build.py            # writes packages/client/public/assets/art2d/...
 
@@ -85,7 +85,7 @@ def sea(src):
 
 
 def piece(src, name):
-    img = Image.open(src).convert('RGBA')
+    img = clear_plain_background(Image.open(src))
     alpha = img.getchannel('A').point(lambda v: 0 if v < 12 else v)
     img.putalpha(alpha)
     img = img.crop(alpha.getbbox())
@@ -127,7 +127,10 @@ def card(src, name, plate=True):
     w, h = img.size
     ch = min(h, round(w * 7 / 5))
     top = (h - ch) // 2
-    art = img.crop((0, top, w, top + ch)).resize((W - 24, H - 24), Image.LANCZOS)
+    # Wider than 5:7 (e.g. 3:4 from the Tripo website, which has no 2:3): cut the sides instead of squeezing.
+    cw = min(w, round(ch * 5 / 7))
+    left = (w - cw) // 2
+    art = img.crop((left, top, left + cw, top + ch)).resize((W - 24, H - 24), Image.LANCZOS)
     base = Image.new('RGBA', (W * ss, H * ss), (0, 0, 0, 0))
     d = ImageDraw.Draw(base)
     d.rounded_rectangle((0, 0, W * ss - 1, H * ss - 1), radius=18 * ss, fill=INK)
@@ -146,9 +149,34 @@ def card(src, name, plate=True):
     save(base, 'card', name, quality=86)
 
 
+def clear_plain_background(img, min_lum=170, max_sat=24):
+    """Images saved from the Tripo website may come without transparency: a white / flat background, or a
+    "transparent" checkerboard (white and light grey squares) baked into the pixels. Every light, nearly
+    colourless pixel connected to the image border becomes transparent; light parts inside the object stay
+    (they are not connected to the border). Images with real alpha stay as they are."""
+    img = img.convert('RGBA')
+    if img.getchannel('A').getextrema()[0] < 250:
+        return img
+    r, g, b, _ = img.split()
+    mx = ImageChops.lighter(ImageChops.lighter(r, g), b)
+    mn = ImageChops.darker(ImageChops.darker(r, g), b)
+    sat_ok = ImageChops.subtract(mx, mn).point(lambda v: 255 if v <= max_sat else 0)
+    lum_ok = img.convert('L').point(lambda v: 255 if v >= min_lum else 0)
+    mask = ImageChops.multiply(sat_ok, lum_ok)  # 255 = background-like
+    w, h = mask.size
+    border = [(x, 0) for x in range(w)] + [(x, h - 1) for x in range(w)] + [(0, y) for y in range(h)] + [(w - 1, y) for y in range(h)]
+    for xy in border:
+        if mask.getpixel(xy) == 255:
+            ImageDraw.floodfill(mask, xy, 128)
+    # 128 = background reached from the border; grow it by a pixel to drop the light anti-aliased fringe.
+    bg = mask.point(lambda v: 255 if v == 128 else 0).filter(ImageFilter.MaxFilter(3))
+    img.putalpha(ImageChops.subtract(img.getchannel('A'), bg))
+    return img
+
+
 def icon(src, name):
     """Goods icon: trimmed, thin ink outline, 128px (UI shows it at 14-28px, the harbor tile larger)."""
-    img = Image.open(src).convert('RGBA')
+    img = clear_plain_background(Image.open(src))
     alpha = img.getchannel('A').point(lambda v: 0 if v < 12 else v)
     img.putalpha(alpha)
     img = img.crop(alpha.getbbox())
@@ -165,7 +193,8 @@ def icon(src, name):
 def main(only):
     for f in sorted(os.listdir(SRC)):
         stem, ext = os.path.splitext(f)
-        if ext != '.png' or (only and stem not in only):
+        # .png from the CLI; images saved from the Tripo website may be .jpg or .webp as well.
+        if ext.lower() not in ('.png', '.jpg', '.jpeg', '.webp') or (only and stem not in only):
             continue
         kind, _, name = stem.partition('-')
         src = os.path.join(SRC, f)

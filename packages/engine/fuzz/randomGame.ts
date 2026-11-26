@@ -1,6 +1,7 @@
 // Fuzzer: plays full random games through getLegalActions and asserts invariants after every action.
 // Usage: pnpm fuzz [games=50] [startSeed=0] [strongholds]
 import {
+  HL, HL_ID, RUIN, RUIN_CITY, type HlState,
   MIST, SCENARIO_IDS, SEA, SH, SH_ID, TL, TL_ID, TRACKS, applyAction, baseConfig, createGame, getGraph, getLegalActions,
   randInt, seedRng, validateAction, type Action, type GameState, type ShState, type TlState,
 } from '../src';
@@ -12,6 +13,7 @@ const WEIGHTS: Record<string, number> = {
   'sh:moveWarden': 0.3, 'sh:displace': 3, 'sh:chase': 2, 'sh:bazaarOffer': 2, 'sh:discardCard': 1,
   'tl:buildShip': 10, 'tl:moveShip': 1, 'tl:moveCorsair': 1, 'tl:placeHarbor': 20, 'tl:stealSilk': 1, 'tl:arm': 30,
   'tl:claimWonder': 40, 'tl:buildWonder': 40,
+  'hl:goodsSet': 6, 'hl:caravan': 1, 'hl:recall': 2,
 };
 
 export interface FuzzResult {
@@ -103,17 +105,44 @@ function checkTidelands(s: GameState, fail: (m: string) => never): void {
   if (!strongholds && s.board.blocker && !land(s.board.blocker)) fail('blocker at sea');
 }
 
+/** Invariants of the highlands expansion. */
+function checkHighlands(s: GameState, fail: (m: string) => never): void {
+  const x = s.ext[HL_ID] as HlState;
+  const founding = s.phase.k === 'ext' && s.phase.id === 'hl:found';
+  for (const p of s.players) {
+    const t = x.players[p.id];
+    if (t.tribe < 1 || t.tribe > HL.tribes) fail(`${p.id} tribe ${t.tribe}`);
+    for (let i = 0; i < t.tribe - 1; i++) if (t.cp[i] !== HL.tribeGoal) fail(`${p.id} tribe ${i + 1} ended with ${t.cp[i]} culture`);
+    if (t.cp.slice(t.tribe).some((n) => n !== 0)) fail(`${p.id} culture for a future tribe`);
+    const cur = t.cp[t.tribe - 1];
+    const waiting = founding && s.phase.k === 'ext' && s.phase.actors?.[0] === p.id;
+    if (waiting ? cur !== 0 : t.tribe > 1 && cur < 1) fail(`${p.id} tribe ${t.tribe} has ${cur} culture (founding ${waiting})`);
+    const own = Object.values(s.pieces.buildings).filter((b) => b.owner === p.id);
+    if (own.filter((b) => b.kind === 'city').length > HL.citiesPerTribe) fail(`${p.id} two active cities`);
+    const active = own.filter((b) => b.kind === 'settlement' || b.kind === 'city').length;
+    if (waiting && active) fail(`${p.id} founds a tribe with active buildings`);
+    if (t.tribe === 1 && own.some((b) => b.kind === RUIN || b.kind === RUIN_CITY)) fail(`${p.id} ruins in tribe 1`);
+  }
+  if (founding !== s.players.some((p) => s.phase.k === 'ext' && s.phase.actors?.[0] === p.id && x.players[p.id].cp[x.players[p.id].tribe - 1] === 0))
+    fail('founding phase without a founding player');
+  const hex = s.board.hexes.find((h) => h.id === s.board.blocker);
+  if (!hex || !['forest', 'claypit', 'meadow', 'field', 'quarry', 'wilds'].includes(hex.terrain)) fail(`blocker on ${hex?.terrain}`);
+  for (const [e, owner] of Object.entries(s.pieces.roads)) if (!owner) fail(`empty road ${e}`);
+}
+
 export function checkInvariants(s: GameState, initial: { resources: number; cards: number }): void {
   const fail = (m: string): never => {
     throw new Error(`invariant: ${m} (seed ${s.init.seed}, action #${s.log.length})`);
   };
   const strongholds = s.init.rulesetIds.includes(SH_ID);
+  const highlands = s.init.rulesetIds.includes(HL_ID);
+  const supply = highlands ? HL.supply : baseConfig.supply;
   let res = 0;
   for (const [r, n] of Object.entries(s.bank.hand)) {
     if (n < 0) fail(`bank ${r} negative`);
     res += n;
   }
-  let cards = s.bank.deck.length;
+  let cards = s.bank.deck.length + ((s.ext[HL_ID] as HlState | undefined)?.stack2.length ?? 0);
   for (const p of s.players) {
     for (const [r, n] of Object.entries(p.hand)) {
       if (!Number.isInteger(n) || n < 0) fail(`${p.id} ${r}=${n}`);
@@ -121,24 +150,33 @@ export function checkInvariants(s: GameState, initial: { resources: number; card
     }
     for (const [k, n] of Object.entries(p.supply)) if (n < 0) fail(`${p.id} supply ${k} negative`);
     const roads = Object.values(s.pieces.roads).filter((o) => o === p.id).length;
-    if (roads + p.supply.road !== baseConfig.supply.road) fail(`${p.id} road count`);
+    if (roads + p.supply.road !== supply.road) fail(`${p.id} road count`);
     if (strongholds) continue; // cards and building pieces are checked by checkStrongholds
     cards += p.cards.length + p.newCards.length + Object.values(p.played).reduce((a, b) => a + b, 0);
     if (p.id === s.players[0].id) cards += ((s.ext[TL_ID] as TlState | undefined)?.castaways?.reserved.length ?? 0);
     // placed + supply = initial pieces
     const own = Object.values(s.pieces.buildings).filter((b) => b.owner === p.id);
-    const cities = own.filter((b) => b.kind === 'city').length;
+    const cities = own.filter((b) => b.kind === 'city' || b.kind === RUIN_CITY).length;
     // Corsair coves: a fort not yet taken holds one of the player's settlement pieces.
     const fort = ((s.ext[TL_ID] as TlState | undefined)?.coves?.lairs[p.id] ?? 0) > 0 ? 1 : 0;
     const settlements = own.length - cities + fort;
-    if (cities + p.supply.city !== baseConfig.supply.city) fail(`${p.id} city count`);
-    if (settlements + p.supply.settlement !== baseConfig.supply.settlement) fail(`${p.id} settlement count`);
+    if (cities + p.supply.city !== supply.city) fail(`${p.id} city count`);
+    if (settlements + p.supply.settlement !== supply.settlement) fail(`${p.id} settlement count`);
   }
   if (res !== initial.resources) fail(`resources not conserved: ${res} != ${initial.resources}`);
   if (s.init.rulesetIds.includes(TL_ID)) checkTidelands(s, fail);
+  if (highlands) checkHighlands(s, fail);
   if (strongholds) checkStrongholds(s, fail);
   else if (cards !== initial.cards) fail(`cards not conserved: ${cards} != ${initial.cards}`);
   if (JSON.stringify(JSON.parse(JSON.stringify(s))) !== JSON.stringify(s)) fail('state is not plain JSON');
+}
+
+/** Resource and card totals of a fresh game (cards held aside by an expansion included). */
+export function initialTotals(s: GameState): { resources: number; cards: number } {
+  const sumBag = (b: Record<string, number>) => Object.values(b).reduce((a, n) => a + n, 0);
+  const reserved = ((s.ext[TL_ID] as TlState | undefined)?.castaways?.reserved.length ?? 0) +
+    ((s.ext[HL_ID] as HlState | undefined)?.stack2.length ?? 0);
+  return { resources: sumBag(s.bank.hand), cards: s.bank.deck.length + reserved };
 }
 
 export function runRandomGame(
@@ -146,9 +184,7 @@ export function runRandomGame(
 ): FuzzResult {
   let s = createGame({ seed, playerCount: players, rulesets, options });
   const policy = seedRng(`policy:${seed}`);
-  const sumBag = (b: Record<string, number>) => Object.values(b).reduce((a, n) => a + n, 0);
-  const reserved = (s.ext[TL_ID] as TlState | undefined)?.castaways?.reserved.length ?? 0;
-  const initial = { resources: sumBag(s.bank.hand), cards: s.bank.deck.length + reserved };
+  const initial = initialTotals(s);
   checkInvariants(s, initial);
   while (!s.winner) {
     if (s.log.length >= maxActions) throw new Error(`game ${seed} did not finish in ${maxActions} actions`);
@@ -167,11 +203,12 @@ export function runRandomGame(
   return { seed, players, winner: s.winner, actions: s.log.length, turns: s.turn.n };
 }
 
-/** Ruleset list and options from a CLI word: base | strongholds | tidelands[:scenario] | both[:scenario].
+/** Ruleset list and options from a CLI word: base | strongholds | highlands[:map] | tidelands[:scenario] | both[:scenario].
  *  Without a scenario, tidelands games cycle through all scenarios (by game index). */
 export function parseMode(word: string | undefined, i: number): { rulesets: string[]; options?: Record<string, unknown> } {
   const [mode, sc] = (word ?? 'base').split(':');
   if (mode === SH_ID) return { rulesets: ['base', SH_ID] };
+  if (mode === HL_ID) return { rulesets: ['base', HL_ID], options: { map: sc ?? (i % 2 ? 'starter' : 'variable') } };
   if (mode !== TL_ID && mode !== 'both') return { rulesets: ['base'] };
   const both = mode === 'both';
   const pool = both ? SCENARIO_IDS.filter((id) => !['castaways', 'silk', 'greatWorks', 'corsairCoves'].includes(id)) : SCENARIO_IDS;
@@ -184,7 +221,8 @@ function main(): void {
   const start = Number(process.argv[3] ?? 0);
   let actions = 0;
   for (let i = start; i < start + games; i++) {
-    const players = 3 + (i % 4);
+    const hlGame = process.argv[4]?.startsWith(HL_ID);
+    const players = hlGame ? 2 + (i % 3) : 3 + (i % 4);
     const { rulesets, options } = parseMode(process.argv[4], i);
     const r = runRandomGame(`fuzz-${i}`, players, 60000, rulesets, options);
     actions += r.actions;

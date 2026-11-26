@@ -62,10 +62,41 @@ interface Ctx {
   salt: number;
   /** Sea maps (tidelands): terrain, scenario data and lazily computed cog plans. */
   sea: SeaCtx | null;
+  /** Highlands: my active tribe and how close it is to its goal (null in other games). */
+  hl: HlInfo | null;
   plan?: { targets: SeaTarget[]; dists: Array<Record<VertexId, number>> };
 }
 
 // ---------- small helpers ----------
+
+/** Highlands: buildings of a tribe in decline (they produce, block roads and can be built over). */
+const isRuinKind = (kind: string | undefined): boolean => kind === 'ruin' || kind === 'ruinCity';
+
+interface HlInfo {
+  tribe: number;
+  /** Culture points of the active tribe and its goal (4, the third tribe 3). */
+  cp: number;
+  goal: number;
+  /** The next settlement or city ends the tribe (tribes 1 and 2): roads vanish and the turn ends. */
+  declining: boolean;
+  /** The active tribe already has its one city. */
+  activeCity: boolean;
+}
+
+function hlInfo(view: PlayerView, me: PlayerId): HlInfo | null {
+  const x = view.ext?.highlands as { players?: Record<PlayerId, { tribe: number; cp: number[] }> } | undefined;
+  const t = x?.players?.[me];
+  if (!t) return null;
+  const goal = t.tribe >= 3 ? 3 : 4;
+  const cp = t.cp[t.tribe - 1] ?? 0;
+  return {
+    tribe: t.tribe, cp, goal, declining: t.tribe < 3 && cp >= goal - 1,
+    activeCity: Object.values(view.pieces.buildings).some((b) => b.owner === me && b.kind === 'city'),
+  };
+}
+
+/** Highlands goods: traded 2:1 (or 3 different for 2 resources), never built with. */
+const GOOD_WEIGHT: Record<string, number> = { plume: 0.6, herb: 0.6, fish: 0.6 };
 
 function hash(s: string): number {
   let h = 2166136261;
@@ -112,7 +143,7 @@ function resWeight(c: Ctx, r: string): number {
   const base: Record<string, number> = early
     ? { timber: 1.1, clay: 1.1, fiber: 0.9, grain: 1.05, stone: 0.85 }
     : { timber: 0.9, clay: 0.9, fiber: 0.85, grain: 1.15, stone: 1.15 };
-  return base[r] ?? 1;
+  return base[r] ?? GOOD_WEIGHT[r] ?? 1;
 }
 
 // ---------- board evaluation ----------
@@ -131,7 +162,7 @@ function vertexValue(c: Ctx, v: VertexId): number {
     sc += pips(c.hexes[h].token) * resWeight(c, r) * (h === c.view.board.blocker ? 0.5 : 1);
     kinds.add(r);
   }
-  for (const k of kinds) if (!c.prod[k]) sc += 1.5;
+  for (const k of kinds) if (!c.prod[k]) sc += GOOD_WEIGHT[k] !== undefined ? 0.6 : 1.5;
   for (const hb of c.view.board.harbors) {
     if (!hb.vertices.includes(v)) continue;
     if (hb.kind === 'any') sc += 1;
@@ -142,17 +173,30 @@ function vertexValue(c: Ctx, v: VertexId): number {
 
 const openSpot = (c: Ctx, v: VertexId): boolean => satisfiesDistanceRule(c.g, c.view.pieces, v);
 
+/** Highlands: an overgrown building on v that may be built over (its neighbours are empty). */
+const ruinFree = (c: Ctx, v: VertexId): boolean =>
+  isRuinKind(c.view.pieces.buildings[v]?.kind) && c.g.vertexNeighbors[v].every((n) => !c.view.pieces.buildings[n]);
+
 /** Value of the best open settlement spot a road on e brings within reach. */
 function roadReach(c: Ctx, e: EdgeId): number {
   const pieces = c.view.pieces;
-  const linked = (v: VertexId) =>
-    pieces.buildings[v]?.owner === c.me || c.g.vertexEdges[v].some((x) => x !== e && pieces.roads[x] === c.me);
+  const linked = (v: VertexId) => {
+    const own = pieces.buildings[v];
+    // Highlands: no road leads on from a building in decline, not even its owner's.
+    if (own) return own.owner === c.me && !isRuinKind(own.kind);
+    return c.g.vertexEdges[v].some((x) => x !== e && pieces.roads[x] === c.me);
+  };
   const onLand = (v: VertexId) => !c.sea || landVertex(c.sea, v);
   const [a, b] = c.g.edgeEnds[e];
   let best = 0;
   for (const [from, to] of [[a, b], [b, a]]) {
     if (!linked(from)) continue;
     const bld = pieces.buildings[to];
+    if (bld && isRuinKind(bld.kind)) {
+      // Highlands: a road up to an overgrown building lets me build over it (an opponent's: their loss too).
+      if (ruinFree(c, to)) best = Math.max(best, vertexValue(c, to) + (bld.owner !== c.me ? 2 : 1));
+      continue;
+    }
     if (bld && bld.owner !== c.me) continue; // a dead end into an opponent
     if (openSpot(c, to) && onLand(to)) best = Math.max(best, vertexValue(c, to));
     for (const w of c.g.vertexNeighbors[to])
@@ -177,7 +221,8 @@ function mySpots(c: Ctx): VertexId[] {
   const p = c.view.pieces;
   return c.g.vertices.filter(
     (v) =>
-      openSpot(c, v) && c.g.vertexEdges[v].some((e) => p.roads[e] === c.me || p.ships?.[e] === c.me) &&
+      (openSpot(c, v) || (!!c.hl && ruinFree(c, v))) &&
+      c.g.vertexEdges[v].some((e) => p.roads[e] === c.me || p.ships?.[e] === c.me) &&
       (!c.sea || (landVertex(c.sea, v) && settleOk(c, v))),
   );
 }
@@ -234,7 +279,8 @@ function chooseGoal(c: Ctx): Goal | null {
   const hasSettlement = Object.values(c.view.pieces.buildings).some(
     (b) => b.owner === c.me && b.kind === 'settlement',
   );
-  if ((supply.city ?? 0) > 0 && hasSettlement && costs.city) opts.push({ g: { what: 'city', cost: costs.city }, w: -0.3 });
+  // Highlands: one city per tribe.
+  if ((supply.city ?? 0) > 0 && hasSettlement && costs.city && !c.hl?.activeCity) opts.push({ g: { what: 'city', cost: costs.city }, w: -0.3 });
   if ((supply.settlement ?? 0) > 0 && costs.settlement) {
     if (mySpots(c).length) opts.push({ g: { what: 'settlement', cost: costs.settlement }, w: -0.5 });
     else {
@@ -313,7 +359,7 @@ function scoreCard(c: Ctx, a: PlayCard, goal: Goal | null): number {
     if (grab && vpNow + c.cfg.awards.largestForce.vp >= toWin) return 500; // wins the game
     let s = 0;
     if (blockerOnMe(c)) s += 30;
-    if (grab) s += 35;
+    if (grab) s += c.cfg.awards.largestForce.vp > 0 ? 35 : 15; // highlands: a power, not points
     if ((c.mine.cards ?? []).filter((x) => x === 'guard').length >= 2) s += 12;
     if (s) return s + (pre ? 5 : 0);
     return pre ? -1 : 4;
@@ -358,8 +404,16 @@ function scoreMain(c: Ctx, a: Action, goal: Goal | null, b: Board2): number {
     case 'endTurn':
       return 0;
     case 'buildCity':
+      // Highlands: the build that ends a tribe also ends the turn, so it comes after everything else
+      // worth doing; a city then (it keeps producing double as a ruin) rather than a settlement.
+      if (c.hl?.declining) return 7 + vertexValue(c, a.v) * 0.1;
       return (vpNow + 1 >= toWin && !c.sea?.sea.works ? 1000 : 100) + vertexValue(c, a.v) * 1.5;
     case 'placeSettlement': {
+      if (c.hl?.declining) return 6 + vertexValue(c, a.v) * 0.1;
+      // Highlands: building over an opponent's ruin also takes its production away from them.
+      const over = c.view.pieces.buildings[a.v];
+      if (c.hl && over && isRuinKind(over.kind))
+        return (vpNow + 1 >= toWin ? 1000 : 92 + (over.owner !== c.me ? 4 : 0)) + vertexValue(c, a.v);
       const bonus = c.sea ? landfallRegions(c.sea, a.v).length * c.sea.landfallVP : 0;
       return (vpNow + 1 + bonus >= toWin && !c.sea?.sea.works ? 1000 : 90 + bonus * 25) + vertexValue(c, a.v);
     }
@@ -369,10 +423,13 @@ function scoreMain(c: Ctx, a: Action, goal: Goal | null, b: Board2): number {
       const rival = Math.max(0, ...Object.entries(b.routes).filter(([p]) => p !== c.me).map(([, n]) => n));
       const min = c.cfg.awards.longestRoute.min;
       const grabs = holder !== c.me && myLen >= min && myLen > rival;
-      if (grabs && vpNow + c.cfg.awards.longestRoute.vp >= toWin) return 900;
+      if (grabs && vpNow + c.cfg.awards.longestRoute.vp >= toWin && c.cfg.awards.longestRoute.vp > 0) return 900;
+      // Highlands: roads vanish when the tribe declines; with a spot in reach, more roads are wasted.
+      if (c.hl?.declining && b.spots.length) return -5;
+      const award = c.cfg.awards.longestRoute.vp > 0 ? 45 : c.hl?.declining ? 0 : 8;
       let s = 0;
-      if (grabs) s += 45;
-      else if (holder !== c.me && myLen > b.routes[c.me] && myLen >= min - 2 && rival >= min - 1) s += 8;
+      if (grabs) s += award;
+      else if (holder !== c.me && myLen > b.routes[c.me] && myLen >= min - 2 && rival >= min - 1) s += award > 8 ? 8 : 1;
       const reach = roadReach(c, a.e);
       if (!b.spots.length && (c.mine.supply.settlement ?? 0) > 0) s += reach > 0 ? 20 + reach : 1;
       else s += reach * 0.4;
@@ -401,8 +458,81 @@ function scoreMain(c: Ctx, a: Action, goal: Goal | null, b: Board2): number {
       return (n === 1 ? 30 : 12) + (sp[give] - k) * 0.5 - k;
     }
     default:
+      if (c.hl && a.t.startsWith('hl:')) return scoreHl(c, a, goal);
       return c.sea ? scoreSea(c, a, goal) : scoreExt(a);
   }
+}
+
+// ---------- highlands ----------
+
+/** A path edge (a land hex on one side): the only edges roads may use on the highlands map. */
+const landEdge = (c: Ctx, e: EdgeId): boolean =>
+  c.g.edgeHexes[e].some((h) => ['forest', 'claypit', 'meadow', 'field', 'quarry'].includes(c.hexes[h]?.terrain ?? ''));
+
+/** Highlands actions: goods sets and the caravan only toward the goal, the recall always. */
+function scoreHl(c: Ctx, a: Action, goal: Goal | null): number {
+  const x = a as Action & Record<string, unknown>;
+  switch (a.t) {
+    case 'hl:recall':
+      return 40; // one free resource and my hex produces again
+    case 'hl:goodsSet': {
+      const get = x.get as Bag;
+      if (!goal) return bagTotal(c.hand) > 7 ? 6 : -1;
+      const { m, n } = missing(c.hand, goal.cost);
+      let covered = 0;
+      for (const [r, k] of Object.entries(get)) covered += Math.min(k, m[r] ?? 0);
+      if (!covered) return bagTotal(c.hand) > 7 + (c.mine.played.guard ?? 0) ? 4 : -1;
+      return 22 + covered * 8 + (covered >= n ? 10 : 0);
+    }
+    case 'hl:caravan': {
+      if (!goal) return -1;
+      const get = Object.keys(x.get as Bag)[0];
+      const { m, n } = missing(c.hand, goal.cost);
+      if (!((m[get] ?? 0) > 0)) return -1;
+      const sp = surplus(c, goal);
+      let cost = 0;
+      for (const [r, k] of Object.entries(x.give as Bag)) {
+        if ((sp[r] ?? 0) < k) return -1; // would eat into the goal
+        cost += k * resWeight(c, r);
+      }
+      // Below the bank's goods trades (they do not use up the once-per-turn power).
+      return (n === 1 ? 24 : 10) - cost;
+    }
+    case 'hl:found':
+      return foundScore(c, x.v as VertexId);
+    default:
+      return scoreExt(a);
+  }
+}
+
+/**
+ * Where to found a new tribe: the spot's own production (the third tribe needs few points, so a city
+ * there counts double) plus the best place to build next within two roads. Overgrown buildings are
+ * good targets: nobody else can take the spot by the distance rule, and an opponent's ruin costs them
+ * its production. Targets an opponent's road already reaches are worth less.
+ */
+function foundScore(c: Ctx, v: VertexId): number {
+  const pieces = c.view.pieces;
+  const third = (c.hl?.tribe ?? 1) >= 3;
+  const sc = vertexValue(c, v) * (third ? 1.5 : 1);
+  const opponentRoadAt = (w: VertexId) => c.g.vertexEdges[w].some((e) => pieces.roads[e] && pieces.roads[e] !== c.me);
+  let target = 0;
+  for (const e1 of c.g.vertexEdges[v]) {
+    if (!landEdge(c, e1) || pieces.roads[e1]) continue;
+    const w1 = c.g.edgeEnds[e1][0] === v ? c.g.edgeEnds[e1][1] : c.g.edgeEnds[e1][0];
+    if (pieces.buildings[w1]) continue;
+    for (const e2 of c.g.vertexEdges[w1]) {
+      if (e2 === e1 || !landEdge(c, e2) || pieces.roads[e2]) continue;
+      const w2 = c.g.edgeEnds[e2][0] === w1 ? c.g.edgeEnds[e2][1] : c.g.edgeEnds[e2][0];
+      const b = pieces.buildings[w2];
+      let t = 0;
+      if (b && isRuinKind(b.kind)) t = vertexValue(c, w2) + (b.owner !== c.me ? 3 : 1.5);
+      else if (!b && openSpot(c, w2)) t = vertexValue(c, w2);
+      if (opponentRoadAt(w1) || opponentRoadAt(w2)) t *= 0.5;
+      target = Math.max(target, t);
+    }
+  }
+  return sc + target * (third ? 0.6 : 0.8);
 }
 
 /** Tidelands actions (and the generic extension scores for anything else). */
@@ -647,7 +777,7 @@ function makeCtx(view: PlayerView, level: BotLevel): Ctx | null {
   const sc = view.init.options?.scenario;
   const landfallVP = typeof sc === 'string' ? SCENARIOS[sc]?.landfall ?? 0 : 0;
   const sea = seaCtx(view, me, base.g, landfallVP);
-  return { ...base, prod: production(base, me), sea };
+  return { ...base, prod: production(base, me), sea, hl: hlInfo(view, me) };
 }
 
 /** Gold-mine picks: what my goal still needs, else my weakest resources. */
@@ -724,6 +854,8 @@ export function decide(view: PlayerView, legal: Action[], opts: BotOptions = {})
     if (silk.length) return steal(c, silk);
     if (only('steal').length) return steal(c, only('steal'));
   }
+  if (ph.k === 'ext' && only('hl:found').length)
+    return best(c, only('hl:found'), (a) => foundScore(c, (a as unknown as { v: VertexId }).v), 'found');
   if (ph.k === 'ext' && only('tl:gold').length) return pickGold(c, only('tl:gold'));
   if (ph.k === 'ext' && only('tl:placeHarbor').length)
     return best(c, only('tl:placeHarbor'), (a) => scoreSea(c, a, null), 'harbor');
@@ -740,6 +872,9 @@ export function decide(view: PlayerView, legal: Action[], opts: BotOptions = {})
   if (!pool.length) return null;
 
   if (ph.k === 'preRoll') {
+    // Highlands: the largest-force power works before the roll too (the hex produces this roll).
+    const recall = pool.find((a) => a.t === 'hl:recall');
+    if (recall) return recall;
     const cards = pool.filter((a): a is PlayCard => a.t === 'playCard');
     if (cards.length) {
       const a = best(c, cards, (x) => scoreCard(c, x as PlayCard, goal), 'pre') as PlayCard;

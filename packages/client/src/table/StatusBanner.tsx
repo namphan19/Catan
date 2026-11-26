@@ -87,6 +87,7 @@ export function statusOf(view: PlayerView, legal: Action[], pending: PendingPick
   if (pending === 'tl:buildShip') return mine(t('status_pickShip'), true);
   if (has('tl:gold')) return mine(t('tl_goldHint'));
   if (has('tl:placeHarbor') && ph.k === 'ext') return mine(t('tl_harborWindow'));
+  if (has('hl:found') && ph.k === 'ext') return mine(t('hl_foundHint'));
   if (has('confirmTrade')) return mine(t('status_confirm'));
   if (has('cancelTrade')) {
     const tr = view.trade;
