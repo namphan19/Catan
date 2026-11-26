@@ -120,6 +120,24 @@ describe('strongholds rooms', () => {
     expect(before).toContain('scatteredIsles');
   });
 
+  it('creates a highlands game, plays its setup and rejects bad highlands options', async () => {
+    players = await startRoom(url, 3, { highlands: 'starter' });
+    const v = lastState(players[0]).view as View & { init: { options?: { map?: string } }; ext?: { highlands?: { players?: unknown } } };
+    expect(v.init.rulesetIds).toEqual(['base', 'highlands']);
+    expect(v.init.options?.map).toBe('starter');
+    expect(v.init.vpToWin).toBe(11);
+    expect(v.ext?.highlands?.players).toBeDefined();
+    expect(JSON.stringify(v)).not.toContain('"stack2"');
+    await playSome(13);
+    expect((lastState(players[0]).view as View).phase.k).not.toBe('setup');
+    const p = await connect(url, 'Bo');
+    players.push(p);
+    p.client.send({ type: 'createRoom', playerCount: 5, options: { highlands: 'variable' } });
+    expect(((await p.client.next((m) => m.type === 'error')) as { code: string }).code).toBe('BAD_MESSAGE');
+    p.client.send({ type: 'createRoom', playerCount: 4, options: { highlands: 'variable', expansion: 'strongholds' } });
+    expect(((await p.client.next((m) => m.type === 'error')) as { code: string }).code).toBe('BAD_MESSAGE');
+  });
+
   it('rejects unknown tidelands scenarios and scenarios that do not combine with strongholds', async () => {
     const p = await connect(url, 'Ann');
     players = [p];

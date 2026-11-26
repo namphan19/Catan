@@ -6,6 +6,7 @@ import { composeRules } from './ruleset/compose';
 import { baseRuleset } from './rules/base';
 import { strongholdsRuleset } from './rules/strongholds';
 import { tidelandsRuleset } from './rules/tidelands';
+import { highlandsRuleset } from './rules/highlands';
 import { getGraph } from './board/graph';
 import { generateBoard } from './board/generate';
 import { randInt, seedRng, shuffle } from './rng';
@@ -16,6 +17,7 @@ const REGISTRY: Record<string, Ruleset> = {
   base: baseRuleset,
   [strongholdsRuleset.id]: strongholdsRuleset,
   [tidelandsRuleset.id]: tidelandsRuleset,
+  [highlandsRuleset.id]: highlandsRuleset,
 };
 const rulesCache: Record<string, Rules> = {};
 

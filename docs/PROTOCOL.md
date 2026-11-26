@@ -23,7 +23,7 @@ redacted data (getPlayerView / getEventsView).
 | type | fields | when |
 |---|---|---|
 | hello | name (1-24 chars), sessionToken? | first message on every connection |
-| createRoom | playerCount 2-6, options? { largeTableMode?, vpToWin?, expansion?: 'strongholds' } | lobby; creator becomes host. With the expansion 5-6 players always use paired mode |
+| createRoom | playerCount 2-6, options? { largeTableMode?, vpToWin?, expansion?: 'strongholds', tidelands?: scenario id, highlands?: 'variable' \| 'starter' } | lobby; creator becomes host. With the expansion 5-6 players always use paired mode. Highlands plays alone with 2-4 players (vpToWin is ignored: 11 culture points) |
 | joinRoom | code (5 chars A-Z0-9 without O/0/I/1) | lobby |
 | leaveRoom | - | lobby (before start); after start the seat is kept for reconnect |
 | setReady | ready: boolean | lobby |

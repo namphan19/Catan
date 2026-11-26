@@ -5,7 +5,7 @@ import {
   applyAction, createGame, decide, expertDecide, getLegalActions, getPlayerView, randInt, seedRng, validateAction,
   type Action, type BotLevel, type GameState, type PlayerId, type RngState,
 } from '../src';
-import { checkInvariants, parseMode } from './randomGame';
+import { checkInvariants, initialTotals, parseMode } from './randomGame';
 
 export type Policy = BotLevel | 'random';
 
@@ -56,9 +56,7 @@ export function playArenaGame(
   const ids = s.players.map((p) => p.id);
   const policy: Record<PlayerId, Policy> = Object.fromEntries(ids.map((id, i) => [id, seats[i]]));
   const rng = seedRng(`arena:${seed}`);
-  const sum = (b: Record<string, number>) => Object.values(b).reduce((a, n) => a + n, 0);
-  const reserved = ((s.ext.tidelands as { castaways?: { reserved: string[] } } | undefined)?.castaways?.reserved.length) ?? 0;
-  const initial = { resources: sum(s.bank.hand), cards: s.bank.deck.length + reserved };
+  const initial = initialTotals(s);
   const out: ArenaGame = { seed, turns: 0, actions: 0, invalid: 0, botMs: 0, botCalls: 0 };
 
   const choose = (id: PlayerId, legal: Action[], timedOut: boolean): Action | null => {

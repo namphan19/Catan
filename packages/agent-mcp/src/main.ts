@@ -129,10 +129,10 @@ const server = new McpServer(
   { name: 'boschtan-player', version: '0.1.0' },
   {
     instructions: [
-      'You sit at a Boschtan table (a Catan-like hex game: base game, optional Strongholds and Tidelands expansions) as a normal player.',
+      'You sit at a Boschtan table (a Catan-like hex game: base game, optional Strongholds and Tidelands expansions, or the standalone Highlands expansion) as a normal player.',
       'You only ever see what a human in your seat sees. Loop: wait_for_turn -> get_state (and get_board when placing) -> list_actions -> act -> repeat until the game is over.',
       'Think like a player: pick spots by pips and resource mix, plan toward the goal VP, trade with people (offerTrade) and answer their offers, use chat to talk to the table. Humans are slow: waiting is normal.',
-      'Resource ids in actions are the engine ids: timber(wood), clay(brick), fiber(wool), grain(wheat), stone(ore). get_rules explains the rules.',
+      'Resource ids in actions are the engine ids: timber(wood), clay(brick), fiber(wool), grain(wheat), stone(ore); Highlands adds the goods plume, herb, fish (trade only). get_rules explains the rules.',
     ].join('\n'),
   },
 );
@@ -176,13 +176,15 @@ server.registerTool(
       vpToWin: z.number().int().min(3).max(30).optional(),
       strongholds: z.boolean().optional().describe('Play with the Strongholds expansion'),
       tidelands: z.string().optional().describe(`Tidelands (sea) scenario id: ${SCENARIO_IDS.join(', ')}`),
+      highlands: z.enum(['variable', 'starter']).optional().describe('Play the Highlands expansion (tribes rise and decline; alone, 2-4 players): map mode'),
     },
   },
-  async ({ playerCount, vpToWin, strongholds, tidelands }) => {
+  async ({ playerCount, vpToWin, strongholds, tidelands, highlands }) => {
     const options: Record<string, unknown> = {};
     if (vpToWin) options.vpToWin = vpToWin;
     if (strongholds) options.expansion = 'strongholds';
     if (tidelands) options.tidelands = tidelands;
+    if (highlands) options.highlands = highlands;
     const err = await client.request({ type: 'createRoom', playerCount, options }, (m) => m.type === 'room');
     return err ? fail(err) : text(roomText());
   },
@@ -401,11 +403,11 @@ server.registerTool(
 server.registerTool(
   'get_rules',
   {
-    description: 'The rules text: base, strongholds, tidelands or decisions (clarifications).',
-    inputSchema: { topic: z.enum(['base', 'strongholds', 'tidelands', 'decisions']) },
+    description: 'The rules text: base, strongholds, tidelands, highlands or decisions (clarifications).',
+    inputSchema: { topic: z.enum(['base', 'strongholds', 'tidelands', 'highlands', 'decisions']) },
   },
   async ({ topic }) => {
-    const file = { base: 'RULES.md', strongholds: 'RULES_STRONGHOLDS.md', tidelands: 'RULES_TIDELANDS.md', decisions: 'RULES_DECISIONS.md' }[topic];
+    const file = { base: 'RULES.md', strongholds: 'RULES_STRONGHOLDS.md', tidelands: 'RULES_TIDELANDS.md', highlands: 'RULES_HIGHLANDS.md', decisions: 'RULES_DECISIONS.md' }[topic];
     try {
       return text(fs.readFileSync(path.join(REPO, 'docs', file), 'utf8'));
     } catch (e) {

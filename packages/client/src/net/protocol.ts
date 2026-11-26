@@ -9,6 +9,8 @@ export interface RoomOptions {
   expansion?: 'strongholds';
   /** Tidelands scenario id (the sea expansion). */
   tidelands?: string;
+  /** Highlands expansion (plays alone, 2-4 players): the map mode. */
+  highlands?: 'variable' | 'starter';
 }
 
 export type BotLevel = 'easy' | 'normal' | 'hard' | 'expert';

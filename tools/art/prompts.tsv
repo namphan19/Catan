@@ -63,3 +63,14 @@ d-wonder-obelisk	card	1024x1536	Subject: a tall carved stone obelisk standing on
 d-wonder-highKeep	card	1024x1536	Subject: a tall square castle keep on a rocky crag, banners flying, clouds drifting around its top.
 d-wonder-beacon	card	1024x1536	Subject: a stone beacon tower on a sea cliff with a great fire burning on top, guiding small ships home at dusk.
 d-wonder-scriptorium	card	1024x1536	Subject: a monastery scriptorium hall with tall arched windows, wooden writing desks with open books and scrolls in warm light.
+# Highlands (tribes expansion) - same styles: painted terrain, chunky icons, storybook cards. Not generated yet (docs/ART_HIGHLANDS.md)
+t-jungle	terrain	1024x1024	Subject: a dense tropical rainforest canopy seen from above, layered broad leaves and tall palms in deep emerald greens, a few bright red and blue long tail feathers of hidden birds showing between the leaves. Deep emerald green dominates.
+t-grove	terrain	1024x1024	Subject: small terraced herb gardens cut into a lush jungle slope, neat rows of bright green leafy bushes on narrow earth terraces, a woven basket of picked leaves on a path. Fresh leaf green on warm earth dominates.
+t-fishery	terrain	1024x1024	Subject: calm open sea water with a ring of gentle ripples, a silver shoal of small fish just under the surface and a floating wooden net float, no land, no boats. Teal blue water dominates.
+t-wilds	terrain	1024x1024	Subject: impenetrable old-growth jungle seen from above, huge dark tree crowns and hanging vines, deep shadows, no paths, no clearings. Very dark green dominates.
+i-plume	icon	1024x1024	Subject: one long chunky bird feather, bright red with a blue tip.
+i-herb	icon	1024x1024	Subject: a small bundle of three plain chunky green leaves tied with a brown string.
+i-fish	icon	1024x1024	Subject: one plain chunky silver-blue fish seen from the side.
+c-plume	card	1024x1536	Subject: a colourful bunch of long red, blue and gold tropical bird feathers lying on a woven mat at the edge of a jungle.
+c-herb	card	1024x1536	Subject: a woven basket full of fresh bright green leaves on a sunny terraced garden path in the hills.
+c-fish	card	1024x1536	Subject: a small reed fishing boat drawn up on a beach with a net full of silver fish beside it at dawn.

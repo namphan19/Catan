@@ -105,8 +105,9 @@ export type Phase =
   /** `actor` is set only when the flow was started by the paired player (who is not turn.current). */
   | { k: 'moveBlocker'; resume: Resume; actor?: PlayerId }
   | { k: 'steal'; from: PlayerId[]; resume: Resume; actor?: PlayerId }
-  /** `only`: the window takes just this route piece (e.g. a ship removed by a card is rebuilt as a ship). */
-  | { k: 'freeRoads'; left: number; actor?: PlayerId; only?: 'road' | 'ship' }
+  /** `only`: the window takes just this route piece (e.g. a ship removed by a card is rebuilt as a ship).
+   *  `resume`: phase after the window (default main; preRoll when an extension lets the card be played before the roll). */
+  | { k: 'freeRoads'; left: number; actor?: PlayerId; only?: 'road' | 'ship'; resume?: Resume }
   | { k: 'extraBuild'; queue: PlayerId[] }
   | { k: 'over' }
   /** Extension window. `actors` optionally names who may act (default: turn.current). */

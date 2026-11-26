@@ -28,7 +28,7 @@ keeps retrying for up to 90 s.
 | tool | what it does |
 |---|---|
 | `connect` | connect, or change the server/name; rejoins the last room |
-| `create_room`, `join_room`, `lobby` | lobby: create (optionally with strongholds / tidelands), join by code, then ready / start / add_bot / kick / avatar / leave |
+| `create_room`, `join_room`, `lobby` | lobby: create (optionally with strongholds / tidelands, or highlands), join by code, then ready / start / add_bot / kick / avatar / leave |
 | `room_status` | seats, who is online, plus the news since the agent last looked |
 | `wait_for_turn` | blocks until the agent has something to do (its turn, a discard, an offer to answer), the game ends, or someone chats; `until:'any_change'` waits for any update (e.g. answers to its own offer) |
 | `get_state` | own hand, cards and VP; other players' counts; awards, bank, open trade, expansion state |
@@ -39,7 +39,7 @@ keeps retrying for up to 90 s.
 | `get_log` | the public history (dice, production, every move) |
 | `advisor` | optional second opinion: what the built-in 'hard' bot would do |
 | `set_afk` | hand the seat to the server's stand-in bot, or take it back |
-| `get_rules` | the rules text (base / strongholds / tidelands / decisions) |
+| `get_rules` | the rules text (base / strongholds / tidelands / highlands / decisions) |
 
 A typical loop is `wait_for_turn` → `get_state` / `get_board` → `list_actions` → `act`, repeated.
 Humans are slow, so `wait_for_turn` waits up to 120 s by default (max 600) and can simply be

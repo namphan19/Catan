@@ -67,6 +67,11 @@ export const TERRAIN_COLORS: Record<string, string> = {
   goldmine: '#C9A227',
   mist: '#9AA3A8',
   village: '#B9A07A',
+  // Highlands placeholders until the painted tiles arrive (see docs/ART_HIGHLANDS.md).
+  jungle: '#2F5E34',
+  grove: '#5E8C3A',
+  fishery: '#5FA8C2',
+  wilds: '#1F3B24',
 };
 
 /** Same palette as hex strings, for WebGL materials (CSS var() cannot reach a shader). */
@@ -100,4 +105,8 @@ export const RESOURCE_COLORS: Record<string, string> = {
   fiber: 'var(--meadow)',
   grain: 'var(--field)',
   stone: 'var(--quarry)',
+  // Highlands goods
+  plume: '#C2453A',
+  herb: '#5E8C3A',
+  fish: '#5FA8C2',
 };
