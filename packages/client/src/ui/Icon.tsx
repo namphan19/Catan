@@ -11,6 +11,10 @@ import { useId } from 'react';
 import { PIECE_ART, parseArt, type Art } from '../board/pieceArt';
 import { art2dUrl, useAssets } from '../board/assets';
 
+const menuRaw = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+const closeRaw = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+const sheetRaw = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 3.5h9l3 3V20H6z" fill="var(--parchment)" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14.5 3.5V7H18M9 11h6M9 14.5h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+
 const UI_ART: Record<string, Art | null> = {
   roll: parseArt(rollRaw),
   end: parseArt(endRaw),
@@ -18,9 +22,12 @@ const UI_ART: Record<string, Art | null> = {
   card: parseArt(cardRaw),
   build: parseArt(buildRaw),
   info: parseArt(infoRaw),
+  menu: parseArt(menuRaw),
+  close: parseArt(closeRaw),
+  sheet: parseArt(sheetRaw),
 };
 
-export type UiIconName = 'roll' | 'end' | 'trade' | 'card' | 'build' | 'info';
+export type UiIconName = 'roll' | 'end' | 'trade' | 'card' | 'build' | 'info' | 'menu' | 'close' | 'sheet';
 
 export function UiIcon({ name, size = 18 }: { name: UiIconName; size?: number }) {
   const art = UI_ART[name] ?? null;

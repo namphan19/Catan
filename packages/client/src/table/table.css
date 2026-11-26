@@ -445,6 +445,162 @@
   padding: 4px 10px 4px 6px;
   /* The layout follows the card's own width (players x screen), not the viewport. */
   container-type: inline-size;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Compact phone tiles keep the hand count on the portrait; the full public info lives in the
+   player dialog. Desktop cards already show the complete stat rows. */
+.seat-hand-badge {
+  display: none;
+}
+
+/* Public player details opened from a seat tile. */
+.player-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.player-detail-vp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.player-detail-vp strong {
+  font-family: var(--font-logo);
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.player-detail-vp small {
+  color: var(--ink-soft);
+}
+
+.player-detail-id {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-detail-id h3 {
+  margin: 0 0 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.2rem;
+}
+
+.player-detail-state {
+  display: inline-flex;
+  padding: 1px 8px;
+  border: 1px solid var(--ink-soft);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.player-detail-state.acting {
+  border-color: var(--ink);
+  background: var(--gold);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.player-detail-progress {
+  height: 8px;
+  margin: 14px 0;
+  overflow: hidden;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: var(--parchment-dark);
+}
+
+.player-detail-progress span {
+  display: block;
+  height: 100%;
+  border-right: 1px solid var(--ink);
+  background: var(--seat);
+}
+
+.player-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.player-detail-stats > div {
+  min-width: 0;
+  padding: 10px 8px;
+  border: 1px solid var(--ink-soft);
+  border-radius: 8px;
+  background: var(--parchment-dark);
+}
+
+.player-detail-stats dt {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 2.8em;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.player-detail-stats dd {
+  margin: 4px 0 0;
+  font-family: var(--font-logo);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.player-detail-supply {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.player-detail-supply > div {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(59, 47, 47, 0.2);
+}
+
+.player-detail-supply span {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+
+.player-detail-supply strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.player-detail-awards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.player-detail-awards span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 5px;
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  background: rgba(201, 162, 39, 0.14);
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 /* Narrow card: VP line on top, card stats and piece stats stacked (3:3) beside the portrait. */

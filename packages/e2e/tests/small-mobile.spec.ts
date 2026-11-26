@@ -33,6 +33,22 @@ for (const [name, w, h] of [
       expect(n.clipped, 'seat name is not truncated').toBe(false);
       expect(n.h).toBeLessThan(30);
     }
+    // The five base resources stay together in the dock even on the smallest phone.
+    const resources = await page.locator('.hand .res-card').evaluateAll((els) =>
+      els.map((e) => {
+        const r = e.getBoundingClientRect();
+        return { left: r.left, right: r.right };
+      }),
+    );
+    expect(resources).toHaveLength(5);
+    for (const r of resources) {
+      expect(r.left).toBeGreaterThanOrEqual(0);
+      expect(r.right).toBeLessThanOrEqual(w + 0.5);
+    }
+    const actionWidths = await page.locator('.actionbar button').evaluateAll((els) =>
+      els.map((e) => Math.round(e.getBoundingClientRect().width)),
+    );
+    for (const width of actionWidths) expect(width).toBeGreaterThanOrEqual(44);
     await clearHover(page);
     await page.screenshot({ path: shotPath(`mobile-small-${name}.png`, testInfo.project.name) });
   });

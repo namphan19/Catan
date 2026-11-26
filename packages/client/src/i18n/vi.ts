@@ -61,6 +61,7 @@ export const vi: Record<string, string> = {
   // Players / seats
   player: 'Người chơi {n}',
   seat_list: 'Người chơi',
+  playerDetails: 'Chi tiết người chơi',
   you: 'Bạn',
   turnTag: 'đang đi',
   waitingFor: 'Đang chờ {name}…',

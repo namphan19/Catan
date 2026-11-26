@@ -14,7 +14,8 @@
 /* ---------- Desktop defaults for the phone-only controls ---------- */
 .topbar-menu-btn,
 .sheet-toggle,
-.sheet-close {
+.sheet-close,
+.sheet-backdrop {
   display: none;
 }
 
@@ -52,8 +53,9 @@
   .topbar {
     position: relative;
     z-index: 50;
-    gap: 6px;
-    padding: 3px 8px;
+    gap: 4px;
+    min-height: calc(44px + env(safe-area-inset-top));
+    padding: env(safe-area-inset-top) 6px 0;
   }
 
   .game-title {
@@ -75,7 +77,7 @@
     border-radius: 999px;
     background: var(--ink);
     color: var(--parchment);
-    font-size: 0.8rem;
+    font-size: 0.76rem;
     line-height: 1.5;
     white-space: nowrap;
   }
@@ -84,15 +86,18 @@
     display: block;
     min-width: 0;
     overflow: hidden;
-    font-size: 0.76rem;
+    font-size: 0.72rem;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
   .topbar .btn-help {
     order: 0;
-    width: 30px;
-    min-height: 30px;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
   }
 
   .topbar-menu-wrap {
@@ -104,10 +109,10 @@
   .topbar .topbar-menu-btn {
     display: inline-flex;
     justify-content: center;
-    width: 34px;
-    min-height: 30px;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
     padding: 0;
-    font-size: 1.05rem;
   }
 
   .topbar-menu {
@@ -137,7 +142,7 @@
 
   .topbar .topbar-menu .btn {
     order: 0;
-    min-height: 42px;
+    min-height: 44px;
     padding: 6px 12px;
     justify-content: flex-start;
     font-size: 1rem;
@@ -152,9 +157,9 @@
   }
 
   .board-zoom .btn {
-    width: 36px;
-    height: 36px;
-    min-height: 36px;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
     padding: 0;
     justify-content: center;
     border-radius: 50%;
@@ -200,7 +205,8 @@
   }
 
   .cost-card-head {
-    padding: 3px 10px;
+    min-height: 44px;
+    padding: 4px 12px;
     border-radius: 999px;
     font-size: 0.85rem;
   }
@@ -226,8 +232,8 @@
 
   .board-hint .btn,
   .sh-pickbar .btn {
-    min-height: 28px;
-    padding: 1px 10px;
+    min-height: 44px;
+    padding: 4px 10px;
     font-size: 0.82rem;
   }
 
@@ -249,7 +255,20 @@
     line-height: 1.3;
   }
 
-  /* The side column (expansion panels) becomes a sheet over the board. */
+  /* The side column (expansion panels) becomes a sheet over the board. A backdrop makes the
+     open sheet modal on touch: taps cannot accidentally arm a board pick behind it. */
+  .sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 44;
+    border: 0;
+    background: rgba(27, 21, 18, 0.34);
+  }
+
+  .table[data-sheet='open'] .sheet-backdrop {
+    display: block;
+  }
+
   .sheet-toggle {
     display: inline-flex;
     align-items: center;
@@ -258,8 +277,8 @@
     left: 8px;
     bottom: 8px;
     z-index: 7;
-    min-height: 34px;
-    padding: 3px 12px;
+    min-height: 44px;
+    padding: 4px 12px;
     border-radius: 999px;
     font-size: 0.85rem;
     background: rgba(243, 233, 210, 0.96);
@@ -290,9 +309,22 @@
     display: inline-flex;
     flex: none;
     align-self: flex-end;
-    min-height: 34px;
+    min-height: 44px;
     margin: 6px 8px 0;
-    padding: 2px 12px;
+    padding: 4px 12px;
+  }
+
+  /* Strongholds advance cards sit one row above the utility pills, so they cannot cover the
+     expansion-sheet toggle or the cost button. */
+  .board-area.has-sh-hand .sh-hand {
+    left: 8px;
+    right: 8px;
+    bottom: 54px;
+    max-width: none;
+  }
+
+  .board-area.has-sh-hand .toast-stack {
+    bottom: 132px;
   }
 
   /* The whole sheet scrolls, so the expansion panels show in full (no own max-height). */
@@ -303,10 +335,11 @@
     overflow: visible;
   }
 
-  /* Player tiles: a seat-colour band with the portrait and the VP, the name in full on its
-     own line, and the card counts under it. One row of tiles for up to four players, three
-     per row for five or six. */
+  /* Player tiles: a seat-colour band with portrait, hand badge, VP and a readable name.
+     Up to four players fit one row; five or six use a shallow swipeable rail. */
   .seat-strip {
+    position: relative;
+    flex: none;
     border-bottom-width: 2px;
   }
 
@@ -317,7 +350,7 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
     overflow: visible;
     gap: 4px;
-    padding: 4px 6px;
+    padding: 3px 4px;
   }
 
   .seat-strip .seats[data-n='2'] {
@@ -328,18 +361,49 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  /* Five and six players keep one shallow rail instead of spending a second tile row on the
+     board. Swipe to the end; each tile snaps into place and the right fade signals more seats. */
   .seat-strip .seats[data-n='5'],
   .seat-strip .seats[data-n='6'] {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(108px, 1fr);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .seat-strip .seats[data-n='5']::-webkit-scrollbar,
+  .seat-strip .seats[data-n='6']::-webkit-scrollbar {
+    display: none;
+  }
+
+  .seat-strip:has(.seats[data-n='5'])::after,
+  .seat-strip:has(.seats[data-n='6'])::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 14px;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, var(--parchment-dark));
+  }
+
+  .seat-strip .seats[data-n='5'] .seat,
+  .seat-strip .seats[data-n='6'] .seat {
+    scroll-snap-align: start;
   }
 
   .seat,
   .seats-compact .seat {
     position: relative;
     overflow: hidden;
+    min-height: 46px;
     border: 2px solid var(--ink);
     border-radius: 8px;
-    padding: 0 0 1px;
+    padding: 0;
     background: var(--parchment);
     /* the tile is re-laid out below; the desktop container queries must not fire */
     container-type: normal;
@@ -351,7 +415,7 @@
     content: '';
     position: absolute;
     inset: 0 0 auto;
-    height: 30px;
+    height: 28px;
     z-index: 0;
     background: var(--seat);
     border-bottom: 1px solid var(--ink);
@@ -361,12 +425,11 @@
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-columns: 30px minmax(0, 1fr);
-    grid-template-rows: 30px auto auto;
+    grid-template-columns: 28px minmax(0, 1fr);
+    grid-template-rows: 28px auto;
     grid-template-areas:
       'av head'
-      'name name'
-      'cards cards';
+      'name name';
     align-items: center;
     column-gap: 1px;
   }
@@ -383,13 +446,39 @@
   }
 
   .seat .seat-avatar .avatar {
-    width: 26px !important;
-    height: 26px !important;
+    width: 24px !important;
+    height: 24px !important;
     border: 2px solid var(--parchment);
     box-shadow: 0 0 0 1px var(--ink);
   }
 
-  /* The portrait and the colour band already tell the seat; the badge only crowds it. */
+  /* The hand count rides on the portrait, leaving the colour band for the VP. */
+  .seat-hand-badge {
+    position: absolute;
+    right: -4px;
+    bottom: -2px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    min-width: 17px;
+    height: 14px;
+    padding: 0 3px;
+    border: 1px solid var(--ink);
+    border-radius: 999px;
+    background: var(--parchment);
+    color: var(--ink);
+    font-size: 0.58rem;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .seat-hand-badge.warn {
+    border-color: var(--danger);
+    color: var(--danger);
+  }
+
+  /* The portrait and the colour band already tell the seat; the emblem only crowds it. */
   .seat-emblem {
     display: none;
   }
@@ -404,6 +493,7 @@
 
   .seat-you,
   .seat-acting-tag,
+  .seat-cards,
   .seat-vp small,
   .stat-supply {
     display: none;
@@ -421,7 +511,7 @@
   }
 
   .seat-vp strong {
-    font-size: 1rem;
+    font-size: 0.92rem;
     color: var(--seat-text, var(--ink));
     text-shadow: none;
   }
@@ -429,10 +519,11 @@
   .seat .seat-name {
     grid-area: name;
     width: 100%;
+    min-height: 15px;
     padding: 1px 2px 0;
     text-align: center;
     font-size: 0.72rem;
-    line-height: 1.25;
+    line-height: 1.1;
     font-weight: 700;
   }
 
@@ -446,7 +537,7 @@
     background: #fbf5e4;
     box-shadow:
       0 0 0 2px var(--gold),
-      0 2px 8px rgba(0, 0, 0, 0.3);
+      0 1px 4px rgba(0, 0, 0, 0.22);
   }
 
   .seat.acting .avatar {
@@ -505,8 +596,8 @@
   .hand {
     flex-wrap: nowrap;
     align-items: center;
-    gap: 8px;
-    padding: 4px 6px;
+    gap: 6px;
+    padding: 3px 6px;
     overflow: auto hidden;
     scrollbar-width: none;
   }
@@ -526,6 +617,16 @@
     gap: 5px;
   }
 
+  .hand-group:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .hand-res {
+    min-width: 0;
+    gap: 4px;
+  }
+
   .hand-group + .hand-group {
     padding-left: 8px;
     border-left: 1px solid rgba(59, 47, 47, 0.25);
@@ -540,11 +641,12 @@
   .res-card {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     width: auto;
-    padding: 1px 6px 1px 4px;
+    min-height: 36px;
+    padding: 2px 6px;
     border: 1px solid rgba(59, 47, 47, 0.4);
-    border-radius: 999px;
+    border-radius: 8px;
     background: rgba(243, 233, 210, 0.9);
   }
 
@@ -596,7 +698,8 @@
     align-items: center;
     gap: 3px;
     width: auto;
-    padding: 1px 6px 1px 3px;
+    min-height: 36px;
+    padding: 2px 6px 2px 3px;
     border: 1px solid rgba(59, 47, 47, 0.4);
     border-radius: 999px;
     background: rgba(243, 233, 210, 0.9);
@@ -662,14 +765,18 @@
     display: contents;
   }
 
-  .act-strip > .btn,
-  .act-strip > .tipwrap {
+  /* The action groups use display:contents, so their buttons are layout children of the strip
+     even though they are not direct DOM children. Match both shapes and never shrink a tap
+     target below the accessible minimum. */
+  .act-strip .btn,
+  .act-strip .tipwrap {
     flex: 0 0 auto;
     min-width: 46px;
   }
 
-  .act-strip > .tipwrap > .btn {
+  .act-strip .tipwrap > .btn {
     width: 100%;
+    min-width: 44px;
   }
 
   .actionbar .btn {
@@ -696,19 +803,25 @@
     margin: 0;
   }
 
-  .actionbar > .act-primary {
+  .actionbar .act-primary {
     flex: 0 0 auto;
     display: block;
   }
 
-  .actionbar > .act-primary > .btn,
-  .actionbar > .act-primary > .tipwrap {
+  .actionbar .act-primary .btn,
+  .actionbar .act-primary .tipwrap {
     flex: none;
     width: 74px;
     height: 100%;
   }
 
-  .actionbar > .act-primary .btn {
+  /* Disabled primary actions carry a tooltip wrapper; its button must fill the pinned box. */
+  .actionbar .act-primary .tipwrap > .btn {
+    width: 100%;
+    min-width: 44px;
+  }
+
+  .actionbar .act-primary .btn {
     justify-content: center;
     gap: 1px;
     min-height: 54px;
@@ -743,6 +856,8 @@
   }
 
   .dialog {
+    min-width: 0;
+    max-width: min(640px, calc(100vw - 16px));
     max-height: calc(100dvh - 16px);
   }
 
@@ -751,7 +866,60 @@
   }
 
   .dialog-body {
+    min-width: 0;
     padding: 10px 12px;
+    overflow: auto;
+  }
+
+  .dialog-head .btn-icon {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+
+  /* Player details read as a phone bottom sheet, not a desktop modal dropped on the board. */
+  .dialog-overlay:has(.player-detail-dialog) {
+    place-items: end center;
+    padding: 0;
+  }
+
+  .player-detail-dialog {
+    max-width: 560px;
+    max-height: 82dvh;
+    padding-bottom: env(safe-area-inset-bottom);
+    border-width: 2px 0 0;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .player-detail-head {
+    gap: 10px;
+  }
+
+  .player-detail-stats {
+    gap: 6px;
+  }
+
+  .player-detail-stats > div {
+    padding: 8px 6px;
+  }
+
+  .player-detail-stats dt {
+    font-size: 0.72rem;
+  }
+
+  .stepper .btn,
+  .trade-grid .stepper .btn {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 2px 8px;
+  }
+
+  /* The compact trade table may need a sideways swipe inside the dialog; it must never widen
+     the page or hide the pinned game controls. */
+  .trade-grid {
+    min-width: 440px;
   }
 
   .tipwrap::after {
@@ -816,16 +984,18 @@
 
   .topbar {
     grid-area: top;
+    padding-left: max(6px, env(safe-area-inset-left));
+    padding-right: max(6px, env(safe-area-inset-right));
   }
 
   .seat-strip {
     grid-area: seats;
   }
 
-  /* Same tiles as portrait; five or six players still need a second row. */
+  /* Same shallow, swipeable rail as portrait; the board keeps its full height in landscape. */
   .seat-strip .seats[data-n='5'],
   .seat-strip .seats[data-n='6'] {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-columns: minmax(104px, 1fr);
   }
 
   .seat-strip .seats:not([data-n='5']):not([data-n='6']) .stat-supply {
@@ -849,7 +1019,8 @@
 
   .actionbar {
     grid-area: actions;
-    padding: 4px 6px calc(4px + env(safe-area-inset-bottom));
+    padding: 4px max(6px, env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom))
+      max(6px, env(safe-area-inset-left));
     border-top: 2px solid var(--ink);
     background: var(--parchment-dark);
   }
@@ -912,17 +1083,29 @@
     font-size: 0.64rem;
   }
 
-  .act-strip > .btn,
-  .act-strip > .tipwrap {
-    min-width: 42px;
+  .act-strip .btn,
+  .act-strip .tipwrap {
+    min-width: 44px;
   }
 
-  .actionbar > .act-primary > .btn,
-  .actionbar > .act-primary > .tipwrap {
+  .actionbar .act-primary .btn,
+  .actionbar .act-primary .tipwrap {
     width: 66px;
   }
 
-  .actionbar > .act-primary .btn {
+  .actionbar .act-primary .btn {
     font-size: 0.7rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidecol,
+  .toast,
+  .res-card.changed,
+  .dice-roll,
+  .hex-produced,
+  .btn.pulse {
+    animation: none;
+    transition: none;
   }
 }

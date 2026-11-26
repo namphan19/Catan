@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { PlayerView } from '@hexgame/engine';
 import { useI18n, type Lang } from '../i18n';
+import { UiIcon } from '../ui/Icon';
 
 export function TopBar({
   view,
@@ -62,7 +63,7 @@ export function TopBar({
           aria-expanded={menuOpen}
           onClick={() => setMenuOpen((o) => !o)}
         >
-          ☰
+          <UiIcon name="menu" size={20} />
         </button>
         {/* A click on any item (pass device, export, home, language) also closes the menu. */}
         <div className={menuOpen ? 'topbar-menu open' : 'topbar-menu'} onClick={() => setMenuOpen(false)}>
