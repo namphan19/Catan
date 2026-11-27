@@ -26,10 +26,17 @@ export function HexTile({ hex, producing }: { hex: Hex; producing?: boolean }) {
   return <LandTile hex={hex} producing={producing} />;
 }
 
+/** Highlands goods hexes carry the icon of their good above the number token: a painted tile alone can
+ *  be hard to tell apart (a fishing ground looks like sea once the token covers its middle). */
+const GOODS_BADGE: Record<string, string> = { jungle: 'plume', grove: 'herb', fishery: 'fish' };
+
 function LandTile({ hex, producing }: { hex: Hex; producing?: boolean }) {
   const { t } = useI18n();
   const painted = art2dUrl('terrain', hex.terrain);
-  const path = useAssets([painted])[painted] ? painted : null;
+  const good = GOODS_BADGE[hex.terrain];
+  const badge = good ? art2dUrl('icon', good) : '';
+  const loaded = useAssets(badge ? [painted, badge] : [painted]);
+  const path = loaded[painted] ? painted : null;
   const c = hexCenter(hex.id);
   const w = SQRT3 * SIZE;
   // The painted webp is cut exactly to the hex (w x 2*SIZE).
@@ -86,6 +93,14 @@ function LandTile({ hex, producing }: { hex: Hex; producing?: boolean }) {
         )}
         {producing && <polygon className="hex-produced" points={hexPoints(hex.q, hex.r)} />}
       </g>
+      {path && badge && loaded[badge] && (
+        <g className="hex-good-badge" pointerEvents="none">
+          <circle cx={c.x} cy={c.y - SIZE * 0.66} r={SIZE * 0.23} />
+          <image href={badge} x={c.x - SIZE * 0.19} y={c.y - SIZE * 0.85} width={SIZE * 0.38} height={SIZE * 0.38}>
+            <title>{t(terrainKey(hex.terrain))}</title>
+          </image>
+        </g>
+      )}
       {hex.token != null && <Token n={hex.token} cx={c.x} cy={c.y} />}
     </g>
   );

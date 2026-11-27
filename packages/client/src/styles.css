@@ -10,6 +10,29 @@
   background: var(--parchment);
 }
 
+/* Native dropdowns: our selects have a transparent background, so on an OS in dark mode some
+   browsers (Chrome/Edge on Windows) draw the option popup dark while the options keep our dark
+   ink colour, and only the hovered option is readable. Pin the popup to parchment + ink. */
+select {
+  color-scheme: light;
+}
+
+select option,
+select optgroup {
+  background-color: var(--parchment);
+  color: var(--ink);
+}
+
+select option:checked {
+  background-color: var(--parchment-dark);
+}
+
+/* The ink colour above overrides the browser's grey for disabled options: keep them greyed out
+   (e.g. Tidelands scenarios that do not combine with Strongholds). */
+select option:disabled {
+  color: GrayText;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
