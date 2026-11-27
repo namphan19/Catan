@@ -68,9 +68,10 @@ test('a new sea game: scenario option, sea map, setup with cogs, the side panel'
   // sea hexes of the scenario map are drawn as water tiles, the corsair sails on one of them
   expect(await page.locator('.sea-tile').count()).toBeGreaterThan(30);
   await expect(page.locator('.tl-corsair')).toHaveCount(1);
-  // the cost card lists the cog (it starts folded on small screens)
-  if ((await page.locator('.cost-rows').count()) === 0) await page.locator('.cost-card-head').click();
-  await expect(page.locator('.cost-rows')).toContainText('Thuyền buồm');
+  // the build row has a cog button; its hover card names it and its cost
+  const cog = page.locator('.build-slot:has(button[data-build="ship"])');
+  await expect(cog).toHaveCount(1);
+  await expect(cog.locator('.build-tip')).toContainText('Thuyền buồm');
   await clearHover(page);
   await page.screenshot({ path: shotPath('tidelands-start.png', testInfo.project.name), fullPage: true });
   expect(errors()).toEqual([]);

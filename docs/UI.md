@@ -71,42 +71,44 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
    (island illustration built from the game's terrain/piece art) + online ticket; right: the new-game
    ledger (players, seed + randomise, named seats with emblems, wax-sealed start, marginal tip);
    below: the logbook archive (load a saved log). Two columns at >= 900 px, stacked on tablet/mobile.
-2. Game table (UX2 layout, 2026-11-16; CSS in src/table/table.css): slim top bar (wordmark, turn, "?" quick
-   help, 2D/3D, language); status banner = one sentence "what to do now" (gold when it is the viewer's move,
-   "Đang chờ <name>…" otherwise); board fills the centre (zoom + pan) with overlays: zoom top-left, dice box
-   top-right, collapsible cost card bottom-right (marks what the viewer can pay), toasts bottom-left; player
-   strip on top: one card per player (portrait with the seat emblem as a badge + name on the left, then VP,
-   hand / card / guard counts and pieces left / awards; one line on a wide card, stacked on a narrow one via
-   a container query; acting marker = gold ring); right column only with an expansion (Tidelands /
-   Strongholds panels). PO 2026-11-19: the Log / Trade side panel is removed; events show as toasts, the
-   trade status in the trade dialog. Strongholds advance cards sit bottom-left on the board (AdvanceHand:
-   name tabs, a click opens the full card with Play / Discard). Bottom: own hand as cards (all 5 resources
-   always shown, +N/-N on change, development cards) + action bar (build group, trade group, one large
-   primary button: Roll or End turn). Number tokens carry probability pips; hexes that just produced pulse
-   (2D). Winner overlay.
+2. Game table ("HUD" layout, PO 2026-11-27; CSS in src/table/table.css; replaces the UX2 frames):
+   the board fills the whole table and is fitted into the free middle; every control floats over its
+   edges on dark scrims, without boxes. Top centre: turn label (+ shell info) and ONE guidance line
+   ("what to do now", a board pick with Cancel, or "Đang chờ <name>…"); top-right: "?" quick help and a
+   menu (shell buttons: pass device, export log, home; language). Left edge: the players as portrait
+   medallions in turn order (seat-colour ring, wax seal with the VP, emblem badge, award badges, name,
+   hand / card counts; the acting player larger with a gold glow); a click opens the public details
+   (pieces left, guards...). Top-right under the menu: the dice on the sea (no box). Bottom: round
+   icon-only build buttons on the left (road, settlement, city, card; hovering one shows its name, its
+   cost with the missing cards dimmed, and why it is not possible), ONE trade button (bank and player
+   trades are tabs of its dialog), the hand as a fan of painted cards in the middle (all resources
+   always shown, empty ones dimmed, +N/-N on change; development cards as a second, smaller fan) and
+   ONE primary button on the right (Roll or End turn). Events read as a one-line narration over the hand
+   (former toasts). The price card is gone (costs live in the build buttons). Number tokens carry
+   probability pips; hexes that just produced pulse. Winner overlay.
+   Strongholds on the HUD: raid lane under the dice (fleet on a dotted lane, raiders vs defence), the
+   viewer's three improvement tracks on the right edge (a click opens a tray with costs, perks, capitals
+   and Improve buttons), each player's levels under their name, rampart + recruit as build buttons,
+   advance cards as a small fan right of the hand (deck band; a click opens the card with Play /
+   Discard), and a click on one of the viewer's wardens opens its actions around it on the board. The
+   full Strongholds panel is a drawer (panel button, Esc or backdrop closes it). Tidelands and Highlands
+   keep their docked right column on wide screens.
    Online extras (2026-11-19, docs/PROTOCOL.md): portraits (6, picked in the lobby, first come first
    served; hot-seat seats use the portrait matching their emblem), a floating chat bubble (lobby
-   bottom-right, game under the zoom buttons, unread counter), and "Let a bot play for me" (AFK: a
+   bottom-right, game bottom-right above the zoom buttons, unread counter), and "Let a bot play for me" (AFK: a
    'normal' stand-in bot plays the seat until "I'm back"; the others get a popup).
 3. Hot-seat: "Pass the device to <name>" cover between actors so hands stay hidden.
-4. Phone layout (2026-11-23; CSS in src/table/mobile.css, e2e project "mobile"):
-   - portrait (<= 640 px wide): top bar with the turn in a dark chip + "?" + a menu (shell buttons,
-     language); 2-4 players share one grid row of compact colour tiles (seat-colour band with portrait,
-     hand badge and VP, readable name under it). Five or six players use one shallow swipe/snap rail;
-      tapping any tile opens its public details in a bottom sheet (VP progress, hand / development
-      cards / guards, pieces left, awards).
-     board fills the middle (pinch zoom with two fingers, drag to pan) with a round zoom rail top-left;
-     hand as a compact icon dock (every base resource keeps its slot, count + "+N" pulse); secondary
-     actions scroll sideways while the primary Roll / End turn button stays pinned on the right.
-     Utility controls have 44 px hit areas and fixed bars respect safe-area insets.
-   - landscape (<= 520 px tall): board on the left at full height, right column with top bar, the same
-     player tiles (five or six players use the swipeable rail), the icon hand dock and the actions; event
-     toasts stack in the free space above the actions instead of covering the board.
-   - the side column (Strongholds and Tidelands panels; the base game has none) is a sheet behind the
-     "Bảng mở rộng" button (a content-height bottom sheet in portrait, from the right in landscape);
-     the open sheet has a board backdrop and closes with its button, Esc or a backdrop tap; picking an
-      action in a panel closes it so the board is in view. Strongholds advance cards sit above the
-      utility pills so they cannot cover the sheet toggle or cost button.
+4. Phone layout (HUD, 2026-11-27; CSS in src/table/mobile.css, e2e project "mobile"):
+   - portrait (<= 640 px wide): turn label + "?" + menu on top; one row of portrait medallions (VP seal,
+     name; five or six players swipe); the guidance line under them; dice (and the Strongholds raid lane)
+     right-aligned under that; the board fills the middle (pinch zoom, drag to pan); at the foot the
+     hand fan and one row of round buttons with names under them - "Xây" opens a menu with every build
+     (name, cost, why not), "Đổi bài", Strongholds' "Nâng cấp" - and the primary Roll / End turn button
+     pinned on the right. Controls have 44 px hit areas and respect safe-area insets.
+   - landscape (<= 520 px tall): the desktop arrangement, smaller (players down the left edge).
+   - every expansion panel is a sheet behind the panel button (bottom sheet in portrait, from the right
+     in landscape) with a backdrop; it closes with its button, Esc or a backdrop tap, and picking an
+     action in it closes it so the board is in view.
 
 ## Interaction rules
 - The UI never decides legality: buttons, highlights and dialogs come from getLegalActions; disabled
@@ -126,7 +128,7 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
 ## Component structure (packages/client/src)
 ui/ (tokens.css, Button, Panel, Dialog, Toast, Tooltip), board/ (Board, HexTile, Token, Harbor, Piece,
 Highlights), board3d/ (Board3D, terrain, decor, pieces3d, strongholds3d), table/ (GameTable, TopBar, PlayerCards, PlayerDialog,
-ActionBar, CostCard, HandPanel), strongholds/ (Panel, AdvanceHand, BoardExtras, ChoiceDialogs, chooser), dialogs/
+ActionBar + BuildSlot, HandPanel), strongholds/ (Panel, Hud: RaidLane / TrackRail / ShLevels / warden ring, AdvanceHand, BoardExtras, ChoiceDialogs, chooser), dialogs/
 (DiscardDialog, StealDialog, TradeDialog, CardDialog), shell/ (HomeScreen, HomeMap, home.css, OnlineHome, Lobby,
 ChatBubble, HotseatShell, PassDeviceCover), ui/Avatar, i18n/. GameTable takes { view, legal, onAction, events } only, so the online
 client reuses it.

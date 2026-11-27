@@ -1,13 +1,25 @@
-/* Game table: layout and every component under src/table (top bar, status banner, board
-   overlays, player cards, side panel, hand, action bar, toasts). Loaded after styles.css.
-   Colours and fonts are the tokens of ui/tokens.css (docs/UI.md). */
+/* Game table (PO 2026-11-27 "HUD"): the board fills the whole table and every control floats over
+   its edges on dark scrims, without frames: the turn and "what now" line on top, the players as
+   portrait medallions on the left, the dice top-right, the hand as a fan of cards at the foot,
+   round icon-only build buttons bottom-left and ONE primary button (Roll / End turn) bottom-right.
+   Phone layouts are in mobile.css. Colours and fonts are the tokens of ui/tokens.css. */
 
-/* ---------- Layout ---------- */
-.table {
+.table.hud {
+  --hud-text: #fff6e0;
+  --hud-muted: #e3d3ae;
+  --hud-gold: #e8c467;
+  --hud-shade: 10, 16, 18;
+  --hud-chip: rgba(20, 16, 14, 0.5);
+  /* Where the fitted board sits inside the table (the HUD lives in these margins). */
+  --inset-top: 84px;
+  --inset-right: 80px;
+  --inset-bottom: 140px;
+  --inset-left: 240px;
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  position: relative;
 }
 
 .table-main {
@@ -19,165 +31,415 @@
 .board-area {
   flex: 1;
   min-width: 0;
-  display: flex;
   position: relative;
   overflow: hidden;
+  background: var(--sea);
 }
 
-.sidecol {
-  width: 320px;
-  flex: 0 0 320px;
-  border-left: 2px solid var(--ink);
-  background: var(--parchment-dark);
+.hud .board-wrap {
+  position: absolute;
+  inset: 0;
+}
+
+/* The board is fitted into the free middle; the sea (drawn far past the viewBox) still covers the
+   whole table, so the HUD margins read as open water, not as empty bars. */
+.hud .board-svg {
+  position: absolute;
+  top: var(--inset-top);
+  right: var(--inset-right);
+  bottom: var(--inset-bottom);
+  left: var(--inset-left);
+  /* A replaced element ignores left/right for its size: give it the free box explicitly. */
+  width: calc(100% - var(--inset-left) - var(--inset-right));
+  height: calc(100% - var(--inset-top) - var(--inset-bottom));
+  overflow: visible;
+  background: transparent;
+}
+
+.hud-scrim {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+}
+.hud-scrim-top {
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 140px;
+  background: linear-gradient(rgba(var(--hud-shade), 0.66), rgba(var(--hud-shade), 0));
+}
+.hud-scrim-left {
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 300px;
+  background: linear-gradient(90deg, rgba(var(--hud-shade), 0.58), rgba(var(--hud-shade), 0));
+}
+.hud-scrim-bottom {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 250px;
+  background: linear-gradient(rgba(var(--hud-shade), 0), rgba(var(--hud-shade), 0.8));
+}
+.hud-scrim-right {
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 340px;
+  background: linear-gradient(270deg, rgba(var(--hud-shade), 0.6), rgba(var(--hud-shade), 0));
+}
+
+/* Round dark icon buttons on the scrim (help, menu, expansion panel). */
+.hud-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--hud-chip);
+  color: #f3e9d2;
+  font-family: var(--font-logo);
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.hud-icon:hover,
+.hud-icon[aria-expanded='true'] {
+  background: rgba(20, 16, 14, 0.78);
+}
+
+/* ---------- Top: turn + guidance, help and menu ---------- */
+.topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: center;
+  padding: 14px 140px 0;
+  pointer-events: none;
+}
+.topbar > * {
+  pointer-events: auto;
+}
+
+.topbar-center {
   display: flex;
   flex-direction: column;
-  min-height: 0;
-}
-
-.table-bottom {
-  border-top: 2px solid var(--ink);
-  background: var(--parchment-dark);
-  padding: 8px 12px;
-  display: flex;
-  align-items: flex-end;
-  gap: 18px;
-}
-
-/* ---------- Top bar ---------- */
-.topbar {
-  display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 3px 10px;
-  border-bottom: 2px solid var(--ink);
-  background: var(--parchment-dark);
-}
-
-.topbar-left {
-  flex: 1;
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
+  gap: 4px;
+  max-width: 820px;
   min-width: 0;
+  text-align: center;
 }
 
-.game-title {
-  font-family: var(--font-logo);
-  font-size: 1.1rem;
+.topbar-turn {
   margin: 0;
-}
-
-/* The wordmark only: Cinzel has no lowercase and no Vietnamese diacritics. */
-.logo {
-  font-family: var(--font-logo);
-  letter-spacing: 0.06em;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
+  color: var(--hud-muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
 }
 
 .turn-label {
   font-weight: 700;
 }
 
-/* Shell info + buttons merged into the top bar (one header row). */
 .topbar-info {
   display: inline-flex;
-  align-items: baseline;
-  gap: 10px;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  color: var(--ink-soft);
-  font-size: 0.9rem;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  font-size: 0.95rem;
+  font-style: italic;
 }
 
-.topbar-info .shell-viewing {
-  flex: none;
-}
-
-.topbar-actions {
-  display: flex;
-  gap: 6px;
-  flex: none;
-}
-
-.topbar .btn {
-  min-height: 30px;
-  padding: 2px 10px;
-}
-
-.btn-help {
-  width: 30px;
-  justify-content: center;
-  border-radius: 50%;
-  font-family: var(--font-logo);
-  font-weight: 700;
-}
-
-/* ---------- Status banner: "what do I do now?" ---------- */
-.status-banner {
-  display: flex;
+.hud-guide {
+  margin: 0;
+  display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  min-height: 40px;
-  padding: 5px 12px;
-  border-bottom: 2px solid var(--ink);
-  background: var(--parchment);
-  color: var(--ink-soft);
-  font-size: 1.15rem;
-  font-weight: 600;
-  text-align: center;
+  gap: 6px 12px;
+  color: var(--hud-text);
+  font-size: 1.4rem;
+  font-style: italic;
+  line-height: 1.2;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.75);
+}
+.hud-guide[data-mine='false'] {
+  color: var(--hud-muted);
+  font-size: 1.2rem;
+}
+/* A board pick (setup, a build, the blocker, a staged choice): gold words + small buttons. */
+.hud-guide.board-hint,
+.hud-guide.sh-pickbar {
+  position: static;
+  transform: none;
+  max-width: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: #f2d27a;
+  font-weight: 400;
+}
+.hud-guide .btn {
+  min-height: 32px;
+  padding: 2px 14px;
+  border-radius: 16px;
+  font-size: 0.95rem;
+  font-style: normal;
 }
 
-.status-banner[data-mine='true'] {
-  background: #f1dc92;
-  color: var(--ink);
-  box-shadow: inset 0 0 0 2px var(--gold);
-}
-
-/* The emblem sits in a parchment seal so every player colour reads on the gold banner. */
-.status-banner .emblem {
-  box-sizing: content-box;
-  padding: 3px;
-  border: 1px solid var(--ink);
-  border-radius: 50%;
-  background: var(--parchment);
-}
-
-.status-cancel {
-  min-height: 28px;
-  padding: 2px 10px;
-  font-size: 0.9rem;
-  background: var(--parchment);
-}
-
-/* ---------- Board overlays ---------- */
-.board-zoom {
+.topbar-right {
   position: absolute;
-  left: 10px;
-  top: 10px;
+  top: 16px;
+  right: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.topbar-menu-wrap {
+  position: relative;
+}
+
+.topbar-menu {
+  display: none;
+  position: absolute;
+  top: 52px;
+  right: 0;
+  z-index: 60;
+  min-width: 230px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--parchment);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+}
+.topbar-menu.open {
+  display: flex;
+}
+.topbar-actions {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  z-index: 5;
+  gap: 6px;
+}
+.topbar-menu .btn {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 1.05rem;
+}
+.topbar-menu .btn:hover {
+  background: rgba(201, 162, 39, 0.25);
+  color: var(--ink);
+}
+
+/* ---------- Players: medallions down the left edge ---------- */
+.seat-strip {
+  position: absolute;
+  top: 92px;
+  left: 20px;
+  z-index: 15;
+  max-height: calc(100% - 92px - 210px);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.seats {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 8px 6px;
+}
+
+.seat {
+  --seat: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  max-width: 230px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--hud-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.seat-avatar {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  margin-left: 8px;
+}
+.seat.acting .seat-avatar {
+  margin-left: 0;
+}
+
+.seat .avatar {
+  border: 3px solid var(--seat);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: box-shadow 0.2s ease;
+}
+.seat.acting .avatar {
+  box-shadow: 0 0 0 3px var(--hud-gold), 0 0 24px rgba(232, 196, 103, 0.8);
+}
+.seat:hover .avatar,
+.seat:focus-visible .avatar {
+  box-shadow: 0 0 0 3px rgba(243, 233, 210, 0.7), 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Victory points: a wax seal on the portrait. */
+.seat-vp {
+  position: absolute;
+  right: -9px;
+  bottom: -6px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #f3e9d2;
+  color: var(--ink);
+  font-family: var(--font-logo);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+.seat.acting .seat-vp {
+  min-width: 32px;
+  height: 32px;
+  font-size: 1.05rem;
+}
+
+/* Emblem badge: the seat is never told apart by colour alone. */
+.seat-emblem {
+  position: absolute;
+  left: -5px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #f3e9d2;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.seat-awards {
+  position: absolute;
+  left: -10px;
+  top: -8px;
+  display: flex;
+}
+.seat-award {
+  width: 26px;
+  height: 26px;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.6));
+}
+.seat-award + .seat-award {
+  margin-left: -8px;
+}
+
+.seat-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+}
+
+.seat-name {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.seat.acting .seat-name {
+  font-size: 1.2rem;
+}
+
+.seat-tag {
+  color: var(--hud-gold);
+  font-size: 0.88rem;
+  font-style: italic;
+}
+
+.seat-sub {
+  display: flex;
+  gap: 10px;
+  color: var(--hud-muted);
+  font-size: 0.88rem;
+}
+.seat-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.seat-stat.warn {
+  color: #ffab96;
+  font-weight: 800;
+}
+
+.seats-compact {
+  gap: 10px;
+}
+.seats-compact .seat .avatar {
+  width: 46px !important;
+  height: 46px !important;
+}
+.seats-compact .seat.acting .avatar {
+  width: 56px !important;
+  height: 56px !important;
+}
+
+/* ---------- Dice (top-right, on the sea) ---------- */
+.hud-tr {
+  position: absolute;
+  top: 74px;
+  right: 24px;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none;
 }
 
 .dice-box {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 6;
-  padding: 8px 12px;
-  border: 2px solid var(--ink);
-  border-radius: 10px;
-  background: rgba(243, 233, 210, 0.95);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  pointer-events: auto;
 }
 
 .dice-roll {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   animation: dice-in 0.45s ease;
 }
 
@@ -190,156 +452,91 @@
 
 .die {
   display: block;
-  filter: drop-shadow(1px 1px 0 rgba(59, 47, 47, 0.4));
+  filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.45));
 }
 
 .dice-sum {
+  color: var(--hud-text);
   font-family: var(--font-logo);
-  font-size: 1.6rem;
+  font-size: 1.9rem;
   font-weight: 700;
   white-space: nowrap;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7);
 }
 
 .dice-sum[data-blocker='true'] {
-  color: var(--danger);
+  color: #ffab96;
 }
 
-.cost-card {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  z-index: 6;
-  border: 2px solid var(--ink);
-  border-radius: 10px;
-  background: rgba(243, 233, 210, 0.96);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  font-size: 0.92rem;
-}
-
-.cost-card-head {
+/* Expansion games: the event die after the sum, set apart by a thin rule. */
+.dice-event {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  padding: 4px 10px;
+  margin-left: 4px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(243, 233, 210, 0.35);
+}
+
+/* Zoom: small and quiet, bottom-right above the primary button. */
+.board-zoom {
+  position: absolute;
+  right: 26px;
+  bottom: 118px;
+  z-index: 14;
+  display: flex;
+  gap: 8px;
+}
+.board-zoom .btn {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  justify-content: center;
   border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--ink);
-  font-family: var(--font-head);
-  font-size: 0.98rem;
-  font-weight: 700;
+  border-radius: 50%;
+  background: rgba(20, 16, 14, 0.4);
+  color: #f3e9d2;
+}
+.board-zoom .btn:hover:not(:disabled) {
+  background: rgba(20, 16, 14, 0.75);
+  color: #fff;
 }
 
-.cost-card-head:hover {
-  background: rgba(201, 162, 39, 0.3);
-}
-
-.cost-card-caret {
-  margin-left: auto;
-}
-
-.cost-rows {
-  list-style: none;
-  margin: 0;
-  padding: 4px 10px 4px;
-  border-top: 1px solid var(--ink-soft);
-  display: grid;
-  gap: 3px;
-}
-
-.cost-row {
-  display: grid;
-  grid-template-columns: 28px minmax(84px, auto) 1fr 14px;
-  align-items: center;
-  gap: 6px;
-  padding: 1px 4px;
-  border-radius: 5px;
-}
-
-.cost-row.can {
-  background: rgba(47, 93, 58, 0.14);
-}
-
-.cost-icon {
-  display: inline-grid;
-  place-items: center;
-}
-
-.cost-name {
-  white-space: nowrap;
-  font-weight: 600;
-}
-
-.cost-vp {
-  font-weight: 400;
-  color: var(--ink-soft);
-  font-size: 0.78rem;
-}
-
-.cost-units {
-  display: inline-flex;
-  gap: 2px;
-}
-
-.cost-unit {
-  display: inline-grid;
-}
-
-/* Still recognisable (a new player reads the price here), just visibly "not yet". */
-.cost-unit.missing {
-  opacity: 0.45;
-}
-
-.cost-ok {
-  color: var(--forest);
-  font-weight: 800;
-}
-
-.cost-note {
-  margin: 0;
-  padding: 2px 10px 6px;
-  color: var(--ink-soft);
-  font-size: 0.78rem;
-}
-
-/* Toasts: bottom-left corner of the board area (open sea next to the hex island), clear
-   of the zoom buttons (top-left), the dice (top-right) and the cost card (bottom-right).
-   Newest at the bottom. */
+/* ---------- Narration (former toasts): one line over the hand ---------- */
 .toast-stack {
   position: absolute;
-  left: 10px;
-  bottom: 10px;
-  z-index: 40;
+  left: 50%;
+  bottom: 186px;
+  z-index: 18;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
+  align-items: center;
+  gap: 2px;
   width: max-content;
-  max-width: min(340px, calc(100% - 20px));
+  max-width: min(700px, calc(100% - 40px));
+  transform: translateX(-50%);
   pointer-events: none;
 }
 
 .toast {
-  border: 2px solid var(--ink);
-  border-radius: 8px;
-  background: var(--parchment);
-  padding: 6px 12px;
-  font-size: 0.92rem;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  padding: 1px 8px;
+  color: #f7ecd2;
+  font-size: 1.12rem;
+  font-style: italic;
+  text-align: center;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.95), 0 0 14px rgba(0, 0, 0, 0.6);
   animation: toast-in 0.25s ease;
-  pointer-events: auto;
 }
-
+.toast:not(:last-child) {
+  opacity: 0.6;
+  font-size: 0.98rem;
+}
 .toast-error {
-  border-color: var(--danger);
-  color: var(--danger);
+  color: #ffb4a3;
   font-weight: 600;
 }
-
 .toast-gold {
-  border-color: var(--gold);
-  background: #f1dc92;
+  color: #f2d27a;
+  font-weight: 600;
 }
 
 @keyframes toast-in {
@@ -349,6 +546,713 @@
   }
 }
 
+/* ---------- Bottom: build | hand | primary ---------- */
+.table-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 16;
+  display: grid;
+  /* build | hand (centred in the free middle) | advance cards (Strongholds) | primary */
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: end;
+  column-gap: 20px;
+  padding: 0 28px 26px;
+  pointer-events: none;
+}
+.table-bottom > *,
+.actionbar > * {
+  pointer-events: auto;
+}
+
+/* The bar itself only groups its parts; they sit in the bottom grid's outer columns. */
+.actionbar {
+  display: contents;
+}
+.act-strip {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+}
+.act-primary {
+  grid-column: 4;
+  grid-row: 1;
+  justify-self: end;
+}
+
+.act-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+/* Screen-reader label inside icon-only buttons (keeps the accessible name and text lookups). */
+.act-lbl {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.act-build-wrap {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+.act-build-toggle {
+  display: none !important;
+}
+
+/* Round parchment buttons: build slots, trade, (phones) the build toggle. */
+.build-btn,
+.hud-round {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  min-height: 0;
+  padding: 0;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: #f3e9d2;
+  color: var(--ink);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.build-btn:hover:not(:disabled),
+.hud-round:hover:not(:disabled) {
+  background: #fffaf0;
+  color: var(--ink);
+  transform: scale(1.06);
+}
+.build-btn:disabled,
+.build-btn:disabled:hover {
+  background: rgba(243, 233, 210, 0.42);
+  border: 0;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+.build-btn:disabled .build-icon {
+  opacity: 0.55;
+  filter: grayscale(0.6);
+}
+.build-slot.affordable .build-btn:not(:disabled) {
+  box-shadow: 0 0 0 2px var(--hud-gold), 0 6px 16px rgba(0, 0, 0, 0.45);
+}
+.build-btn.active,
+.build-btn[aria-pressed='true'],
+.hud-round.hot {
+  background: var(--hud-gold);
+  color: var(--ink);
+  box-shadow: 0 0 0 3px #fff6e0, 0 0 22px rgba(232, 196, 103, 0.8);
+}
+.build-icon {
+  display: grid;
+  place-items: center;
+}
+.build-icon img {
+  display: block;
+}
+.hud-round .badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  margin: 0;
+}
+
+.build-slot {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Hover card of a build button: name, cost (missing cards dimmed) and why it is not possible. */
+.build-tip {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 12px);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: max-content;
+  min-width: 190px;
+  max-width: 280px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--parchment);
+  color: var(--ink);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+  text-align: left;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+.build-slot:hover .build-tip,
+.build-slot:focus-within .build-tip {
+  opacity: 1;
+}
+.build-tip b {
+  font-size: 1.05rem;
+}
+.build-tip small {
+  color: var(--ink-soft);
+}
+.build-tip-cost {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.cost-unit {
+  display: inline-grid;
+}
+.cost-unit.missing {
+  opacity: 0.35;
+}
+.build-tip-why {
+  color: var(--danger);
+  font-size: 0.88rem;
+  line-height: 1.3;
+}
+.build-tip-ok {
+  color: var(--forest);
+  font-size: 0.88rem;
+}
+
+/* Pills for the occasional extra action (move the blocker, play a card, cancel an offer). */
+.act-pill {
+  min-height: 44px;
+  border-radius: 22px;
+  padding: 0 18px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Dice cheat: two die pickers just before Roll. */
+.act-dice {
+  gap: 6px;
+}
+.actionbar .die-pick {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+.actionbar .die-pick.set {
+  background: var(--gold);
+}
+
+/* The one button that stands out. */
+.act-primary .btn {
+  min-height: 62px;
+  padding: 0 30px;
+  border: 2px solid #c9a24a;
+  border-radius: 32px;
+  background: #2b211c;
+  color: #f6e7c1;
+  font-size: 1.25rem;
+  font-weight: 700;
+  box-shadow: 0 0 22px rgba(232, 196, 103, 0.45), 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+.act-primary .btn:hover:not(:disabled) {
+  background: #3a2c24;
+  color: #fff;
+}
+.act-primary .btn:disabled,
+.act-primary .btn:disabled:hover {
+  background: rgba(43, 33, 28, 0.6);
+  border-color: rgba(201, 162, 39, 0.35);
+  color: rgba(246, 231, 193, 0.55);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+.act-primary .btn.pulse {
+  animation: primary-pulse 1.2s ease-in-out infinite;
+}
+@keyframes primary-pulse {
+  50% {
+    box-shadow: 0 0 0 6px rgba(232, 196, 103, 0.45), 0 0 30px rgba(232, 196, 103, 0.7), 0 8px 20px rgba(0, 0, 0, 0.5);
+  }
+}
+
+.btn:disabled .pieceicon,
+.btn:disabled .uiicon {
+  opacity: 0.45;
+}
+
+/* ---------- Own hand: a fan of painted cards ---------- */
+.hand {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: center;
+  display: flex;
+  align-items: flex-end;
+  gap: 26px;
+  margin-bottom: -48px;
+}
+
+.hand-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.hand-title {
+  color: var(--hud-muted);
+  font-size: 0.88rem;
+  font-style: italic;
+  white-space: nowrap;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.hand-res,
+.dev-cards {
+  display: flex;
+  align-items: flex-end;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.res-card,
+.dev-card {
+  position: relative;
+  display: block;
+  flex: none;
+  transform: translateY(var(--drop, 0px)) rotate(var(--rot, 0deg));
+  transform-origin: 50% 120%;
+  transition: translate 0.15s ease;
+}
+.res-card {
+  width: 86px;
+  margin-left: -20px;
+}
+.res-card:first-child {
+  margin-left: 0;
+}
+.res-card.first-extra {
+  margin-left: 12px;
+}
+/* Eight card kinds (Strongholds commodities): a slightly smaller fan. */
+.hand-res:has(.first-extra) .res-card,
+.hand-res:has(.first-extra) .res-card-art,
+.hand-res:has(.first-extra) .res-card-fallback {
+  width: 74px;
+}
+.hand-res:has(.first-extra) .res-card {
+  margin-left: -18px;
+}
+.hand-res:has(.first-extra) .res-card:first-child {
+  margin-left: 0;
+}
+.hand-res:has(.first-extra) .res-card.first-extra {
+  margin-left: 10px;
+}
+.res-card:hover,
+.dev-card:hover {
+  z-index: 3;
+  translate: 0 -16px;
+}
+
+.res-card-icon {
+  display: none;
+}
+
+.res-card-art {
+  display: block;
+  width: 86px;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5);
+}
+
+.res-card-fallback {
+  display: flex;
+  width: 86px;
+  height: 120px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--parchment);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.5);
+}
+
+/* The localised name sits on the blank nameplate printed at the card's foot. */
+.res-card-name {
+  position: absolute;
+  left: 50%;
+  bottom: 9px;
+  width: 78%;
+  height: 12px;
+  overflow: hidden;
+  transform: translateX(-50%);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.68rem;
+  line-height: 12px;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.res-card.empty {
+  opacity: 0.4;
+  filter: grayscale(0.75);
+}
+.res-card.empty .res-card-art {
+  box-shadow: none;
+}
+
+.res-card-count {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 5px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: #2b211c;
+  color: #f6e7c1;
+  box-shadow: 0 0 0 2px var(--hud-gold);
+  font-family: var(--font-logo);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.res-card-count.is-zero {
+  display: none;
+}
+
+.res-card.changed {
+  animation: card-pop 0.55s ease;
+}
+@keyframes card-pop {
+  40% {
+    translate: 0 -10px;
+    scale: 1.07;
+  }
+}
+
+.res-delta {
+  position: absolute;
+  left: 50%;
+  top: -30px;
+  color: #9be07a;
+  font-family: var(--font-logo);
+  font-size: 1.25rem;
+  font-weight: 800;
+  pointer-events: none;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  animation: delta-float 1.35s ease-out forwards;
+}
+.res-delta.plus {
+  color: #9be07a;
+}
+.res-delta.minus {
+  color: #ffab96;
+}
+@keyframes delta-float {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  15% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+}
+
+.dev-card {
+  width: 70px;
+  margin-left: -34px;
+}
+.dev-card:first-child {
+  margin-left: 0;
+}
+.dev-card img,
+.dev-card-blank {
+  display: block;
+  width: 70px;
+  height: 98px;
+  border-radius: 7px;
+  object-fit: cover;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.5);
+}
+.dev-card-blank {
+  background: var(--parchment);
+}
+.dev-card-name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.dev-card-new {
+  position: absolute;
+  top: -8px;
+  left: -4px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+/* ---------- Expansion panel: docked column (Tidelands, Highlands) or drawer ---------- */
+.sidecol {
+  width: 320px;
+  flex: 0 0 320px;
+  border-left: 2px solid var(--ink);
+  background: var(--parchment-dark);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.sheet-toggle,
+.sheet-close,
+.sheet-backdrop {
+  display: none;
+}
+
+/* Strongholds: the panel is a drawer, opened from the HUD (the rail or this button). */
+.has-drawer .sheet-toggle {
+  display: grid;
+  position: absolute;
+  top: 16px;
+  right: 128px;
+  z-index: 21;
+}
+.sheet-toggle-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.has-drawer .sidecol {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 70;
+  width: min(380px, 92vw);
+  border-left: 0;
+  box-shadow: -14px 0 40px rgba(0, 0, 0, 0.45);
+  transform: translateX(105%);
+  /* Closed = gone for the keyboard and screen readers too (visibility flips after the slide). */
+  visibility: hidden;
+  transition: transform 0.22s ease, visibility 0s linear 0.22s;
+}
+.has-drawer[data-sheet='open'] .sidecol {
+  transform: none;
+  visibility: visible;
+  transition: transform 0.22s ease;
+}
+.has-drawer .sheet-close {
+  display: inline-flex;
+  align-self: flex-end;
+  margin: 8px 8px 0;
+}
+.has-drawer[data-sheet='open'] .sheet-backdrop {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 65;
+  border: 0;
+  background: rgba(10, 16, 18, 0.35);
+}
+.table.hud.has-dock {
+  --inset-right: 40px;
+}
+
+/* A parchment tray that slides up from the foot of the board (Strongholds improvements). */
+.hud-tray {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  z-index: 45;
+  width: min(880px, calc(100% - 24px));
+  padding: 18px 26px 24px;
+  border-radius: 18px 18px 0 0;
+  background: var(--parchment);
+  color: var(--ink);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
+  transform: translateX(-50%);
+}
+.hud-tray-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.hud-tray-head h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.hud-tray-note {
+  flex: 1;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+.hud-tray-close {
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* ---------- Tablet / small laptop ---------- */
+@media (max-width: 1180px) {
+  .table.hud {
+    --inset-left: 200px;
+    --inset-bottom: 150px;
+    --inset-right: 60px;
+  }
+  .seat {
+    max-width: 190px;
+    gap: 10px;
+  }
+  .seat .avatar {
+    width: 48px !important;
+    height: 48px !important;
+  }
+  .seat.acting .avatar {
+    width: 58px !important;
+    height: 58px !important;
+  }
+  .seat-name {
+    max-width: 120px;
+    font-size: 1rem;
+  }
+  .hud-guide {
+    font-size: 1.2rem;
+  }
+  .topbar {
+    padding: 12px 120px 0;
+  }
+  .table-bottom {
+    padding: 0 18px 20px;
+    column-gap: 12px;
+  }
+  .build-btn,
+  .hud-round {
+    width: 50px;
+    height: 50px;
+  }
+  .act-group,
+  .act-build {
+    gap: 8px;
+  }
+  .res-card,
+  .res-card-art,
+  .res-card-fallback {
+    width: 66px;
+  }
+  .res-card {
+    margin-left: -16px;
+  }
+  .res-card-fallback {
+    height: 92px;
+  }
+  .hand-res:has(.first-extra) .res-card,
+  .hand-res:has(.first-extra) .res-card-art,
+  .hand-res:has(.first-extra) .res-card-fallback {
+    width: 56px;
+  }
+  .hand-res:has(.first-extra) .res-card {
+    margin-left: -14px;
+  }
+  .dev-card,
+  .dev-card img,
+  .dev-card-blank {
+    width: 54px;
+  }
+  .dev-card img,
+  .dev-card-blank {
+    height: 76px;
+  }
+  .hand {
+    margin-bottom: -36px;
+    gap: 16px;
+  }
+  .act-primary .btn {
+    min-height: 54px;
+    padding: 0 20px;
+    font-size: 1.05rem;
+  }
+  .toast-stack {
+    bottom: 158px;
+  }
+  .sidecol {
+    width: 264px;
+    flex-basis: 264px;
+  }
+}
+
+@media (max-width: 900px) and (min-height: 521px) {
+  /* Narrow tablets: the bottom row wraps: build + primary below, the hand above. */
+  .table.hud {
+    --inset-bottom: 220px;
+  }
+  .table-bottom {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    row-gap: 10px;
+  }
+  .hand {
+    grid-column: 1 / 3;
+    grid-row: 1;
+    justify-self: center;
+    margin-bottom: 0;
+  }
+  .act-strip {
+    grid-row: 2;
+  }
+  .act-primary {
+    grid-column: 2 / 4;
+    grid-row: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dice-roll,
+  .res-card.changed,
+  .toast,
+  .hex-produced,
+  .act-primary .btn.pulse {
+    animation: none;
+  }
+  .res-delta {
+    animation: none;
+    transform: translate(-50%, 0);
+  }
+  .has-drawer .sidecol {
+    transition: none;
+  }
+}
+
+/* ---------- Kept from the previous table: board pulses, player dialog, tabs, help ---------- */
 /* Number-token probability pips and the "this hex just produced" pulse (2D board). */
 .token-pip {
   fill: var(--ink);
@@ -376,86 +1280,6 @@
   }
 }
 
-/* ---------- Player strip (one row on top, PO 2026-11-17) ---------- */
-.seat-strip {
-  background: var(--parchment-dark);
-  border-bottom: 2px solid var(--ink);
-}
-.seat-strip .seats,
-.seat-strip .seats-compact {
-  grid-template-columns: none;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(200px, 1fr);
-  overflow-x: auto;
-  padding: 6px 10px;
-  border-bottom: none;
-}
-
-/* A pick the board asks for (setup, build, blocker, free roads): a small chip over the board. */
-.board-hint {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: calc(100% - 140px);
-  padding: 5px 12px;
-  border: 2px solid var(--ink);
-  border-radius: 8px;
-  background: #f1dc92;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  font-weight: 600;
-  text-align: center;
-}
-
-/* ---------- Player cards ---------- */
-.seats {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 6px;
-  padding: 8px;
-  border-bottom: 2px solid var(--ink);
-}
-
-/* 5-6 players: same one-card-per-row list (names stay readable), just tighter. */
-.seats-compact {
-  gap: 4px;
-  padding: 6px 8px;
-}
-
-.seats-compact .seat {
-  padding: 3px 8px 3px 6px;
-}
-
-.seats-compact .seat-stats {
-  min-height: 22px;
-}
-
-/* Portrait + name on the left (spanning the card); VP top-right; card row and piece row beside. */
-.seat {
-  --seat: var(--ink-soft);
-  min-width: 0;
-  border: 2px solid var(--ink);
-  border-left: 9px solid var(--seat);
-  border-radius: 8px;
-  background: var(--parchment);
-  padding: 4px 10px 4px 6px;
-  /* The layout follows the card's own width (players x screen), not the viewport. */
-  container-type: inline-size;
-  font: inherit;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-/* Compact phone tiles keep the hand count on the portrait; the full public info lives in the
-   player dialog. Desktop cards already show the complete stat rows. */
-.seat-hand-badge {
-  display: none;
-}
 
 /* Public player details opened from a seat tile. */
 .player-detail-head {
@@ -603,189 +1427,6 @@
   font-weight: 700;
 }
 
-/* Narrow card: VP line on top, card stats and piece stats stacked (3:3) beside the portrait. */
-.seat-grid {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  grid-template-areas:
-    'id head'
-    'id cards'
-    'id assets';
-  column-gap: 14px;
-  align-items: center;
-}
-.seat-id { grid-area: id; }
-.seat-head { grid-area: head; }
-.seat-cards { grid-area: cards; }
-.seat-assets { grid-area: assets; }
-
-/* Very narrow card (6 players on a small screen): tighter gaps and a shorter name so each stat
-   group still fits on its own line. */
-@container (max-width: 239px) {
-  /* .seat prefix: these must beat the base rules further down the file. */
-  .seat .seat-grid { column-gap: 5px; }
-  .seat .seat-id { max-width: 66px; padding-right: 5px; }
-  .seat .seat-vp small { display: none; }
-  .seat .seat-name { font-size: 0.78rem; }
-  .seat .seat-stats { gap: 2px 4px; flex-wrap: nowrap; }
-}
-
-/* Wide card: VP line stays on top (VP in the right corner); portrait | card stats | piece stats
-   share one line below it. */
-@container (min-width: 400px) {
-  .seat-grid {
-    grid-template-columns: auto auto minmax(0, 1fr);
-    grid-template-areas:
-      'id head head'
-      'id cards assets';
-    column-gap: 14px;
-  }
-  .seat-assets {
-    padding-left: 14px;
-    border-left: 1px solid rgba(59, 47, 47, 0.3);
-  }
-  .seat-stats {
-    flex-wrap: nowrap;
-  }
-}
-
-.seat-id {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  align-self: stretch;
-  gap: 2px;
-  max-width: 104px;
-  min-width: 0;
-  /* Divider between the portrait + name and the stats (PO 2026-11-19). */
-  padding-right: 12px;
-  border-right: 1px solid rgba(59, 47, 47, 0.35);
-}
-
-.seat-avatar {
-  position: relative;
-  display: block;
-}
-
-.seat.acting .avatar {
-  box-shadow: 0 0 0 1px var(--ink), 0 0 0 4px var(--gold);
-}
-
-/* Emblem badge on the portrait's lower right. */
-.seat-emblem {
-  position: absolute;
-  right: -3px;
-  bottom: -2px;
-  display: grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--parchment);
-  border: 1px solid var(--ink);
-}
-
-.seat-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-  min-height: 22px;
-}
-
-.seat.me {
-  background: #fbf5e4;
-}
-
-.seat.acting {
-  box-shadow: 0 0 0 3px var(--gold);
-}
-
-.seat-name {
-  max-width: 100%;
-  min-width: 0;
-  font-size: 0.86rem;
-  line-height: 1.15;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 700;
-}
-
-/* "Bạn" pill and the "▶" acting marker: ink on parchment / gold, readable next to every
-   player colour. */
-.seat-you,
-.seat-acting-tag {
-  flex: 0 0 auto;
-  font-size: 0.72rem;
-  line-height: 1.35;
-  background: var(--parchment);
-  color: var(--ink);
-  border: 1px solid var(--ink);
-  border-radius: 999px;
-  padding: 0 6px;
-  white-space: nowrap;
-}
-
-.seat-acting-tag {
-  background: var(--gold);
-  font-weight: 700;
-}
-
-.seat-vp {
-  margin-left: auto;
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  white-space: nowrap;
-}
-
-.seat-vp strong {
-  font-family: var(--font-logo);
-  font-size: 1.3rem;
-  line-height: 1;
-}
-
-.seat-vp small {
-  color: var(--ink-soft);
-  font-size: 0.78rem;
-}
-
-.seat-stats {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px 12px;
-  min-height: 24px;
-}
-
-.stat {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-variant-numeric: tabular-nums;
-}
-
-.stat b {
-  font-weight: 600;
-}
-
-.stat.warn b {
-  color: var(--danger);
-  font-weight: 800;
-}
-
-.seat-award {
-  width: 22px;
-  height: 22px;
-  margin-left: auto;
-}
-
-.seat-award + .seat-award {
-  margin-left: 0;
-}
 
 .uiicon,
 .pieceicon {
@@ -857,292 +1498,6 @@
   color: var(--ink-soft);
 }
 
-/* ---------- Own hand ---------- */
-.hand {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: flex-end;
-  gap: 16px;
-}
-
-.hand-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.hand-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--ink-soft);
-  white-space: nowrap;
-}
-
-.hand-total {
-  font-weight: 400;
-  margin-left: 4px;
-}
-
-.hand-empty {
-  color: var(--ink-soft);
-  font-size: 0.85rem;
-  min-height: 84px;
-  display: flex;
-  align-items: center;
-}
-
-.hand-res,
-.dev-cards {
-  display: flex;
-  gap: 8px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.res-card {
-  position: relative;
-  width: 60px;
-  display: block;
-  padding: 0;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  box-shadow: none;
-}
-
-/* Compact phone dock: the icon replaces the painted card (mobile.css). */
-.res-card-icon {
-  display: none;
-}
-
-.res-card-art {
-  display: block;
-  width: 60px;
-  height: auto;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(27, 21, 18, 0.35);
-}
-
-.res-card-fallback {
-  display: flex;
-  width: 60px;
-  height: 84px;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--ink);
-  border-radius: 6px;
-  background: var(--parchment);
-}
-
-/* The localised name sits on the blank nameplate printed at the card's foot. */
-.res-card-name {
-  position: absolute;
-  left: 50%;
-  bottom: 7px;
-  width: 78%;
-  height: 10px;
-  overflow: hidden;
-  transform: translateX(-50%);
-  text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.6rem;
-  line-height: 10px;
-  color: var(--ink);
-  pointer-events: none;
-}
-
-.res-card.empty {
-  opacity: 0.5;
-}
-
-.res-card.empty .res-card-art {
-  box-shadow: none;
-}
-
-.res-card-count {
-  position: absolute;
-  top: -7px;
-  right: -7px;
-  min-width: 21px;
-  height: 21px;
-  padding: 0 4px;
-  display: grid;
-  place-items: center;
-  border: 2px solid var(--parchment);
-  border-radius: 11px;
-  background: var(--ink);
-  color: var(--parchment);
-  font-family: var(--font-logo);
-  font-size: 0.85rem;
-  font-weight: 700;
-  line-height: 1;
-}
-
-/* An empty resource keeps its slot in the phone dock ("0"); on wide screens the dimmed
-   card already says it. */
-.res-card-count.is-zero {
-  display: none;
-}
-
-.res-card.changed {
-  animation: card-pop 0.55s ease;
-}
-
-@keyframes card-pop {
-  40% {
-    transform: translateY(-5px) scale(1.07);
-    box-shadow: 0 0 0 3px var(--gold);
-  }
-}
-
-.res-delta {
-  position: absolute;
-  left: 50%;
-  top: 30%;
-  font-size: 1.15rem;
-  font-weight: 800;
-  pointer-events: none;
-  text-shadow:
-    0 0 3px var(--parchment),
-    0 0 3px var(--parchment),
-    0 0 3px var(--parchment);
-  animation: delta-float 1.35s ease-out forwards;
-}
-
-.res-delta.plus {
-  color: var(--forest);
-}
-
-.res-delta.minus {
-  color: var(--danger);
-}
-
-@keyframes delta-float {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 8px);
-  }
-  15% {
-    opacity: 1;
-  }
-  70% {
-    opacity: 1;
-  }
-  /* stays over the card (it used to rise into the "Total: n" header and cover it) */
-  to {
-    opacity: 0;
-    transform: translate(-50%, -8px);
-  }
-}
-
-.dev-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 64px;
-}
-
-.dev-card img,
-.dev-card-blank {
-  display: block;
-  width: 40px;
-  height: 56px;
-  border-radius: 4px;
-  box-shadow: 1px 2px 0 rgba(59, 47, 47, 0.4);
-}
-
-.dev-card-blank {
-  border: 2px solid var(--ink);
-  background: var(--parchment);
-}
-
-.dev-card-name {
-  max-width: 100%;
-  min-height: 2.1em;
-  padding-top: 2px;
-  overflow: hidden;
-  text-align: center;
-  font-size: 0.68rem;
-  line-height: 1.05;
-}
-
-.dev-card-new {
-  position: absolute;
-  top: -8px;
-  left: -2px;
-  padding: 0 5px;
-  border-radius: 8px;
-  background: var(--danger);
-  color: #fff;
-  font-size: 0.66rem;
-  line-height: 1.4;
-}
-
-/* ---------- Action bar ---------- */
-.actionbar {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px 16px;
-}
-
-.act-group {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-}
-
-/* Phones turn this into a sideways-scrolling strip (mobile.css); elsewhere it must not
-   change the flex layout of the bar. */
-.act-strip {
-  display: contents;
-}
-
-/* Dice cheat: two die pickers just before Roll. */
-.act-dice {
-  gap: 4px;
-}
-
-.actionbar .die-pick {
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
-  padding: 0;
-  justify-content: center;
-  border-radius: 9px;
-  font-size: 1.25rem;
-  font-weight: 800;
-}
-
-.actionbar .die-pick.set {
-  background: var(--gold);
-}
-
-.act-primary .btn {
-  min-height: 48px;
-  padding: 0.5em 1.3em;
-  font-size: 1.2rem;
-  font-weight: 700;
-}
-
-.btn:disabled .pieceicon,
-.btn:disabled .uiicon {
-  opacity: 0.45;
-}
-
-/* Compact action bar (tablet ~1024 px, V6): short labels; the full label moves into the
-   button tooltip. */
-.lbl-short {
-  display: none;
-}
 
 /* ---------- Help dialog ---------- */
 .help h3 {
@@ -1164,134 +1519,31 @@
   font-weight: 600;
 }
 
-/* ---------- Responsive ---------- */
-@media (max-width: 1180px) {
-  .sidecol {
-    width: 264px;
-    flex-basis: 264px;
-  }
 
-  /* Narrow column: one stat line per card, so drop the "/10" (it stays in the tooltip
-     and the aria-label). */
-  .seat {
-    padding: 2px 6px 3px;
-  }
-
-  .seat-stats {
-    gap: 2px 5px;
-    font-size: 0.9rem;
-  }
-
-  .seat-stats .uiicon {
-    width: 15px;
-    height: 15px;
-  }
-
-  .seat-vp small {
-    display: none;
-  }
-
-  .table-bottom {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    padding: 6px 10px;
-  }
-
-  .actionbar {
-    flex: none;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    gap: 6px;
-    overflow-x: auto;
-  }
-
-  .act-group {
-    flex-wrap: nowrap;
-  }
-
-  .act-primary {
-    margin-left: auto;
-  }
-
-  .actionbar .btn {
-    padding: 0.35em 0.55em;
-    font-size: 0.95rem;
-    white-space: nowrap;
-    flex: none;
-  }
-
-  .act-primary .btn {
-    min-height: 36px;
-    font-size: 1rem;
-  }
-
-  .actionbar .lbl-full {
-    display: none;
-  }
-
-  .actionbar .lbl-short {
-    display: inline;
-  }
-
-  .status-banner {
-    font-size: 1.02rem;
-  }
-}
-
-@media (max-width: 900px) {
-  .table-main {
-    flex-direction: column;
-  }
-
-  .sidecol {
-    width: auto;
-    flex: none;
-    max-height: 38vh;
-    border-left: none;
-    border-top: 2px solid var(--ink);
-  }
-
-  .seats,
-  .seats-compact {
-    grid-template-columns: none;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(230px, 1fr);
-    overflow-x: auto;
-  }
-
-  .board-area {
-    min-height: 40vh;
-  }
-
-  .hand {
-    overflow-x: auto;
-    padding-top: 10px;
-  }
-
-  .winner-card {
-    padding: 16px 20px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dice-roll,
-  .res-card.changed,
-  .toast,
-  .hex-produced {
-    animation: none;
-  }
-
-  .res-delta {
-    animation: none;
-    transform: translate(-50%, 0);
-  }
-}
-
-/* Expansion games: the event die after the sum, set apart by a dashed rule. */
-.dice-event {
+/* Online room chat (ChatBubble): bottom-right above the zoom buttons, opening upwards, clear of
+   the players on the left edge. */
+.hud .chat-board {
+  left: auto;
+  right: 26px;
+  top: auto;
+  bottom: 168px;
   display: flex;
-  margin-left: 4px;
-  padding-left: 10px;
-  border-left: 2px dashed rgba(59, 47, 47, 0.35);
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: 8px;
+}
+.hud .chat-board .chat-panel {
+  margin-top: 0;
+}
+@media (max-width: 640px) and (min-height: 521px) {
+  .hud .chat-board {
+    right: 12px;
+    bottom: calc(290px + env(safe-area-inset-bottom));
+  }
+}
+@media (max-height: 520px) and (max-width: 1000px) {
+  .hud .chat-board {
+    right: 10px;
+    bottom: 110px;
+  }
 }

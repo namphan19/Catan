@@ -49,19 +49,28 @@ test('portrait: setup and first roll fit one screen, all players and buttons vis
   await expect(seats).toHaveCount(4);
   const tops = await seats.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
   expect(new Set(tops).size).toBe(1);
-  // The side column is a closed sheet; the hand and the action bar sit under the board.
-  await expect(page.locator('.sidecol')).toBeHidden();
-  const board = await box(page, '.board-area');
-  const bar = await box(page, '.actionbar');
-  expect(bar.y).toBeGreaterThanOrEqual(board.y + board.height - 1);
-  // Compact visuals still get finger-sized hit areas on the utility controls.
+  // HUD (PO 2026-11-27): the board fills the screen; the hand and the buttons float over its foot,
+  // below the fitted island.
+  await expect(page.locator('.sidecol')).toHaveCount(0);
+  const vh = page.viewportSize()!.height;
+  const primary = await box(page, '.act-primary');
+  expect(primary.y + primary.height).toBeLessThanOrEqual(vh + 0.5);
+  const island = await page.evaluate(() => {
+    let bottom = -Infinity;
+    document.querySelectorAll('.hex-tile').forEach((el) => (bottom = Math.max(bottom, el.getBoundingClientRect().bottom)));
+    return bottom;
+  });
+  expect(primary.y, 'buttons below the island').toBeGreaterThan(island);
+  // Compact visuals still get finger-sized hit areas on every visible control.
   const measure = (els: HTMLElement[]) =>
-    els.map((e) => {
-      const r = e.getBoundingClientRect();
-      return { cls: e.className, w: Math.round(r.width), h: Math.round(r.height) };
-    });
+    els
+      .map((e) => {
+        const r = e.getBoundingClientRect();
+        return { cls: e.className, w: Math.round(r.width), h: Math.round(r.height) };
+      })
+      .filter((m) => m.w > 0);
   const targets = [
-    ...(await page.locator('.topbar-menu-btn, .btn-help, .board-zoom .btn, .cost-card-head').evaluateAll(measure)),
+    ...(await page.locator('.topbar-menu-btn, .btn-help').evaluateAll(measure)),
     ...(await page.locator('.actionbar button').evaluateAll(measure)),
   ];
   for (const target of targets) {
@@ -76,7 +85,9 @@ test('portrait: setup and first roll fit one screen, all players and buttons vis
   await expectFitsScreen(page);
   // Every action button (End turn included) is on screen without scrolling the bar.
   const vw = page.viewportSize()!.width;
-  const rights = await page.locator('.actionbar .btn').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().right));
+  const rights = await page
+    .locator('.actionbar .btn')
+    .evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().width > 0).map((e) => e.getBoundingClientRect().right));
   for (const r of rights) expect(r).toBeLessThanOrEqual(vw + 0.5);
   await clearHover(page);
   await page.screenshot({ path: shotPath('mobile-midgame.png', testInfo.project.name) });
@@ -103,7 +114,7 @@ test('portrait: six players share one swipeable rail, names readable', async ({ 
     }),
   );
   expect(new Set(boxes.map((b) => b.top)).size).toBe(1);
-  for (const b of boxes) expect(b.w).toBeGreaterThan(100);
+  for (const b of boxes) expect(b.w).toBeGreaterThanOrEqual(56);
   await seats.last().scrollIntoViewIfNeeded();
   await expect(seats.last()).toBeInViewport();
   expect(await page.locator('.seat-strip .seats').evaluate((e) => e.scrollLeft)).toBeGreaterThan(0);
@@ -153,7 +164,8 @@ test('portrait: a player tile opens public details in a bottom sheet', async ({ 
 test('portrait: the trade composer scrolls inside its dialog without widening the page', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await loadFixture(page, 'city-game.json');
-  await page.locator('.act-trade .btn').nth(1).click();
+  await page.locator('.act-trade .btn').first().click();
+  await page.getByRole('tab', { name: 'Người chơi' }).click();
   const grid = page.locator('.trade-grid');
   await expect(grid).toBeVisible();
   await expectFitsScreen(page);
@@ -215,18 +227,19 @@ test('portrait: the Tidelands sheet opens over the board, closes, and building a
   expect(errors()).toEqual([]);
 });
 
-test('landscape: board on the left at full height, controls on the right, sheet closable', async ({ page }, testInfo) => {
+test('landscape: board at full height, controls on its edges, sheet closable', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await page.setViewportSize({ width: 844, height: 390 });
   await loadFixture(page, 'strongholds-active.json');
   await expectFitsScreen(page);
 
   const board = await box(page, '.board-area');
-  const top = await box(page, '.topbar');
-  const bar = await box(page, '.actionbar');
+  const primary = await box(page, '.act-primary');
   expect(board.height).toBeGreaterThan(380);
-  expect(top.x).toBeGreaterThanOrEqual(board.x + board.width - 1);
-  expect(bar.x).toBeGreaterThanOrEqual(board.x + board.width - 1);
+  // the primary button sits in the bottom-right corner, on screen
+  expect(primary.x + primary.width).toBeLessThanOrEqual(844 + 0.5);
+  expect(primary.y + primary.height).toBeLessThanOrEqual(390 + 0.5);
+  expect(primary.x).toBeGreaterThan(844 / 2);
   await clearHover(page);
   await page.screenshot({ path: shotPath('mobile-landscape.png', testInfo.project.name) });
 
@@ -247,9 +260,10 @@ test('narrow landscape: board and controls still fit without page overflow', asy
   await expectFitsScreen(page);
 
   const board = await box(page, '.board-area');
-  const bar = await box(page, '.actionbar');
+  const primary = await box(page, '.act-primary');
   expect(board.height).toBeGreaterThanOrEqual(318);
-  expect(bar.x).toBeGreaterThanOrEqual(board.x + board.width - 1);
+  expect(primary.x + primary.width).toBeLessThanOrEqual(568 + 0.5);
+  expect(primary.y + primary.height).toBeLessThanOrEqual(320 + 0.5);
   await clearHover(page);
   await page.screenshot({ path: shotPath('mobile-narrow-landscape.png', testInfo.project.name) });
   expect(errors()).toEqual([]);

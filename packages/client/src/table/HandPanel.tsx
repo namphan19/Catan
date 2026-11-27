@@ -1,5 +1,6 @@
-// The viewer's own hand as cards: all resource types are always shown (0 = dimmed) with a
-// count badge, development cards as mini cards. A changed count pops and shows "+N" / "-N".
+// The viewer's own hand as a fan of painted cards at the foot of the board (PO 2026-11-27 HUD): all
+// resource types are always shown (0 = dimmed) with a count badge, development cards as a second,
+// smaller fan. A changed count pops and shows "+N" / "-N". Fan angles are display only.
 import { useEffect, useRef, useState } from 'react';
 import type { PlayerView } from '@hexgame/engine';
 import { useI18n, resKey, cardKey, RESOURCE_ORDER } from '../i18n';
@@ -57,6 +58,12 @@ function CardArt({ card }: { card: string }) {
   return useAssets([path])[path] ? <img className="dev-card-art painted" src={path} alt="" width={40} height={56} /> : <span className="dev-card-blank" aria-hidden="true" />;
 }
 
+/** Rotation / drop of card i of n in a fan (display only). */
+export function fanStyle(i: number, n: number, deg = 4, drop = 2.2): React.CSSProperties {
+  const o = i - (n - 1) / 2;
+  return { '--rot': `${(o * deg).toFixed(2)}deg`, '--drop': `${(o * o * drop).toFixed(1)}px` } as React.CSSProperties;
+}
+
 export function HandPanel({ view }: { view: PlayerView }) {
   const { t } = useI18n();
   const me = view.players.find((p) => p.id === view.viewer);
@@ -77,20 +84,21 @@ export function HandPanel({ view }: { view: PlayerView }) {
   return (
     <div className="hand" aria-label={t('hand_title')}>
       <div className="hand-group">
-        <span className="hand-title">
+        <span className="hand-title sr-only">
           {t('hand_title')} <small className="hand-total">{t('hand_total', { n: total })}</small>
         </span>
         <ul className="hand-res">
-          {kinds.map((r) => {
+          {kinds.map((r, i) => {
             const n = hand[r] ?? 0;
             const d = deltas[r];
             const label = `${t(resKey(r))}: ${n}`;
             return (
               <li
                 key={r}
-                className={`res-card${n === 0 ? ' empty' : ''}${d ? ' changed' : ''}`}
+                className={`res-card${n === 0 ? ' empty' : ''}${d ? ' changed' : ''}${i === RESOURCE_ORDER.length ? ' first-extra' : ''}`}
                 data-res={r}
                 data-count={n}
+                style={fanStyle(i, kinds.length)}
                 title={label}
                 aria-label={label}
               >
@@ -116,15 +124,15 @@ export function HandPanel({ view }: { view: PlayerView }) {
           base "development cards" strip would only show the same cards a second time. */}
       {!view.ext?.strongholds && (
       <div className="hand-group hand-cards">
-        <span className="hand-title">{t('hand_cards')}</span>
-        {groups.size === 0 ? (
-          <span className="hand-empty">{t('hand_noCards')}</span>
-        ) : (
+        <span className={groups.size === 0 ? 'hand-title sr-only' : 'hand-title'}>
+          {groups.size === 0 ? t('hand_noCards') : t('hand_cards')}
+        </span>
+        {groups.size > 0 && (
           <ul className="dev-cards">
-            {[...groups.entries()].map(([c, g]) => {
+            {[...groups.entries()].map(([c, g], i) => {
               const label = `${t(cardKey(c))} × ${g.n}${g.fresh > 0 ? ` (${t('newCardMark')}: ${g.fresh})` : ''}`;
               return (
-                <li key={c} className="dev-card" title={label} aria-label={label}>
+                <li key={c} className="dev-card" title={label} aria-label={label} style={fanStyle(i, groups.size, 6, 3)}>
                   <CardArt card={c} />
                   <span className="dev-card-name">{t(cardKey(c))}</span>
                   {g.n > 1 && <span className="res-card-count">{g.n}</span>}

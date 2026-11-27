@@ -46,7 +46,7 @@ for (const [name, w, h] of [
       expect(r.right).toBeLessThanOrEqual(w + 0.5);
     }
     const actionWidths = await page.locator('.actionbar button').evaluateAll((els) =>
-      els.map((e) => Math.round(e.getBoundingClientRect().width)),
+      els.map((e) => Math.round(e.getBoundingClientRect().width)).filter((wd) => wd > 0),
     );
     for (const width of actionWidths) expect(width).toBeGreaterThanOrEqual(44);
     await clearHover(page);

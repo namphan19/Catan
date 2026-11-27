@@ -50,7 +50,8 @@ export const VI = {
   start: /Bắt đầu ván mới/,
   rollText: 'Gieo xúc xắc',
   endTurnText: 'Kết thúc lượt',
-  tradePlayersText: 'Đổi bài với người chơi',
+  /** The one trade button (bank and player trades are tabs of its dialog). */
+  tradePlayersText: 'Đổi bài',
   coverTitle: 'Chuyền máy cho',
   coverReady: /Tôi đã sẵn sàng/,
   roll: /Gieo xúc xắc/,

@@ -1,15 +1,18 @@
-// Contextual action bar. Every button's enabled state comes from getLegalActions; the tooltip
-// reason of a disabled button comes from validateAction (passed by the shell), translated by
-// error code (BUG-QA-03). No rules logic here.
+// Contextual action bar, drawn over the foot of the board (PO 2026-11-27 HUD). Every button's
+// enabled state comes from getLegalActions; the reason of a disabled button comes from
+// validateAction (passed by the shell), translated by error code (BUG-QA-03). No rules logic here.
 //
-// Three groups: build (road / settlement / city / card, plus card plays), trade, and ONE large
-// primary button on the right: "Roll" until the turn can be ended, then "End turn".
-import { useEffect, useState } from 'react';
-import type { Action, PlayerId, PlayerView, Validation } from '@hexgame/engine';
-import { useI18n, cardKey } from '../i18n';
+// Left: round icon-only build buttons (road / settlement / city / card, plus expansion builds).
+// Hovering or focusing one shows its name, its cost (missing cards dimmed) and, when it is not
+// possible, why. Phones fold the build buttons behind one "Build" button. Then the trade button.
+// Right: ONE large primary button, "Roll" until the turn can be ended, then "End turn".
+import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { TL, baseConfig, type Action, type PlayerId, type PlayerView, type Validation } from '@hexgame/engine';
+import { useI18n, cardKey, resKey, RESOURCE_ORDER } from '../i18n';
 import { validationText } from '../net/errors';
 import { Button } from '../ui/Button';
 import { playerColor } from '../ui/colors';
+import { ResourceIcon } from '../ui/ResourceIcon';
 import { PieceIcon, UiIcon } from '../ui/Icon';
 
 export type Pending = 'placeSettlement' | 'placeRoad' | 'buildCity' | 'moveBlocker' | 'tl:buildShip' | null;
@@ -25,28 +28,116 @@ interface ActionBarProps {
   onOpenCards: (card: 'harvest' | 'claim') => void;
   /** Dice cheat unlocked: two die pickers next to Roll (? = random) set the roll's `dice`. */
   diceCheat?: boolean;
+  /** Expansion build buttons (BuildSlot elements) after the base ones. */
+  extraBuild?: ReactNode;
 }
 
 const PLACEHOLDER = { v: 'v:0,0,N', e: 'e:0,0,NE', hex: 'h:0,0' };
 
-/** True below the compact breakpoint (tablet ~1024 px): short labels are shown and the
- * full label moves into the tooltip (V6). */
-function useCompact(): boolean {
-  const [compact, setCompact] = useState(() => window.matchMedia('(max-width: 1180px)').matches);
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 1180px)');
-    const on = () => setCompact(mq.matches);
-    mq.addEventListener('change', on);
-    return () => mq.removeEventListener('change', on);
-  }, []);
-  return compact;
+/** Cost units of a bag in resource order (commodities and goods after the base five). */
+function units(bag: Record<string, number>): string[] {
+  const order = [...RESOURCE_ORDER, ...Object.keys(bag).filter((r) => !(RESOURCE_ORDER as readonly string[]).includes(r))];
+  return order.flatMap((r) => Array.from({ length: bag[r] ?? 0 }, () => r));
 }
 
-export function ActionBar({ view, legal, onAction, validate, pending, setPending, onOpenTrade, onOpenCards, diceCheat }: ActionBarProps) {
+/**
+ * One round build button with its hover card. The visible label is screen-reader text inside the
+ * button (so the accessible name and `hasText` lookups stay the full label); phones show it next
+ * to the icon in the folded build menu.
+ */
+export function BuildSlot({
+  icon,
+  label,
+  note,
+  cost,
+  hand,
+  enabled,
+  reason,
+  pressed,
+  onClick,
+  data,
+}: {
+  icon: ReactNode;
+  label: string;
+  /** Short extra line in the card, e.g. "+1 VP". */
+  note?: string;
+  cost?: Record<string, number>;
+  hand?: Record<string, number>;
+  enabled: boolean;
+  /** Why it is not possible (validateAction), shown when disabled. */
+  reason?: string;
+  pressed?: boolean;
+  onClick: () => void;
+  data?: string;
+}) {
   const { t } = useI18n();
-  const compact = useCompact();
+  const list = cost ? units(cost) : [];
+  const seen: Record<string, number> = {};
+  const marks = list.map((r) => {
+    seen[r] = (seen[r] ?? 0) + 1;
+    return { r, ok: !hand || (hand[r] ?? 0) >= seen[r] };
+  });
+  const missing: Record<string, number> = {};
+  for (const m of marks) if (!m.ok) missing[m.r] = (missing[m.r] ?? 0) + 1;
+  const missingText = Object.entries(missing)
+    .map(([r, n]) => `${n} ${t(resKey(r))}`)
+    .join(', ');
+  const can = marks.length > 0 && marks.every((m) => m.ok);
+  return (
+    <span className={`build-slot${can ? ' affordable' : ''}`}>
+      <button
+        type="button"
+        className={`btn build-btn${pressed ? ' active' : ''}`}
+        disabled={!enabled}
+        aria-pressed={pressed}
+        data-build={data}
+        onClick={onClick}
+      >
+        <span className="build-icon" aria-hidden="true">
+          {icon}
+        </span>
+        <span className="act-lbl">{label}</span>
+      </button>
+      <span className="build-tip" role="tooltip">
+        <b>{label}</b>
+        {note && <small>{note}</small>}
+        {marks.length > 0 && (
+          <span className="build-tip-cost">
+            {marks.map((m, i) => (
+              <span key={i} className={m.ok ? 'cost-unit' : 'cost-unit missing'}>
+                <ResourceIcon res={m.r} size={22} />
+              </span>
+            ))}
+          </span>
+        )}
+        {!enabled && reason ? (
+          <span className="build-tip-why">{reason}</span>
+        ) : missingText ? (
+          <span className="build-tip-why">{t('cost_missing', { list: missingText })}</span>
+        ) : can ? (
+          <span className="build-tip-ok">{t('cost_ready')}</span>
+        ) : null}
+      </span>
+    </span>
+  );
+}
+
+export function ActionBar({
+  view,
+  legal,
+  onAction,
+  validate,
+  pending,
+  setPending,
+  onOpenTrade,
+  onOpenCards,
+  diceCheat,
+  extraBuild,
+}: ActionBarProps) {
+  const { t } = useI18n();
   const me = (view.viewer ?? 'p1') as PlayerId;
   const color = playerColor(me);
+  const hand = view.players.find((p) => p.id === me)?.hand;
   const has = (tt: string) => legal.some((a) => a.t === tt);
 
   /** Disabled reason from validateAction on a probe action, translated by code (unknown
@@ -64,10 +155,6 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
     return validationText(v.code, t);
   };
 
-  /** Tooltip: translated disable reason, or (when compact) the full label that the short
-   * on-button text abbreviates. */
-  const tipOf = (tt: string, fullKey: string): string | undefined => reason(tt) ?? (compact ? t(fullKey) : undefined);
-
   const send = (a: Action) => onAction(a);
 
   /** Dice cheat: the chosen face of each production die (null = random); reset after each roll. */
@@ -80,68 +167,127 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
     } else send({ t: 'roll', player: me });
     setPick([null, null]);
   };
+
+  // Phones: the build buttons fold behind one "Build" button; a pick or a click outside closes it.
+  const [buildOpen, setBuildOpen] = useState(false);
+  const buildRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!buildOpen) return;
+    const away = (e: PointerEvent) => {
+      if (!buildRef.current?.contains(e.target as Node)) setBuildOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setBuildOpen(false);
+    };
+    window.addEventListener('pointerdown', away);
+    window.addEventListener('keydown', esc);
+    return () => {
+      window.removeEventListener('pointerdown', away);
+      window.removeEventListener('keydown', esc);
+    };
+  }, [buildOpen]);
+
   const toggle = (p: Exclude<Pending, null>) => setPending(pending === p ? null : p);
 
   const playable = [...new Set(legal.filter((a) => a.t === 'playCard').map((a) => (a as { card: string }).card))];
   const mustRespond = has('respondTrade');
   const confirmables = legal.filter((a) => a.t === 'confirmTrade');
-
-  /** Full + short label pair; the short one is only visible below the compact breakpoint. */
-  const label = (fullKey: string, shortKey: string) => (
-    <>
-      <span className="lbl-full">{t(fullKey)}</span>
-      <span className="lbl-short">{t(shortKey)}</span>
-    </>
-  );
+  const tradeHot = mustRespond || confirmables.length > 0;
+  const tradeOk = tradeHot || has('bankTrade') || has('offerTrade') || has('cancelTrade');
+  const vpNote = (item: string) => {
+    const vp = baseConfig.buildingVP[item];
+    return vp ? `+${vp} ${t('vpShort')}` : undefined;
+  };
+  const anyBuild =
+    has('placeRoad') || has('placeSettlement') || has('buildCity') || has('buyCard') || has('tl:buildShip') ||
+    legal.some((a) => a.t === 'sh:rampart' || a.t === 'sh:recruit');
 
   return (
     <div className="actionbar" role="toolbar" aria-label={t('appTitle')}>
-      {/* Phones: this strip scrolls sideways while the primary button stays pinned on the right.
-          Wider screens use display: contents, so the groups stay direct flex children. */}
       <div className="act-strip">
-      <div className="act-group act-build">
-        <Button
-          disabled={!has('placeRoad')}
-          tip={tipOf('placeRoad', 'act_buildRoad')}
-          aria-pressed={pending === 'placeRoad'}
-          className={pending === 'placeRoad' ? 'active' : undefined}
-          onClick={() => toggle('placeRoad')}
-        >
-          <PieceIcon kind="road" color={color} size={14} /> {label('act_buildRoad', 'act_road_s')}
-        </Button>
-
-        <Button
-          disabled={!has('placeSettlement')}
-          tip={tipOf('placeSettlement', 'act_buildSettlement')}
-          aria-pressed={pending === 'placeSettlement'}
-          className={pending === 'placeSettlement' ? 'active' : undefined}
-          onClick={() => toggle('placeSettlement')}
-        >
-          <PieceIcon kind="settlement" color={color} size={20} /> {label('act_buildSettlement', 'act_settlement_s')}
-        </Button>
-
-        <Button
-          disabled={!has('buildCity')}
-          tip={tipOf('buildCity', 'act_buildCity')}
-          aria-pressed={pending === 'buildCity'}
-          className={pending === 'buildCity' ? 'active' : undefined}
-          onClick={() => toggle('buildCity')}
-        >
-          <PieceIcon kind="city" color={color} size={20} /> {label('act_buildCity', 'act_city_s')}
-        </Button>
-
-        {/* Strongholds has no base card deck (rules section 1): no "buy card" button there. */}
-        {!view.ext?.strongholds && (
-          <Button disabled={!has('buyCard')} tip={tipOf('buyCard', 'act_buyCard')} onClick={() => send({ t: 'buyCard', player: me })}>
-            <UiIcon name="card" size={18} /> {label('act_buyCard', 'act_buyCard_s')}
-          </Button>
-        )}
+        <div className="act-build-wrap" ref={buildRef}>
+          <button
+            type="button"
+            className={`btn hud-round act-build-toggle${anyBuild ? ' ready' : ''}`}
+            aria-expanded={buildOpen}
+            onClick={() => setBuildOpen((o) => !o)}
+          >
+            <UiIcon name="build" size={22} />
+            <span className="act-lbl">{t('act_build')}</span>
+          </button>
+          <div className="act-group act-build" data-open={buildOpen ? 'true' : undefined} onClick={(e) => {
+            if ((e.target as HTMLElement).closest('button:not([disabled])')) setBuildOpen(false);
+          }}>
+            <BuildSlot
+              icon={<PieceIcon kind="road" color={color} size={22} />}
+              label={t('act_buildRoad')}
+              cost={baseConfig.costs.road as Record<string, number>}
+              hand={hand}
+              enabled={has('placeRoad')}
+              reason={reason('placeRoad')}
+              pressed={pending === 'placeRoad'}
+              onClick={() => toggle('placeRoad')}
+              data="road"
+            />
+            {!!view.ext?.tidelands && (
+              <BuildSlot
+                icon={<PieceIcon kind="ship" color={color} size={26} />}
+                label={t('cost_ship')}
+                cost={TL.costs.ship as Record<string, number>}
+                hand={hand}
+                enabled={has('tl:buildShip')}
+                reason={has('tl:buildShip') ? undefined : t('act_unavailable')}
+                pressed={pending === 'tl:buildShip'}
+                onClick={() => toggle('tl:buildShip')}
+                data="ship"
+              />
+            )}
+            <BuildSlot
+              icon={<PieceIcon kind="settlement" color={color} size={28} />}
+              label={t('act_buildSettlement')}
+              note={vpNote('settlement')}
+              cost={baseConfig.costs.settlement as Record<string, number>}
+              hand={hand}
+              enabled={has('placeSettlement')}
+              reason={reason('placeSettlement')}
+              pressed={pending === 'placeSettlement'}
+              onClick={() => toggle('placeSettlement')}
+              data="settlement"
+            />
+            <BuildSlot
+              icon={<PieceIcon kind="city" color={color} size={30} />}
+              label={t('act_buildCity')}
+              note={vpNote('city')}
+              cost={baseConfig.costs.city as Record<string, number>}
+              hand={hand}
+              enabled={has('buildCity')}
+              reason={reason('buildCity')}
+              pressed={pending === 'buildCity'}
+              onClick={() => toggle('buildCity')}
+              data="city"
+            />
+            {/* Strongholds has no base card deck (rules section 1): no "buy card" button there. */}
+            {!view.ext?.strongholds && (
+              <BuildSlot
+                icon={<UiIcon name="card" size={24} />}
+                label={t('act_buyCard')}
+                cost={baseConfig.costs.card as Record<string, number>}
+                hand={hand}
+                enabled={has('buyCard')}
+                reason={reason('buyCard')}
+                onClick={() => send({ t: 'buyCard', player: me })}
+                data="card"
+              />
+            )}
+            {extraBuild}
+          </div>
+        </div>
 
         {has('moveBlocker') && (
           <Button
             variant="primary"
             aria-pressed={pending === 'moveBlocker'}
-            className={pending === 'moveBlocker' ? 'active' : undefined}
+            className={pending === 'moveBlocker' ? 'act-pill active' : 'act-pill'}
             onClick={() => toggle('moveBlocker')}
           >
             {t('act_moveBlocker')}
@@ -151,7 +297,7 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
         {playable.map((card) => (
           <Button
             key={card}
-            className="btn-play"
+            className="btn-play act-pill"
             onClick={() =>
               card === 'harvest' || card === 'claim' ? onOpenCards(card) : send({ t: 'playCard', player: me, card } as Action)
             }
@@ -159,51 +305,41 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
             <UiIcon name="card" size={18} /> {t('act_playCards')}: {t(cardKey(card))}
           </Button>
         ))}
-      </div>
 
-      <div className="act-group act-trade">
-        <Button
-          variant={mustRespond ? 'primary' : 'ghost'}
-          className={mustRespond ? 'pulse' : undefined}
-          tip={mustRespond ? undefined : tipOf('bankTrade', 'act_bankTrade')}
-          onClick={() => onOpenTrade('bank')}
-        >
-          <UiIcon name="trade" size={18} /> {label('act_bankTrade', 'act_bankTrade_s')}
-        </Button>
-
-        <Button
-          variant={mustRespond || confirmables.length > 0 ? 'primary' : 'ghost'}
-          className={mustRespond ? 'pulse' : undefined}
-          tip={mustRespond || confirmables.length > 0 ? t('tradeBadge') : tipOf('offerTrade', 'act_playerTrade')}
-          onClick={() => onOpenTrade('players')}
-        >
-          <UiIcon name="trade" size={18} /> {label('act_playerTrade', 'act_playerTrade_s')}
-          {mustRespond ? <span className="badge" aria-label={t('tradeBadge')}>1</span> : null}
-        </Button>
-
-        {has('cancelTrade') && (
-          <Button variant="danger" onClick={() => send({ t: 'cancelTrade', player: me })}>
-            ✖ {t('act_cancelOffer')}
+        <div className="act-group act-trade">
+          <Button
+            className={`hud-round act-trade-btn${tradeHot ? ' hot pulse' : ''}`}
+            tip={tradeHot ? t('tradeBadge') : tradeOk ? undefined : reason('bankTrade')}
+            onClick={() => onOpenTrade(tradeHot || view.trade ? 'players' : 'bank')}
+          >
+            <UiIcon name="trade" size={24} />
+            <span className="act-lbl">{t('act_trade')}</span>
+            {mustRespond ? <span className="badge" aria-label={t('tradeBadge')}>1</span> : null}
           </Button>
-        )}
-      </div>
 
-      {diceCheat && has('roll') && (
-        <div className="act-group act-dice" role="group" aria-label={t('cheat_pick')}>
-          {pick.map((v, i) => (
-            <button
-              key={i}
-              type="button"
-              className={`btn btn-ghost die-pick${v === null ? '' : ' set'}`}
-              title={t('cheat_pickTip')}
-              aria-label={`${t('cheat_pick')} ${i + 1}: ${v ?? '?'}`}
-              onClick={() => cycle(i)}
-            >
-              {v ?? '?'}
-            </button>
-          ))}
+          {has('cancelTrade') && (
+            <Button variant="danger" className="act-pill" onClick={() => send({ t: 'cancelTrade', player: me })}>
+              ✖ {t('act_cancelOffer')}
+            </Button>
+          )}
         </div>
-      )}
+
+        {diceCheat && has('roll') && (
+          <div className="act-group act-dice" role="group" aria-label={t('cheat_pick')}>
+            {pick.map((v, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`btn btn-ghost die-pick${v === null ? '' : ' set'}`}
+                title={t('cheat_pickTip')}
+                aria-label={`${t('cheat_pick')} ${i + 1}: ${v ?? '?'}`}
+                onClick={() => cycle(i)}
+              >
+                {v ?? '?'}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="act-group act-primary">
@@ -214,17 +350,17 @@ export function ActionBar({ view, legal, onAction, validate, pending, setPending
             className={legal.some((a) => BUILD_LIKE.has(a.t)) ? undefined : 'pulse'}
             onClick={() => send({ t: 'endTurn', player: me })}
           >
-            <UiIcon name="end" size={20} /> {label('act_endTurn', 'act_endTurn_s')}
+            <UiIcon name="end" size={20} /> <span className="lbl-full">{t('act_endTurn')}</span>
           </Button>
         ) : (
           <Button
             variant="primary"
             className={has('roll') ? 'pulse' : undefined}
             disabled={!has('roll')}
-            tip={tipOf('roll', 'act_roll')}
+            tip={reason('roll')}
             onClick={rollNow}
           >
-            <UiIcon name="roll" size={20} /> {label('act_roll', 'act_roll_s')}
+            <UiIcon name="roll" size={20} /> <span className="lbl-full">{t('act_roll')}</span>
           </Button>
         )}
       </div>

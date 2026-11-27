@@ -41,15 +41,17 @@ test('a new highlands game: option, map, setup and the side panel', async ({ pag
   expect(errors()).toEqual([]);
 });
 
-test('mid-game: overgrown buildings, culture tracks and the cost card', async ({ page }, testInfo) => {
+test('mid-game: overgrown buildings, culture tracks and the build costs', async ({ page }, testInfo) => {
   test.setTimeout(90_000);
   const errors = captureErrors(page);
   await loadFixture(page, 'highlands-midgame.json');
   await expect(page.locator('.hl-panel')).toBeVisible();
   expect(await page.locator('[data-ruin]').count()).toBeGreaterThanOrEqual(4);
   expect(await page.locator('.hl-tribe.done').count()).toBeGreaterThanOrEqual(2);
-  if ((await page.locator('.cost-rows').count()) === 0) await page.locator('.cost-card-head').click();
-  await expect(page.locator('.cost-card')).toContainText('3');
+  // Build costs live in the hover card of each round build button (no price card any more).
+  await page.locator('.build-slot').first().hover();
+  await expect(page.locator('.build-slot').first().locator('.build-tip')).toBeVisible();
+  await expect(page.locator('.build-slot').first().locator('.build-tip .cost-unit')).toHaveCount(2);
   await clearHover(page);
   await page.screenshot({ path: shotPath('highlands-midgame.png', testInfo.project.name), fullPage: true });
 

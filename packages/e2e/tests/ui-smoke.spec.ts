@@ -90,7 +90,7 @@ test('4-player hot-seat game seed e2e-1: board, setup, roll, end turn, trade pan
   await expect(cover).toContainText(VI.coverTitle);
   await confirmCover(page);
 
-  // Open the trade panel (player trade tab) and screenshot it.
+  // Open the trade dialog and screenshot it.
   await actionButton(page, VI.tradePlayersText).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();

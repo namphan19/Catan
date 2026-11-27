@@ -32,6 +32,8 @@ export interface BoardProps {
   producing?: ReadonlySet<string>;
   /** Extra SVG drawn over the pieces in board coordinates (expansion pieces). 2D board only. */
   overlay?: ReactNode;
+  /** SVG drawn above the click targets (own controls on the board, e.g. a warden's action ring). */
+  overlayTop?: ReactNode;
 }
 
 interface Tf {
@@ -49,7 +51,7 @@ const MAX_SCALE = 3;
 /** A press must move this far (in client px) before it counts as a pan (BUG-QA-02). */
 const PAN_THRESHOLD = 5;
 
-export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onHex, onMiss, producing, overlay }: BoardProps) {
+export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onHex, onMiss, producing, overlay, overlayTop }: BoardProps) {
   const { t } = useI18n();
   const graph = useMemo(() => getBoardGraph(layout), [layout]);
   const ext = useMemo(() => boardExtent(graph), [graph]);
@@ -342,6 +344,7 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
               <title>{`${t('board_hex')} ${hexName(h)}`}</title>
             </polygon>
           ))}
+          {overlayTop}
         </g>
       </svg>
       <div className="board-zoom">

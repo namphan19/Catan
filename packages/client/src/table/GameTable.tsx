@@ -2,7 +2,7 @@
 // client can reuse it. Every button, highlight and dialog option derives from getLegalActions;
 // disabled reasons come from validateAction. No rules logic lives here.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { BOT_TRADE_WAIT_MS } from '@hexgame/engine';
+import { BOT_TRADE_WAIT_MS, SH } from '@hexgame/engine';
 import type { Action, GameEvent, PlayerId, PlayerView, StrongholdsView, Validation } from '@hexgame/engine';
 import { StrongholdsPanel } from '../strongholds/StrongholdsPanel';
 import { AdvanceHand } from '../strongholds/AdvanceHand';
@@ -17,6 +17,8 @@ import { tlOf } from '../tidelands/view';
 import { HighlandsPanel } from '../highlands/HighlandsPanel';
 import { hlOf } from '../highlands/labels';
 import { getBoardGraph } from '../board/geom';
+import { art2dUrl } from '../board/assets';
+import { RaidLane, ShLevels, TrackRail, WardenLayer, WardenMenu, type WardenPick } from '../strongholds/Hud';
 import { useI18n, resKey } from '../i18n';
 import { useName } from '../shell/names';
 import { playerColor, playerEmblem } from '../ui/colors';
@@ -31,10 +33,9 @@ import { PlayerCards } from './PlayerCards';
 import { PlayerDialog } from './PlayerDialog';
 import { actorOf, statusOf } from './StatusBanner';
 import { DiceBox } from './DiceBox';
-import { CostCard } from './CostCard';
 import { HelpDialog } from './HelpDialog';
 import { HandPanel } from './HandPanel';
-import { ActionBar, type Pending } from './ActionBar';
+import { ActionBar, BuildSlot, type Pending } from './ActionBar';
 import { describeEvent } from './describe';
 import { DiscardDialog, StealDialog, TradeDialog, CardDialog, type TradeTab, type PickCard } from '../dialogs';
 
@@ -425,16 +426,83 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
         ? t('tl_winSilk', { n: winVP })
         : t('winner_vp', { n: winVP });
 
-  return (
-    <div className="table" data-sheet={sheetOpen ? 'open' : undefined}>
-      <TopBar view={view} info={barInfo} actions={barActions} onHelp={() => setHelpOpen(true)} />
-      {/* PO 2026-11-17: the players sit in one row on top (no status sentence any more); whose turn
-          it is shows as the gold ring, what to do next as a pulsing Roll / End turn button. */}
-      <div className="seat-strip">
-        <PlayerCards view={view} onSelect={setPlayerOpen} />
+  // Strongholds: a click on one of the viewer's wardens opens its actions around it.
+  const [wardenAt, setWardenAt] = useState<WardenPick | null>(null);
+  useEffect(() => setWardenAt(null), [legal]);
+  const boardBusy = pending !== null || (!!choice && !!stage?.board);
+
+  // The guidance line under the turn label: a running board choice, a board pick (with Cancel),
+  // or simply what the viewer can do / whom the table waits for.
+  const guide =
+    choice && stage?.board ? (
+      <div className="hud-guide sh-pickbar" role="status">
+        <span>
+          {choice.title}: {choice.cands[0]?.t.startsWith('tl:') ? t('tl_pick_' + stage.field) : stagePrompt(stage.field, t)}
+        </span>
+        {stage.optional && (
+          <Button variant="primary" onClick={() => pickValue(undefined)}>
+            {valueLabel(stage.field, undefined, t, name)}
+          </Button>
+        )}
+        {!choice.mandatory && (
+          <Button variant="ghost" onClick={() => setChoice(null)}>
+            {t('sh_cancel')}
+          </Button>
+        )}
       </div>
+    ) : boardHint ? (
+      <div className="hud-guide board-hint" role="status">
+        <span>{boardHint.text}</span>
+        {boardHint.cancellable && (
+          <Button variant="ghost" onClick={() => setPending(null)}>
+            {t('status_cancel')}
+          </Button>
+        )}
+      </div>
+    ) : (
+      <p className="hud-guide" data-mine={hintStatus.mine ? 'true' : 'false'} role="status" aria-live="polite">
+        {hintStatus.text}
+      </p>
+    );
+
+  // Strongholds builds next to the base ones: rampart and recruiting a warden.
+  const meHand = view.players.find((p) => p.id === view.viewer)?.hand;
+  const shOf = (tt: string) => legal.filter((a) => a.t === tt);
+  const shBuild = sh ? (
+    <>
+      <BuildSlot
+        icon={<img src={art2dUrl('piece', 'rampart')} alt="" width={34} height={34} />}
+        label={t('shact_rampart')}
+        note={t('shhud_rampartNote')}
+        cost={SH.costs.rampart as Record<string, number>}
+        hand={meHand}
+        enabled={shOf('sh:rampart').length > 0}
+        reason={t('shcost_rampart')}
+        onClick={() => startChoice(shOf('sh:rampart'), t('shact_rampart'))}
+        data="rampart"
+      />
+      <BuildSlot
+        icon={<img src={art2dUrl('piece', 'warden')} alt="" width={32} height={32} />}
+        label={t('shact_recruit')}
+        cost={SH.costs.warden as Record<string, number>}
+        hand={meHand}
+        enabled={shOf('sh:recruit').length > 0}
+        reason={t('shcost_recruit')}
+        onClick={() => startChoice(shOf('sh:recruit'), t('shact_recruit'))}
+        data="recruit"
+      />
+    </>
+  ) : undefined;
+
+  // Expansion panels: Strongholds' panel is a drawer on every screen (the HUD shows its essentials);
+  // Tidelands / Highlands keep their docked column on wide screens.
+  const hasSide = !!(sh || tl || hl);
+  const tableClass = `table hud${sh ? ' has-sh has-drawer' : hasSide ? ' has-dock' : ''}`;
+
+  return (
+    <div className={tableClass} data-sheet={sheetOpen ? 'open' : undefined}>
       <div className="table-main">
-        <div className={sh ? 'board-area has-sh-hand' : 'board-area'}>
+        <div className="board-area">
           <Board
             overlay={
               sh || tl ? (
@@ -442,6 +510,11 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
                   {tl && <SeaExtras graph={getBoardGraph(view.init.layout)} pieces={view.pieces} tl={tl} />}
                   {sh && <BoardExtras pieces={view.pieces} sh={sh} />}
                 </>
+              ) : undefined
+            }
+            overlayTop={
+              sh ? (
+                <WardenLayer legal={legal} open={wardenAt} setOpen={setWardenAt} enabled={!boardBusy} />
               ) : undefined
             }
             layout={view.init.layout}
@@ -467,62 +540,72 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
                 tryTarget((a) => (a.t === 'moveBlocker' || a.t === 'tl:moveCorsair') && (a as { hex?: string }).hex === h, 'hex');
             }}
             onMiss={() => {
+              setWardenAt(null);
               if (choice && !choice.mandatory) setChoice(null);
               if (!mandatoryPick) setPending(null);
             }}
             producing={producing}
           />
-          <DiceBox view={view} sh={sh} />
-          {/* Phones only (mobile.css): the side column (expansion panels) becomes a bottom sheet
-              behind this button. The base game has no side column since the log was removed. */}
-          {(sh || tl || hl) && (
+          {/* Dark scrims on the edges: the HUD reads on any part of the map (display only). */}
+          <span className="hud-scrim hud-scrim-top" aria-hidden="true" />
+          <span className="hud-scrim hud-scrim-left" aria-hidden="true" />
+          <span className="hud-scrim hud-scrim-bottom" aria-hidden="true" />
+          {sh && <span className="hud-scrim hud-scrim-right" aria-hidden="true" />}
+
+          <TopBar view={view} info={barInfo} actions={barActions} onHelp={() => setHelpOpen(true)} guide={guide} />
+          <div className="seat-strip">
+            <PlayerCards view={view} onSelect={setPlayerOpen} extra={sh ? (id) => <ShLevels sh={sh} id={id} /> : undefined} />
+          </div>
+          <div className="hud-tr">
+            <DiceBox view={view} sh={sh} />
+            {sh && <RaidLane view={view} sh={sh} />}
+          </div>
+          {sh && view.viewer && (
+            <TrackRail view={view} sh={sh} legal={legal} onStart={startChoice} onPanel={() => setSheetOpen(true)} />
+          )}
+          {/* The expansion panel: a drawer (Strongholds, and every expansion on phones). */}
+          {hasSide && (
             <button
               type="button"
-              className="btn sheet-toggle"
+              className="hud-icon sheet-toggle"
               aria-expanded={sheetOpen}
               aria-controls="expansion-sheet"
+              aria-label={t('sheet_open')}
+              title={t('sheet_open')}
               onClick={() => setSheetOpen((o) => !o)}
             >
-              <UiIcon name="sheet" size={16} /> {t('sheet_open')}
+              <UiIcon name="sheet" size={18} />
+              <span className="sheet-toggle-text">{t('sheet_open')}</span>
             </button>
           )}
-          <CostCard
-            view={view}
-            picking={highlights.vertices.size + highlights.edges.size + highlights.hexes.size > 0}
-          />
-          {sh && <AdvanceHand view={view} sh={sh} legal={legal} onStart={startChoice} />}
+          {sh && wardenAt && !boardBusy && (
+            <WardenMenu legal={legal} open={wardenAt} onClose={() => setWardenAt(null)} onStart={startChoice} />
+          )}
           <ToastStack toasts={toasts} />
           {boardOverlay}
           {reveals.current && <CardReveal reveal={reveals.current} onClose={reveals.close} t={t} name={name} />}
-          {boardHint && !(choice && stage?.board) && (
-            <div className="board-hint" role="status">
-              <span>{boardHint.text}</span>
-              {boardHint.cancellable && (
-                <Button variant="ghost" onClick={() => setPending(null)}>
-                  {t('status_cancel')}
-                </Button>
-              )}
-            </div>
-          )}
-          {choice && stage?.board && (
-            <div className="sh-pickbar" role="status">
-              <span>
-                {choice.title}: {choice.cands[0]?.t.startsWith('tl:') ? t('tl_pick_' + stage.field) : stagePrompt(stage.field, t)}
-              </span>
-              {stage.optional && (
-                <Button variant="primary" onClick={() => pickValue(undefined)}>
-                  {valueLabel(stage.field, undefined, t, name)}
-                </Button>
-              )}
-              {!choice.mandatory && (
-                <Button variant="ghost" onClick={() => setChoice(null)}>
-                  {t('sh_cancel')}
-                </Button>
-              )}
-            </div>
-          )}
+          <div className="table-bottom">
+            <HandPanel view={view} />
+            {sh && <AdvanceHand view={view} sh={sh} legal={legal} onStart={startChoice} />}
+            <ActionBar
+              view={view}
+              legal={legal}
+              onAction={onAction}
+              validate={validate}
+              pending={pending}
+              setPending={setPending}
+              onOpenTrade={(tab) => {
+                setTradeTab(tab);
+                autoOpened.current = false;
+                setTradeOpen(tab);
+              }}
+              onOpenCards={(c) => setCardOpen(c)}
+              diceCheat={diceCheat}
+              extraBuild={shBuild}
+            />
+          </div>
         </div>
-        {(sh || tl || hl) && (
+        {hasSide && (
           <>
             <button
               type="button"
@@ -567,24 +650,6 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
             </aside>
           </>
         )}
-      </div>
-      <div className="table-bottom">
-        <HandPanel view={view} />
-        <ActionBar
-          view={view}
-          legal={legal}
-          onAction={onAction}
-          validate={validate}
-          pending={pending}
-          setPending={setPending}
-          onOpenTrade={(tab) => {
-            setTradeTab(tab);
-            autoOpened.current = false;
-            setTradeOpen(tab);
-          }}
-          onOpenCards={(c) => setCardOpen(c)}
-          diceCheat={diceCheat}
-        />
       </div>
 
       {mustDiscard && <DiscardDialog view={view} legal={legal} validate={check} onAction={onAction} onClose={() => {}} />}
