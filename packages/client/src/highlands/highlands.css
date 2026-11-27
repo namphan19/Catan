@@ -56,3 +56,6 @@
 /* Overgrown buildings: faded piece under green vines. */
 .piece-ruin > .piece-ruin-body { filter: saturate(0.35) brightness(0.8); opacity: 0.85; }
 .piece-thicket path { fill: #3f7a35; stroke: #1e3d1a; stroke-width: 0.8; }
+
+/* Icon of the good above the number token of a goods hex (jungle, herb grove, fishing ground). */
+.hex-good-badge circle { fill: rgba(243, 233, 210, 0.9); stroke: rgba(59, 47, 47, 0.7); stroke-width: 1.2; }
