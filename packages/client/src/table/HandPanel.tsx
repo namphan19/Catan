@@ -64,7 +64,8 @@ export function fanStyle(i: number, n: number, deg = 4, drop = 2.2): React.CSSPr
   return { '--rot': `${(o * deg).toFixed(2)}deg`, '--drop': `${(o * o * drop).toFixed(1)}px` } as React.CSSProperties;
 }
 
-export function HandPanel({ view }: { view: PlayerView }) {
+/** `extraLabel`: a caption over the expansion cards (commodities, goods), e.g. "trade only". */
+export function HandPanel({ view, extraLabel }: { view: PlayerView; extraLabel?: string }) {
   const { t } = useI18n();
   const me = view.players.find((p) => p.id === view.viewer);
   const hand: Record<string, number> = me?.hand ?? {};
@@ -102,6 +103,11 @@ export function HandPanel({ view }: { view: PlayerView }) {
                 title={label}
                 aria-label={label}
               >
+                {i === RESOURCE_ORDER.length && extraLabel && (
+                  <span className="res-group-label" aria-hidden="true">
+                    {extraLabel}
+                  </span>
+                )}
                 <ResourceArt res={r} />
                 {/* Phones show the small icon + count in one dock row (mobile.css); wider
                     screens keep the painted card. */}

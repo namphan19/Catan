@@ -47,3 +47,165 @@
   font-weight: 700;
 }
 .terrain-mist { stroke-dasharray: 6 4; }
+
+/* ---------- Tidelands HUD (Hud.tsx) ---------- */
+/* Scenario + goal in the turn line; (i) opens the scenario's rules. */
+.tl-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tl-badge-info {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  font-family: var(--font-logo);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+.tl-badge-info:hover,
+.tl-badge-info[aria-expanded='true'] {
+  background: rgba(243, 233, 210, 0.2);
+}
+.tl-badge-pop {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: min(420px, 90vw);
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--parchment);
+  color: var(--ink);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-align: left;
+  text-transform: none;
+  text-shadow: none;
+  transform: translateX(-50%);
+}
+.tl-badge-pop b {
+  font-size: 1.1rem;
+}
+
+/* Scenario progress under each player's name. */
+.tl-seat-line {
+  max-width: 170px;
+  color: #e3d3ae;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+/* Gold-mine choice: big resource buttons over the hand. */
+.tl-gold {
+  position: absolute;
+  left: 50%;
+  bottom: 176px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 46px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(10, 16, 18, 0.78), rgba(10, 16, 18, 0.55) 60%, rgba(10, 16, 18, 0));
+  transform: translateX(-50%);
+}
+.tl-gold-title {
+  color: #f2d27a;
+  font-size: 1.2rem;
+  font-style: italic;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.95);
+}
+.tl-gold-row {
+  display: flex;
+  gap: 14px;
+}
+.tl-gold-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #f3e9d2;
+  box-shadow: 0 0 0 3px #e8c467, 0 0 22px rgba(232, 196, 103, 0.7);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+.tl-gold-btn:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+.tl-gold-btn:disabled {
+  opacity: 0.4;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.tl-gold-n {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #2b211c;
+  color: #f6e7c1;
+  font-weight: 700;
+}
+.tl-gold .btn {
+  min-height: 42px;
+  border-radius: 21px;
+}
+.tl-glyph {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+@media (max-width: 640px), (max-height: 520px) and (max-width: 1000px) {
+  .tl-seat-line {
+    display: none;
+  }
+  .tl-gold {
+    bottom: calc(250px + env(safe-area-inset-bottom));
+    gap: 6px;
+  }
+  .tl-gold-title {
+    font-size: 1rem;
+  }
+  .tl-gold-row {
+    gap: 8px;
+  }
+  .tl-gold-btn {
+    width: 52px;
+    height: 52px;
+  }
+  .tl-gold-btn .resicon,
+  .tl-gold-btn svg,
+  .tl-gold-btn img {
+    width: 32px;
+    height: 32px;
+  }
+}
+@media (max-height: 520px) and (max-width: 1000px) {
+  .tl-gold {
+    bottom: 100px;
+  }
+}

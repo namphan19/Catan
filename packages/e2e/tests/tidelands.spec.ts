@@ -4,7 +4,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { test, expect, type Page } from '@playwright/test';
-import { VI, actionButton, captureErrors, clearHover, confirmCover, shotPath } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, confirmCover, shotPath, openDrawer, closeDrawer, openBuildMenu } from './helpers';
 
 /** One click on the first element of a highlighted board target. */
 async function clickFirst(page: Page, sel: string): Promise<void> {
@@ -63,8 +63,11 @@ test('a new sea game: scenario option, sea map, setup with cogs, the side panel'
   await confirmCover(page);
   await setupUntilRoll(page);
 
-  await expect(page.locator('.tl-panel')).toBeVisible();
+  // HUD: the scenario and its goal sit in the turn line; the full panel is a drawer.
+  await expect(page.locator('.tl-badge')).toContainText('Cập Bến Đầu Tiên');
+  await openDrawer(page);
   await expect(page.locator('.tl-panel')).toContainText('Cập Bến Đầu Tiên');
+  await closeDrawer(page);
   // sea hexes of the scenario map are drawn as water tiles, the corsair sails on one of them
   expect(await page.locator('.sea-tile').count()).toBeGreaterThan(30);
   await expect(page.locator('.tl-corsair')).toHaveCount(1);
@@ -90,6 +93,14 @@ test('mid-game: build a cog from the side panel on a highlighted sea edge', asyn
   test.setTimeout(120_000);
   const errors = captureErrors(page);
   await loadFixture(page, 'tidelands-firstLandfall.json');
+  // the scenario's rules open from the (i) in the turn line
+  await page.locator('.tl-badge-info').click();
+  await expect(page.locator('.tl-badge-pop')).toContainText('Cập Bến Đầu Tiên');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.tl-badge-pop')).toHaveCount(0);
+  // moving a cog is a round button next to the build buttons
+  await expect(page.locator('.act-build button[data-build="moveShip"]')).toHaveCount(1);
+  await openDrawer(page);
   await expect(page.locator('.tl-panel')).toBeVisible();
   expect(await page.locator('.tl-cog').count()).toBeGreaterThanOrEqual(3);
   const build = page.locator('.tl-panel button[data-tl="build"]');
@@ -119,9 +130,35 @@ for (const [file, shot, check] of [
     test.setTimeout(90_000);
     const errors = captureErrors(page);
     await loadFixture(page, file);
+    // the panels live in the drawer: open it for the check, close it for the screenshot
+    if (check !== '.sh-lane') await openDrawer(page);
     await expect(page.locator(check).first()).toBeVisible();
+    if (check !== '.sh-lane') await closeDrawer(page);
     await clearHover(page);
     await page.screenshot({ path: shotPath(shot, testInfo.project.name), fullPage: true });
     expect(errors()).toEqual([]);
   });
 }
+
+test('gold mine: the choice is big resource buttons over the hand, no dialog', async ({ page }, testInfo) => {
+  test.setTimeout(90_000);
+  const errors = captureErrors(page);
+  await loadFixture(page, 'tidelands-gold.json');
+  const gold = page.locator('.tl-gold');
+  await expect(gold).toBeVisible();
+  await expect(page.locator('.dialog')).toHaveCount(0);
+  const total = async () => Number((await page.locator('.hand-total').innerText()).replace(/\D/g, ''));
+  const before = await total();
+  await clearHover(page);
+  await page.screenshot({ path: shotPath('tidelands-gold.png', testInfo.project.name), fullPage: true });
+  // take cards until the choice is complete (one click per card; Take sends a bag of several)
+  while ((await page.locator('.tl-gold .btn-primary').count()) > 0 && !(await page.locator('.tl-gold .btn-primary').isEnabled())) {
+    await page.locator('.tl-gold-btn:not([disabled])').first().click();
+  }
+  if ((await page.locator('.tl-gold .btn-primary').count()) > 0) await page.locator('.tl-gold .btn-primary').click();
+  else await page.locator('.tl-gold-btn:not([disabled])').first().click();
+  // the viewer's choice is done: the buttons go (the next owed player may be asked after the cover)
+  await expect.poll(async () => (await page.locator('.cover').isVisible()) || (await gold.count()) === 0).toBe(true);
+  if ((await page.locator('.cover').count()) === 0) expect(await total()).toBeGreaterThan(before);
+  expect(errors()).toEqual([]);
+});

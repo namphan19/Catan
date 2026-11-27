@@ -1550,3 +1550,22 @@
     bottom: 110px;
   }
 }
+
+/* Caption over the expansion cards in the hand (commodities, goods). */
+.res-group-label {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 0;
+  color: var(--hud-muted);
+  font-size: 0.82rem;
+  font-style: italic;
+  white-space: nowrap;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+  transform: rotate(calc(-1 * var(--rot, 0deg)));
+  pointer-events: none;
+}
+@media (max-width: 640px), (max-height: 520px) and (max-width: 1000px) {
+  .res-group-label {
+    display: none;
+  }
+}

@@ -91,8 +91,19 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
    and Improve buttons), each player's levels under their name, rampart + recruit as build buttons,
    advance cards as a small fan right of the hand (deck band; a click opens the card with Play /
    Discard), and a click on one of the viewer's wardens opens its actions around it on the board. The
-   full Strongholds panel is a drawer (panel button, Esc or backdrop closes it). Tidelands and Highlands
-   keep their docked right column on wide screens.
+   full Strongholds panel is a drawer (panel button, Esc or backdrop closes it).
+   Tidelands on the HUD: scenario + goal in the turn line with an (i) card of the scenario's own rules,
+   each player's progress (landfall, silk, rewards, wonder, coves) under the name, cogs and "move a cog"
+   (plus harbor / warship / wonder actions of the scenario) as round buttons in the build row, and the
+   gold-mine choice as big resource buttons right over the hand (one click for one card, Take for more).
+   Highlands on the HUD: the three tribes as pip groups under each name (active one underlined, declined
+   ones grey), goods as a separate part of the hand fan ("trade only"), the goods-set trade and the award
+   powers (caravan, recall) as round buttons that glow while usable, and a "your tribe has declined" line
+   over the board (fades after ~3 s) while the new tribe is founded.
+   Every expansion panel (and both together: Tidelands + Strongholds) is the same drawer.
+   Tablets (<= 1180 px) fold the build buttons behind "Xây" like phones, so long build rows (Tidelands +
+   Strongholds) never push the hand. Online: room code in the turn line, AFK and leave in the menu, the
+   away banner under the turn line, the chat bubble bottom-right.
    Online extras (2026-11-19, docs/PROTOCOL.md): portraits (6, picked in the lobby, first come first
    served; hot-seat seats use the portrait matching their emblem), a floating chat bubble (lobby
    bottom-right, game bottom-right above the zoom buttons, unread counter), and "Let a bot play for me" (AFK: a
@@ -128,7 +139,7 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
 ## Component structure (packages/client/src)
 ui/ (tokens.css, Button, Panel, Dialog, Toast, Tooltip), board/ (Board, HexTile, Token, Harbor, Piece,
 Highlights), board3d/ (Board3D, terrain, decor, pieces3d, strongholds3d), table/ (GameTable, TopBar, PlayerCards, PlayerDialog,
-ActionBar + BuildSlot, HandPanel), strongholds/ (Panel, Hud: RaidLane / TrackRail / ShLevels / warden ring, AdvanceHand, BoardExtras, ChoiceDialogs, chooser), dialogs/
+ActionBar + BuildSlot, HandPanel), strongholds/ (Panel, Hud: RaidLane / TrackRail / ShLevels / warden ring, AdvanceHand, BoardExtras, ChoiceDialogs, chooser), tidelands/Hud (ScenarioBadge, TlSeatLine, GoldPicker, TlBuildSlots), highlands/Hud (HlSeatLine, HlBuildSlots, FoundMoment), dialogs/
 (DiscardDialog, StealDialog, TradeDialog, CardDialog), shell/ (HomeScreen, HomeMap, home.css, OnlineHome, Lobby,
 ChatBubble, HotseatShell, PassDeviceCover), ui/Avatar, i18n/. GameTable takes { view, legal, onAction, events } only, so the online
 client reuses it.

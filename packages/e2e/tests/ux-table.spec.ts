@@ -135,12 +135,19 @@ test('build buttons show name and cost on hover; quick help opens and closes', a
   // cost (cards you lack dimmed) and, when it is not possible, why.
   const slots = page.locator('.act-build .build-slot');
   await expect(slots).toHaveCount(4);
-  await expect(slots.first().locator('.build-tip')).toHaveCSS('opacity', '0');
-  await slots.first().hover();
+  const folded = await page.locator('.act-build-toggle').isVisible();
+  if (folded) {
+    // tablets fold the build buttons behind "Xây": the menu lists each with its name and cost
+    await page.locator('.act-build-toggle').click();
+  } else {
+    await expect(slots.first().locator('.build-tip')).toHaveCSS('opacity', '0');
+    await slots.first().hover();
+  }
   await expect(slots.first().locator('.build-tip')).toHaveCSS('opacity', '1');
   await expect(slots.first().locator('.build-tip')).toContainText('Xây đường');
   await expect(slots.first().locator('.build-tip .cost-unit')).toHaveCount(2);
   await expect(slots.nth(2).locator('.build-tip .cost-unit')).toHaveCount(5);
+  if (folded) await page.keyboard.press('Escape');
 
   // Quick help.
   await page.getByRole('button', { name: 'Hướng dẫn nhanh' }).click();

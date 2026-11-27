@@ -233,6 +233,7 @@ export function ActionBar({
               <BuildSlot
                 icon={<PieceIcon kind="ship" color={color} size={26} />}
                 label={t('cost_ship')}
+                note={t('tl_cogsLeft', { n: view.players.find((p) => p.id === me)?.supply.ship ?? 0 })}
                 cost={TL.costs.ship as Record<string, number>}
                 hand={hand}
                 enabled={has('tl:buildShip')}

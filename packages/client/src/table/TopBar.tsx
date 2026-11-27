@@ -13,6 +13,7 @@ export function TopBar({
   actions,
   onHelp,
   guide,
+  badge,
 }: {
   view: PlayerView;
   /** Shell info (who is viewing / room code), shown after the turn label. */
@@ -22,6 +23,8 @@ export function TopBar({
   onHelp?: () => void;
   /** The guidance line under the turn label ("your turn - roll", a board pick, waiting for X). */
   guide?: ReactNode;
+  /** Expansion line after the turn label (Tidelands: scenario + goal). */
+  badge?: ReactNode;
 }) {
   const { t, lang, setLang } = useI18n();
   const ph = view.phase;
@@ -56,6 +59,7 @@ export function TopBar({
       <div className="topbar-center">
         <p className="topbar-turn">
           <span className="turn-label">{turnLabel}</span>
+          {badge}
           {info && <span className="topbar-info">{info}</span>}
         </p>
         {guide}

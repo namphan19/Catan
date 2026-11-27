@@ -44,6 +44,10 @@ test('portrait: setup and first roll fit one screen, all players and buttons vis
 
   await expect(page.locator('.board-hint')).toBeVisible();
   await expectFitsScreen(page);
+  // the board-pick line sits under the players row, never on top of it
+  const strip = await box(page, '.seat-strip');
+  const hint = await box(page, '.board-hint');
+  expect(hint.y).toBeGreaterThanOrEqual(strip.y + strip.height - 1);
   // The four players share one row above the board.
   const seats = page.locator('.seat-strip .seat');
   await expect(seats).toHaveCount(4);

@@ -169,7 +169,10 @@
     max-width: min(240px, calc(100vw - 16px));
   }
 
-  /* ---- Build menu: the build buttons fold behind one round "Build" button ---- */
+}
+
+/* ---------- Build menu: tablets and phones fold the build buttons behind one "Build" button ---------- */
+@media (max-width: 1180px) {
   .act-build-toggle {
     display: inline-flex !important;
   }
@@ -283,14 +286,30 @@
   }
   .topbar-turn {
     justify-content: flex-start;
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow: hidden;
     font-size: 0.72rem;
     letter-spacing: 0.14em;
+    white-space: nowrap;
+  }
+  .topbar-info {
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* The scenario name is in its (i) card on phones. */
+  .tl-badge > span:first-child {
+    display: none;
   }
   .topbar-info {
     font-size: 0.8rem;
   }
-  /* The guidance line sits under the players row. */
-  .hud-guide {
+  /* The guidance line sits under the players row (board picks included). */
+  .hud-guide,
+  .hud-guide.board-hint,
+  .hud-guide.sh-pickbar {
     position: absolute;
     top: calc(146px + env(safe-area-inset-top));
     left: 14px;
@@ -509,6 +528,13 @@
   }
   .res-delta {
     font-size: 1rem;
+  }
+
+  /* Online away mode: over the guidance line, clear of the players row. */
+  .afk-banner {
+    top: calc(140px + env(safe-area-inset-top, 0px));
+    width: calc(100% - 24px);
+    padding: 8px 12px;
   }
 }
 

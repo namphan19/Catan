@@ -22,7 +22,7 @@ const same = (a: Bag | undefined, b: Bag) => JSON.stringify(clean(a ?? {}), Obje
   JSON.stringify(clean(b), Object.keys(clean(b)).sort());
 
 /** Culture track of one player: three tribes, filled dots for points, the active tribe framed. */
-function Track({ tribe, cp }: { tribe: number; cp: number[] }) {
+export function Track({ tribe, cp }: { tribe: number; cp: number[] }) {
   return (
     <span className="hl-track">
       {GOALS.map((goal, i) => (
@@ -75,7 +75,7 @@ function Picker({ label, pools, kinds, pick, setPick, need }: {
 }
 
 /** Goods set (pick 2 resources) or caravan (give 2 cards, take 1): sends the matching legal action. */
-function HlTradeDialog({ kind, view, legal, onAction, onClose }: {
+export function HlTradeDialog({ kind, view, legal, onAction, onClose }: {
   kind: 'hl:goodsSet' | 'hl:caravan'; view: PlayerView; legal: Action[]; onAction: (a: Action) => void; onClose: () => void;
 }) {
   const { t } = useI18n();

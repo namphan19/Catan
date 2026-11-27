@@ -164,3 +164,22 @@ export async function terrainImagesLoaded(page: Page): Promise<{ tiles: number; 
     return { tiles, images: hrefs.length, broken };
   });
 }
+
+/** Open the expansion drawer (the panel button) and wait for the slide-in. */
+export async function openDrawer(page: Page): Promise<void> {
+  await page.locator('.sheet-toggle').click();
+  await page.locator('.sidecol').waitFor({ state: 'visible' });
+  await page.waitForTimeout(260);
+}
+
+/** Close the expansion drawer with Esc. */
+export async function closeDrawer(page: Page): Promise<void> {
+  await page.keyboard.press('Escape');
+  await page.locator('.sidecol').waitFor({ state: 'hidden' });
+}
+
+/** Tablets and phones fold the build buttons behind "Xây": open that menu (no-op on desktop). */
+export async function openBuildMenu(page: Page): Promise<void> {
+  const toggle = page.locator('.act-build-toggle');
+  if ((await toggle.isVisible()) && (await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
+}

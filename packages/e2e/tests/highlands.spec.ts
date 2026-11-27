@@ -5,7 +5,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { test, expect, type Page } from '@playwright/test';
-import { VI, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
+import { VI, captureErrors, clearHover, closeDrawer, confirmCover, openBuildMenu, openDrawer, playSetupUntilRoll, shotPath } from './helpers';
 
 const fixture = (name: string) => fs.readFileSync(path.resolve(__dirname, '..', 'fixtures', name), 'utf8');
 
@@ -30,9 +30,12 @@ test('a new highlands game: option, map, setup and the side panel', async ({ pag
   await confirmCover(page);
   await playSetupUntilRoll(page);
 
-  await expect(page.locator('.hl-panel')).toBeVisible();
+  // HUD: each player's three tribes under the name; the full panel is a drawer.
+  await expect(page.locator('.seats .hl-seat-line')).toHaveCount(3);
+  await openDrawer(page);
   await expect(page.locator('.hl-panel tr[data-hl-player]')).toHaveCount(3);
   await expect(page.locator('.hl-panel')).toContainText('2/11');
+  await closeDrawer(page);
   // 30 hexes: coast, land, jungle and the wilds; the blocker rests in the wilds.
   expect(await page.locator('.hex-tile, .sea-tile').count()).toBeGreaterThanOrEqual(30);
   await expect(page.locator('.hand .res-card[data-res="fish"]')).toHaveCount(1);
@@ -45,19 +48,22 @@ test('mid-game: overgrown buildings, culture tracks and the build costs', async 
   test.setTimeout(90_000);
   const errors = captureErrors(page);
   await loadFixture(page, 'highlands-midgame.json');
-  await expect(page.locator('.hl-panel')).toBeVisible();
+  await expect(page.locator('.seats .hl-seat-line')).toHaveCount(3);
   expect(await page.locator('[data-ruin]').count()).toBeGreaterThanOrEqual(4);
   expect(await page.locator('.hl-tribe.done').count()).toBeGreaterThanOrEqual(2);
-  // Build costs live in the hover card of each round build button (no price card any more).
-  await page.locator('.build-slot').first().hover();
-  await expect(page.locator('.build-slot').first().locator('.build-tip')).toBeVisible();
-  await expect(page.locator('.build-slot').first().locator('.build-tip .cost-unit')).toHaveCount(2);
+  // Build costs live in the card of each round build button (no price card any more).
+  await openBuildMenu(page);
+  await page.locator('.act-build .build-slot').first().hover();
+  await expect(page.locator('.act-build .build-slot').first().locator('.build-tip')).toBeVisible();
+  await expect(page.locator('.act-build .build-slot').first().locator('.build-tip .cost-unit')).toHaveCount(2);
+  await page.keyboard.press('Escape');
   await clearHover(page);
   await page.screenshot({ path: shotPath('highlands-midgame.png', testInfo.project.name), fullPage: true });
 
   // The longest-route power (caravan): give 2 cards, take 1 of another kind, once per turn.
-  const caravan = page.locator('.hl-panel button[data-hl="caravan"]');
-  if (await caravan.isEnabled()) {
+  const caravan = page.locator('.act-build button[data-build="caravan"]');
+  if ((await caravan.count()) > 0 && (await caravan.isEnabled())) {
+    await openBuildMenu(page);
     const cards = async () => Number((await page.locator('.hand-total').innerText()).replace(/\D/g, ''));
     const before = await cards();
     await caravan.click();
@@ -78,16 +84,17 @@ test('founding a new tribe: pick a highlighted spot, the turn passes', async ({ 
   const errors = captureErrors(page);
   await loadFixture(page, 'highlands-found.json');
   await expect(page.locator('.sh-pickbar')).toContainText('Khai lập bộ tộc mới');
+  await expect(page.locator('.hl-moment')).toBeVisible();
   const spots = await page.locator('.hit-vertex').count();
   expect(spots).toBeGreaterThan(0);
   await clearHover(page);
   await page.screenshot({ path: shotPath('highlands-found.png', testInfo.project.name), fullPage: true });
-  const before = await page.locator('.hl-panel').innerText();
+  const before = await page.locator('.seats').innerText();
   await page.locator('.hit-vertex').first().click({ force: true });
   // Founding ends the turn: the pass-device cover asks for the next player.
   await expect(page.locator('.cover')).toBeVisible();
   await confirmCover(page);
   await expect(page.locator('.sh-pickbar')).toHaveCount(0);
-  expect(await page.locator('.hl-panel').innerText()).not.toBe(before);
+  expect(await page.locator('.seats').innerText()).not.toBe(before);
   expect(errors()).toEqual([]);
 });
