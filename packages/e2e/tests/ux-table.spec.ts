@@ -1,12 +1,12 @@
 // Player-friendly table (UX2): board hint + player strip (no status banner since 2026-11-17), big board, player cards, hand as cards, dice
 // box, cost card, quick help. Hot-seat, real clicks; runs in the desktop and tablet projects.
 import { test, expect, type Page } from '@playwright/test';
-import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath, setPlayers, setSeed } from './helpers';
 
 async function startGame(page: Page, players: '4' | '6', seed: string): Promise<void> {
   await page.goto('/');
-  await page.getByLabel(VI.players).selectOption(players);
-  await page.getByLabel(VI.seed).fill(seed);
+  await setPlayers(page, players);
+  await setSeed(page, seed);
   await page.getByRole('button', { name: VI.start }).click();
   await confirmCover(page);
 }

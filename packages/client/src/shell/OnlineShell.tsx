@@ -13,6 +13,7 @@ import { NamesProvider } from './names';
 import { OnlineHome } from './OnlineHome';
 import { Lobby } from './Lobby';
 import { GameTable } from '../table/GameTable';
+import type { OnlineIntent } from './HomeScreen';
 import { Dialog } from '../ui/Dialog';
 import { Button } from '../ui/Button';
 import { ChatBubble } from './ChatBubble';
@@ -24,7 +25,7 @@ interface AfkNotice {
   afk: boolean;
 }
 
-const NAME_KEY = 'boschtan.name';
+export const NAME_KEY = 'boschtan.name';
 export const ROOM_KEY = 'boschtan.room';
 
 /** Forget the last room before an explicit "create room" (auto-rejoin is for reloads only). */
@@ -39,9 +40,11 @@ export function forgetStoredRoom(): void {
 export interface OnlineShellProps {
   onHome: () => void;
   onLangToggle: () => void;
+  /** From the home screen's online tab: create or join a room as soon as the connection is up. */
+  intent?: OnlineIntent;
 }
 
-export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
+export function OnlineShell({ onHome, onLangToggle, intent }: OnlineShellProps) {
   const { t } = useI18n();
   const errText = useErrorText();
 
@@ -221,6 +224,19 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
     [clearGame, online, t],
   );
 
+  // The home screen's online tab already chose: create / join once the connection is up.
+  const [pending, setPending] = useState<OnlineIntent | null>(intent ?? null);
+  useEffect(() => {
+    if (!pending || !online) return;
+    if (pending.kind === 'create') createRoom(pending.playerCount, pending.options);
+    else joinRoom(pending.code);
+    setPending(null);
+  }, [pending, online, createRoom, joinRoom]);
+  const [awaiting, setAwaiting] = useState(!!intent);
+  useEffect(() => {
+    if (room || notice) setAwaiting(false);
+  }, [room, notice]);
+
   const leaveRoom = useCallback(() => {
     connRef.current?.send({ type: 'leaveRoom' });
     localStorage.removeItem(ROOM_KEY);
@@ -302,7 +318,17 @@ export function OnlineShell({ onHome, onLangToggle }: OnlineShellProps) {
           {t('net_offline')}
         </div>
       )}
-      {screen === 'home' && (
+      {screen === 'home' && awaiting && (
+        <main className="home net-connecting">
+          <p className="hint" role="status">
+            {t('hub_connecting')}
+          </p>
+          <Button variant="ghost" onClick={onHome}>
+            {t('online_back')}
+          </Button>
+        </main>
+      )}
+      {screen === 'home' && !awaiting && (
         <OnlineHome
           name={name}
           onName={changeName}

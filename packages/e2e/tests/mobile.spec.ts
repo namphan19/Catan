@@ -3,12 +3,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { test, expect, type Page } from '@playwright/test';
-import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath, setPlayers, setSeed, openLogBox } from './helpers';
 
 const fixture = (name: string) => fs.readFileSync(path.resolve(__dirname, '..', 'fixtures', name), 'utf8');
 
 async function loadFixture(page: Page, name: string): Promise<void> {
   await page.goto('/');
+  await openLogBox(page);
   await page.locator('.export-box').first().fill(fixture(name));
   await page.getByRole('button', { name: VI.loadReplay }).click();
   await confirmCover(page);
@@ -37,8 +38,8 @@ test('portrait: setup and first roll fit one screen, all players and buttons vis
   test.setTimeout(120_000);
   const errors = captureErrors(page);
   await page.goto('/');
-  await page.getByLabel(VI.players).selectOption('4');
-  await page.getByLabel(VI.seed).fill('e2e-mobile');
+  await setPlayers(page, '4');
+  await setSeed(page, 'e2e-mobile');
   await page.getByRole('button', { name: VI.start }).click();
   await confirmCover(page);
 
@@ -101,8 +102,8 @@ test('portrait: setup and first roll fit one screen, all players and buttons vis
 test('portrait: six players share one swipeable rail, names readable', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await page.goto('/');
-  await page.getByLabel(VI.players).selectOption('6');
-  await page.getByLabel(VI.seed).fill('e2e-mobile-six');
+  await setPlayers(page, '6');
+  await setSeed(page, 'e2e-mobile-six');
   await page.getByRole('button', { name: VI.start }).click();
   await confirmCover(page);
   await expectFitsScreen(page);
@@ -130,8 +131,8 @@ test('portrait: six players share one swipeable rail, names readable', async ({ 
 test('portrait: two players share one row, the page fits the screen', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await page.goto('/');
-  await page.getByLabel(VI.players).selectOption('2');
-  await page.getByLabel(VI.seed).fill('e2e-mobile-duo');
+  await setPlayers(page, '2');
+  await setSeed(page, 'e2e-mobile-duo');
   await page.getByRole('button', { name: VI.start }).click();
   await confirmCover(page);
   await expectFitsScreen(page);
@@ -148,7 +149,7 @@ test('portrait: two players share one row, the page fits the screen', async ({ p
 test('portrait: a player tile opens public details in a bottom sheet', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await page.goto('/');
-  await page.getByLabel(VI.seed).fill('e2e-mobile');
+  await setSeed(page, 'e2e-mobile');
   await page.getByRole('button', { name: VI.start }).click();
   await confirmCover(page);
 

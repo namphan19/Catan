@@ -2,14 +2,14 @@
 // Shared by dice-cheat.spec.ts (desktop, tablet) and dice-cheat-mobile.spec.ts (phone).
 import { expect, type Page } from '@playwright/test';
 import { DICE_CHEAT_CODE } from '../../engine/src/cheats';
-import { VI, actionButton, captureErrors, clearHover, playSetupUntilRoll, shotPath } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, playSetupUntilRoll, shotPath, setPlayers, setSeed } from './helpers';
 
 export async function diceCheatFlow(page: Page, project: string): Promise<void> {
   const errors = captureErrors(page);
   await page.goto('/');
 
-  await page.getByLabel(VI.players).selectOption('2');
-  await page.getByLabel(VI.seed).fill('cheat-1');
+  await setPlayers(page, '2');
+  await setSeed(page, 'cheat-1');
   await page.getByLabel('Tên người chơi 1').fill('Nam');
   await page.getByLabel('Ai điều khiển ghế 2').selectOption('easy');
   await page.getByRole('button', { name: VI.start }).click();

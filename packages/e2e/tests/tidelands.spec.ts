@@ -4,7 +4,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { test, expect, type Page } from '@playwright/test';
-import { VI, actionButton, captureErrors, clearHover, confirmCover, shotPath, openDrawer, closeDrawer, openBuildMenu } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, confirmCover, shotPath, openDrawer, closeDrawer, openBuildMenu, setPlayers, setSeed, openLogBox, pickMode } from './helpers';
 
 /** One click on the first element of a highlighted board target. */
 async function clickFirst(page: Page, sel: string): Promise<void> {
@@ -56,8 +56,9 @@ test('a new sea game: scenario option, sea map, setup with cogs, the side panel'
   test.setTimeout(120_000);
   const errors = captureErrors(page);
   await page.goto('/');
-  await page.getByLabel(VI.players).selectOption('4');
-  await page.getByLabel(VI.seed).fill('e2e-tl');
+  await setPlayers(page, '4');
+  await setSeed(page, 'e2e-tl');
+  await pickMode(page, 'tl');
   await page.getByTestId('scenario-select').selectOption('firstLandfall');
   await page.getByRole('button', { name: VI.start }).click();
   await confirmCover(page);
@@ -84,6 +85,7 @@ const fixture = (name: string) => fs.readFileSync(path.resolve(__dirname, '..', 
 
 async function loadFixture(page: Page, name: string): Promise<void> {
   await page.goto('/');
+  await openLogBox(page);
   await page.locator('.export-box').first().fill(fixture(name));
   await page.getByRole('button', { name: VI.loadReplay }).click();
   await confirmCover(page);

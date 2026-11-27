@@ -1,7 +1,7 @@
 // Two-player local game: the home screen offers 2 seats, one human plays against one bot on the
 // standard board, the turn comes back to the human, and the table layout holds with only 2 tiles.
 import { test, expect } from '@playwright/test';
-import { VI, actionButton, captureErrors, clearHover, playSetupUntilRoll, shotPath } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, playSetupUntilRoll, shotPath, setPlayers, setSeed } from './helpers';
 
 test('one human against one bot (2 players)', async ({ page }) => {
   test.setTimeout(180_000);
@@ -9,8 +9,8 @@ test('one human against one bot (2 players)', async ({ page }) => {
   const project = test.info().project.name;
   await page.goto('/');
 
-  await page.getByLabel(VI.players).selectOption('2');
-  await page.getByLabel(VI.seed).fill('duo-1');
+  await setPlayers(page, '2');
+  await setSeed(page, 'duo-1');
   await page.getByLabel('Tên người chơi 1').fill('Nam');
   await page.getByLabel('Ai điều khiển ghế 2').selectOption('hard');
   await expect(page.getByLabel('Ai điều khiển ghế 3')).toHaveCount(0);

@@ -67,10 +67,19 @@ Every SVG: viewBox given below, no external refs, no embedded raster, player-col
 The frontend must fall back to simple shapes when an asset file is missing (assets arrive in parallel).
 
 ## Screens
-1. Home ("guild hall", 2026-11-16): a parchment chart on a dark desk. Left: sea-chart medallion
-   (island illustration built from the game's terrain/piece art) + online ticket; right: the new-game
-   ledger (players, seed + randomise, named seats with emblems, wax-sealed start, marginal tip);
-   below: the logbook archive (load a saved log). Two columns at >= 900 px, stacked on tablet/mobile.
+1. Home ("hub", PO 2026-11-27; src/shell/HomeScreen.tsx + hub.css): the same world as the game table, a
+   dark sea with words on it and ONE parchment sheet. Header: brand, two tabs (Chơi chung máy | Chơi trực
+   tuyến), language. Top card: "Continue" (the hot-seat game is auto-saved after every move in
+   localStorage `boschtan.autosave`, shell/autosave.ts; Discard forgets it), or on the online tab "Rejoin
+   room" (the last seated room); otherwise a quick game (you + 2 normal bots, base game). Four mode cards
+   with terrain art: base, Strongholds, Tidelands, Highlands - Strongholds and Tidelands combine,
+   Highlands plays alone (2-4 players); Tidelands shows its scenario picker, Highlands its map picker. The
+   sheet: same device = summary (modes, the engine's VP goal, players, bots), player count as round
+   buttons, seats (portrait, name, who plays it), advanced options (seed), Start; online = your name,
+   seats, advanced (VP goal, 5-6 player mode), "Create room · <modes>", or join by code (a pasted invite
+   link fills in the code; ?room=CODE opens this tab). Footer: the logbook (load a saved log) in a
+   dialog, and a tip. The online client creates / joins at once from the tab's choice; its own form
+   stays only as a fallback (errors, kicked).
 2. Game table ("HUD" layout, PO 2026-11-27; CSS in src/table/table.css; replaces the UX2 frames):
    the board fills the whole table and is fitted into the free middle; every control floats over its
    edges on dark scrims, without boxes. Top centre: turn label (+ shell info) and ONE guidance line
@@ -140,6 +149,6 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
 ui/ (tokens.css, Button, Panel, Dialog, Toast, Tooltip), board/ (Board, HexTile, Token, Harbor, Piece,
 Highlights), board3d/ (Board3D, terrain, decor, pieces3d, strongholds3d), table/ (GameTable, TopBar, PlayerCards, PlayerDialog,
 ActionBar + BuildSlot, HandPanel), strongholds/ (Panel, Hud: RaidLane / TrackRail / ShLevels / warden ring, AdvanceHand, BoardExtras, ChoiceDialogs, chooser), tidelands/Hud (ScenarioBadge, TlSeatLine, GoldPicker, TlBuildSlots), highlands/Hud (HlSeatLine, HlBuildSlots, FoundMoment), dialogs/
-(DiscardDialog, StealDialog, TradeDialog, CardDialog), shell/ (HomeScreen, HomeMap, home.css, OnlineHome, Lobby,
-ChatBubble, HotseatShell, PassDeviceCover), ui/Avatar, i18n/. GameTable takes { view, legal, onAction, events } only, so the online
+(DiscardDialog, StealDialog, TradeDialog, CardDialog), shell/ (HomeScreen, home.css (online home + lobby), OnlineHome, Lobby,
+ChatBubble, HotseatShell, PassDeviceCover, autosave, hub.css), ui/Avatar, i18n/. GameTable takes { view, legal, onAction, events } only, so the online
 client reuses it.

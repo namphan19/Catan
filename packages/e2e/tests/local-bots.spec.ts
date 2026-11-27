@@ -1,7 +1,7 @@
 // Local game against bots: seat kinds on the home screen, bots play in the browser, the view stays
 // on the human (no pass-device cover between bot moves), and the expert shows a thinking hint.
 import { test, expect } from '@playwright/test';
-import { VI, actionButton, captureErrors, clearHover, playSetupUntilRoll, shotPath } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, playSetupUntilRoll, shotPath, setPlayers, setSeed } from './helpers';
 
 test('one human against a hard and an expert bot', async ({ page }) => {
   test.setTimeout(180_000);
@@ -9,8 +9,8 @@ test('one human against a hard and an expert bot', async ({ page }) => {
   const project = test.info().project.name;
   await page.goto('/');
 
-  await page.getByLabel(VI.players).selectOption('3');
-  await page.getByLabel(VI.seed).fill('bots-1');
+  await setPlayers(page, '3');
+  await setSeed(page, 'bots-1');
   await page.getByLabel('Tên người chơi 1').fill('Nam');
   await page.getByLabel('Ai điều khiển ghế 2').selectOption('hard');
   await page.getByLabel('Ai điều khiển ghế 3').selectOption('expert');

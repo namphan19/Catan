@@ -3,15 +3,15 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { test, expect } from '@playwright/test';
-import { VI, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
+import { VI, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath, setPlayers, setSeed, openLogBox, pickMode } from './helpers';
 
 test('a new expansion game: option, setup with a city, panel and raid track', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   const errors = captureErrors(page);
   await page.goto('/');
-  await page.getByLabel(VI.players).selectOption('4');
-  await page.getByLabel(VI.seed).fill('e2e-sh');
-  await page.locator('#home-expansion').check();
+  await setPlayers(page, '4');
+  await setSeed(page, 'e2e-sh');
+  await pickMode(page, 'sh');
   await page.getByRole('button', { name: VI.start }).click();
   await confirmCover(page);
   await playSetupUntilRoll(page);
@@ -45,6 +45,7 @@ test('a mid-game position: wardens on the board and the staged chooser', async (
   const errors = captureErrors(page);
   const log = fs.readFileSync(path.resolve(__dirname, '..', 'fixtures', 'strongholds-game.json'), 'utf8');
   await page.goto('/');
+  await openLogBox(page);
   await page.locator('.export-box').first().fill(log);
   await page.getByRole('button', { name: VI.loadReplay }).click();
   await confirmCover(page);
@@ -126,6 +127,7 @@ test('your warden on the board: a click opens its actions around it', async ({ p
   const errors = captureErrors(page);
   const log = fs.readFileSync(path.resolve(__dirname, '..', 'fixtures', 'strongholds-warden.json'), 'utf8');
   await page.goto('/');
+  await openLogBox(page);
   await page.locator('.export-box').first().fill(log);
   await page.getByRole('button', { name: VI.loadReplay }).click();
   await confirmCover(page);

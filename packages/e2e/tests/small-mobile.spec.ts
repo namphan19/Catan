@@ -1,6 +1,6 @@
 // Temporary: smallest-phone layouts (360 px and 320 px wide), removed after the check.
 import { test, expect } from '@playwright/test';
-import { VI, confirmCover, clearHover, shotPath } from './helpers';
+import { VI, confirmCover, clearHover, shotPath, setPlayers, setSeed } from './helpers';
 
 for (const [name, w, h] of [
   ['360', 360, 740],
@@ -9,8 +9,8 @@ for (const [name, w, h] of [
   test(`portrait ${name}px: tiles, hand dock and actions fit`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width: w, height: h });
     await page.goto('/');
-    await page.getByLabel(VI.players).selectOption('4');
-    await page.getByLabel(VI.seed).fill('e2e-mobile');
+    await setPlayers(page, '4');
+    await setSeed(page, 'e2e-mobile');
     await page.getByRole('button', { name: VI.start }).click();
     await confirmCover(page);
 

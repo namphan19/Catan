@@ -12,7 +12,7 @@
 // the piece is painted with.
 import { test, expect, type Page } from '@playwright/test';
 import { PLAYER_COLORS } from '../../client/src/ui/colors';
-import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath, setPlayers, setSeed } from './helpers';
 
 /** "#rrggbb" (or any css colour) as Chrome reports computed fills: "rgb(r, g, b)". */
 function asRgb(cssColor: string): string {
@@ -81,8 +81,8 @@ test('4-player setup: settlements and roads render in player colours, never blac
   const project = test.info().project.name;
 
   await page.goto('/');
-  await page.getByLabel(VI.players).selectOption('4');
-  await page.getByLabel(VI.seed).fill('e2e-1');
+  await setPlayers(page, '4');
+  await setSeed(page, 'e2e-1');
   await page.getByRole('button', { name: VI.start }).click();
   await confirmCover(page);
 

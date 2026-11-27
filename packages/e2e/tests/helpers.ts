@@ -183,3 +183,28 @@ export async function openBuildMenu(page: Page): Promise<void> {
   const toggle = page.locator('.act-build-toggle');
   if ((await toggle.isVisible()) && (await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
 }
+
+// ---------- home screen (hub, PO 2026-11-27) ----------
+
+/** Pick the player / seat count (round buttons). */
+export async function setPlayers(page: Page, n: string | number): Promise<void> {
+  await page.locator('.hub-count', { hasText: new RegExp(`^${n}$`) }).click();
+}
+
+/** The map seed lives under "advanced options". */
+export async function setSeed(page: Page, seed: string): Promise<void> {
+  const toggle = page.locator('.hub-adv-toggle');
+  if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
+  await page.getByLabel(VI.seed).fill(seed);
+}
+
+/** Open the logbook dialog (load a saved log). */
+export async function openLogBox(page: Page): Promise<void> {
+  await page.locator('.hub-log-open').click();
+  await page.locator('.export-box').waitFor({ state: 'visible' });
+}
+
+/** Toggle a mode card: base, sh (Strongholds), tl (Tidelands), hl (Highlands). */
+export async function pickMode(page: Page, mode: 'base' | 'sh' | 'tl' | 'hl'): Promise<void> {
+  await page.locator(`.hub-mode[data-mode="${mode}"]`).click();
+}
