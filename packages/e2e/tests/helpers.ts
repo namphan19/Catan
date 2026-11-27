@@ -43,7 +43,7 @@ export function actionButton(page: Page, label: string): Locator {
 export const VI = {
   subtitle: 'Trò chơi hex — dựng làng, thương lượng, mở rộng',
   subtitleEn: 'A hex game — settle, trade, expand',
-  langToEn: /Tiếng Anh/,
+  langToEn: /English/,
   langToVi: /Tiếng Việt/,
   seed: 'Hạt giống',
   players: 'Số người chơi',

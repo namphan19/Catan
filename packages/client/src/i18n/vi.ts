@@ -5,7 +5,7 @@ export const vi: Record<string, string> = {
   menu: 'Menu',
   sheet_open: 'Bảng mở rộng',
   sheet_close: 'Đóng',
-  langToggle: 'Tiếng Anh',
+  langToggle: 'English',
 
   // Home screen
   home_newGame: 'Ván mới (chơi chung máy)',
