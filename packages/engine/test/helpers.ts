@@ -47,6 +47,13 @@ export function blankGame(playerCount = 4, phase: GameState['phase'] = { k: 'mai
   return s;
 }
 
+/** Switch a 5-6 player game to a large-table mode (the default is 'normal', as with 2-4 players). */
+export function withMode(s: GameState, mode: GameState['init']['largeTableMode']): GameState {
+  s.init.largeTableMode = mode;
+  s.init.extraBuild = mode === 'extraBuild';
+  return s;
+}
+
 export function pl(s: GameState, id: PlayerId) {
   return s.players.find((p) => p.id === id)!;
 }

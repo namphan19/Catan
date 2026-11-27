@@ -2,7 +2,7 @@
 // D9 (cards bought in the window), D11 (win timing in a window).
 import { describe, expect, it } from 'vitest';
 import { getLegalActions, validateAction, type Action, type GameState } from '../../src';
-import { act, blankGame, findPath, graphOf, pl, setHand } from '../helpers';
+import { act, blankGame, findPath, graphOf, pl, setHand, withMode } from '../helpers';
 
 const code = (s: GameState, a: Action) => {
   const v = validateAction(s, a);
@@ -10,12 +10,9 @@ const code = (s: GameState, a: Action) => {
 };
 const seats = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'];
 
-/** Legacy extra-build behaviour: since the 2025 rulebooks the 5-6 default is the paired phase
- *  (5-6 p.3, see test/official-rules.test.ts); these scenarios pin the legacy windows. */
-function legacy(s: GameState): GameState {
-  s.init.largeTableMode = 'extraBuild';
-  return s;
-}
+/** Legacy extra-build behaviour (opt-in; the 5-6 default is normal turns as with 2-4 players,
+ *  see test/official-rules.test.ts); these scenarios pin the legacy windows. */
+const legacy = (s: GameState): GameState => withMode(s, 'extraBuild');
 
 function queueOf(s: GameState): string[] {
   if (s.phase.k !== 'extraBuild') throw new Error(`not in extraBuild: ${s.phase.k}`);

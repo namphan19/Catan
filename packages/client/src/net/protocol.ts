@@ -2,9 +2,15 @@
 // (docs/PROTOCOL.md). Type-only copy: the client must never import server runtime code.
 // reqId is added by net/connection.ts per request.
 
+/** How 5-6 players take turns: 'normal' = as with 2-4 players (the default). */
+export type LargeTableMode = 'normal' | 'paired' | 'extraBuild';
+export const asLargeTableMode = (v: string): LargeTableMode =>
+  v === 'paired' || v === 'extraBuild' ? v : 'normal';
+
 /** Room options accepted from the client; passed through to createGame. */
 export interface RoomOptions {
-  largeTableMode?: 'paired' | 'extraBuild';
+  /** 5-6 players: 'normal' (default, turns as with 2-4 players), 'paired' or 'extraBuild'. */
+  largeTableMode?: LargeTableMode;
   vpToWin?: number;
   expansion?: 'strongholds';
   /** Tidelands scenario id (the sea expansion). */

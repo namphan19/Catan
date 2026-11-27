@@ -47,7 +47,8 @@ adjacent producing hex (if the bank has it). Then the first player starts turn 1
    choosing which. Then the roller moves the blocker to a different hex and steals one random card from
    one player with a building on that hex (if any such player has cards). (D4)
 4. **Main:** in any order: build, buy cards, trade, play at most one card (if not played before the roll).
-5. **End turn.** With 5-6 players an **extra build phase** follows (section 8).
+5. **End turn.** The next seat starts their turn. With 5-6 players this is the default too; the optional
+   paired players or extra build phase add a window here (section 8).
 
 ## 6. Trading (main phase of the active player only)
 - **Bank:** 4 identical resources for 1 of another kind; 3:1 with a generic harbor; 2:1 for the
@@ -66,12 +67,19 @@ adjacent producing hex (if the bank has it). Then the first player starts turn 1
 - **claim:** name a resource; every other player gives you all of it.
 - **relic:** 1 VP, kept hidden, never played.
 
-## 8. Five and six players: paired players (default)
-Each turn has two players. Player 1 (the active player) plays a normal turn. If player 1 has not won,
-player 2 - the third seat to the left of player 1 - takes an action phase: build, buy cards, trade with the
-bank or harbors (not with players) and play at most one card. Player 2 wins immediately on reaching the
-VP target. Then the next seat becomes player 1. (D8, D9, D11)
-Option largeTableMode=extraBuild: instead every other player gets a build window (build and buy only).
+## 8. Five and six players
+**Normal turns (default, largeTableMode=normal):** played exactly like 2-4 players, only on the large
+board: every player rolls in their own turn, then the next seat goes. Nobody acts in another player's turn
+except to answer trade offers and discard on a 7. (D8)
+
+**Option largeTableMode=paired (official paired players, five-six p.3):** each turn has two players.
+Player 1 (the active player) plays a normal turn. If player 1 has not won, player 2 - the third seat to the
+left of player 1 - takes an action phase without rolling: build, buy cards, trade with the bank or harbors
+(not with players) and play at most one card. Player 2 wins immediately on reaching the VP target. Then
+the next seat becomes player 1. (D8, D9, D11)
+
+**Option largeTableMode=extraBuild (legacy):** after each turn every other player gets a build window
+(build and buy only). Not available with the Strongholds or Tidelands expansions.
 
 ## 9. Awards and victory
 - **Longest route (2 VP):** the first player with a continuous route of at least 5 roads. A route is the

@@ -126,3 +126,43 @@ test('lobby: code, mode line, seats, bots, chat and ready', async ({ page }, tes
   }
   expect(errors()).toEqual([]);
 });
+
+test('create room: 5-6 players default to normal turns (as with 2-4 players)', async ({ page }) => {
+  const errors = captureErrors(page);
+  const sent: Array<Record<string, unknown> | undefined> = [];
+  await page.routeWebSocket(/\/ws$/, (ws) => {
+    ws.onMessage((raw) => {
+      const m = JSON.parse(String(raw));
+      if (m.type === 'hello') ws.send(JSON.stringify({ type: 'welcome', sessionToken: 'tok', name: m.name }));
+      if (m.type === 'createRoom') sent.push(m.options);
+    });
+  });
+  /** The online tab with 6 seats, the given mode cards picked and the advanced options open. */
+  const openOptions = async (modes: string[]) => {
+    await page.goto('/');
+    await page.getByRole('tab', { name: 'Chơi trực tuyến' }).click();
+    for (const m of modes) await page.locator(`.hub-mode[data-mode="${m}"]`).click();
+    await page.getByLabel('Tên hiển thị').fill('Mai');
+    await page.getByRole('radio', { name: '6' }).check({ force: true });
+    await page.getByRole('button', { name: /Tùy chọn nâng cao/ }).click();
+  };
+  await openOptions([]);
+
+  // Base game: normal turns first and chosen; paired and the legacy extra build stay available.
+  const mode = page.getByLabel('Chế độ 5-6 người');
+  await expect(mode).toHaveValue('normal');
+  await expect(mode.locator('option')).toHaveText(['Bình thường (như 2-4 người)', 'Ghép cặp (paired)', 'Xây thêm lượt (extraBuild)']);
+  await page.getByRole('button', { name: /Tạo phòng/ }).click();
+  await expect.poll(() => sent.length).toBe(1);
+  expect(sent[0]).toMatchObject({ largeTableMode: 'normal' });
+
+  // With an expansion the mode can still be chosen (no extra build phase there).
+  await openOptions(['sh']);
+  await expect(mode).toHaveValue('normal');
+  await expect(mode.locator('option')).toHaveText(['Bình thường (như 2-4 người)', 'Ghép cặp (paired)']);
+  await mode.selectOption('paired');
+  await page.getByRole('button', { name: /Tạo phòng/ }).click();
+  await expect.poll(() => sent.length).toBe(2);
+  expect(sent[1]).toMatchObject({ largeTableMode: 'paired', expansion: 'strongholds' });
+  expect(errors()).toEqual([]);
+});

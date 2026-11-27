@@ -141,8 +141,9 @@ export const strongholdsRuleset: Ruleset = {
 
   init(ctx) {
     const { state } = ctx;
-    if (state.players.length >= 5 && state.init.largeTableMode !== 'paired')
-      throw new Error('strongholds with 5-6 players needs largeTableMode "paired"');
+    // The legacy extra build windows are not supported with the expansion; normal and paired turns are.
+    if (state.players.length >= 5 && state.init.largeTableMode === 'extraBuild')
+      throw new Error('strongholds with 5-6 players needs largeTableMode "normal" or "paired"');
     const ids = state.players.map((p) => p.id);
     const perTrack = <T>(make: (t: Track) => T) =>
       Object.fromEntries(TRACKS.map((t) => [t, make(t)])) as Record<Track, T>;

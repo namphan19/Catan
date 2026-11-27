@@ -3,7 +3,7 @@ import {
   applyAction, baseConfig, getLegalActions, satisfiesDistanceRule, validateAction, victoryPoints,
   type Action, type GameState, type VertexId,
 } from '../src';
-import { act, autoSetup, blankGame, findPath, graphOf, hand, newGame, pl, setHand, totalResources } from './helpers';
+import { act, autoSetup, blankGame, findPath, graphOf, hand, newGame, pl, setHand, totalResources, withMode } from './helpers';
 
 const code = (s: GameState, a: Action) => {
   const v = validateAction(s, a);
@@ -382,8 +382,7 @@ describe('victory', () => {
   });
 
   it("reaching the target in another player's build window wins only when the own turn starts", () => {
-    let s = blankGame(5);
-    s.init.largeTableMode = 'extraBuild'; // this scenario pins the legacy extra-build windows
+    let s = withMode(blankGame(5), 'extraBuild'); // this scenario pins the legacy extra-build windows
     const v = nineVP(s, 'p2');
     s = act(s, { t: 'endTurn', player: 'p1' });
     expect(s.phase).toEqual({ k: 'extraBuild', queue: ['p2', 'p3', 'p4', 'p5'] });
@@ -399,11 +398,8 @@ describe('victory', () => {
 });
 
 describe('extra build phase (5-6 players)', () => {
-  /** Legacy extra-build behaviour: the 5-6 default is now the official paired phase (5-6 p.3). */
-  function legacy(s: GameState): GameState {
-    s.init.largeTableMode = 'extraBuild';
-    return s;
-  }
+  /** Legacy extra-build behaviour (opt-in; the 5-6 default is normal turns as with 2-4 players). */
+  const legacy = (s: GameState): GameState => withMode(s, 'extraBuild');
 
   it('after each turn every other player gets a build window in seat order', () => {
     let s = legacy(blankGame(5));

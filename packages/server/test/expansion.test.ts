@@ -147,6 +147,17 @@ describe('strongholds rooms', () => {
     expect(((await p.client.next((m) => m.type === 'error')) as { code: string }).code).toBe('BAD_MESSAGE');
   });
 
+  it('5-6 players: normal turns (as with 2-4 players) by default, also with the expansion', async () => {
+    players = await startRoom(url, 5, { expansion: 'strongholds' });
+    for (const p of players) {
+      const view = lastState(p).view as View & { init: { largeTableMode: string; extraBuild: boolean } };
+      expect(view.init).toMatchObject({ largeTableMode: 'normal', extraBuild: false });
+    }
+    for (const p of players) p.client.close();
+    players = await startRoom(url, 5, { expansion: 'strongholds', largeTableMode: 'paired' });
+    expect((lastState(players[0]).view as { init: { largeTableMode: string } }).init.largeTableMode).toBe('paired');
+  });
+
   it('rejects unknown expansions and the legacy extra build mode with the expansion', async () => {
     const p = await connect(url, 'host');
     players = [p];
