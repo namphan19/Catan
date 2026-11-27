@@ -3,13 +3,15 @@
 // more cards = more card edges behind it (up to 3) and a count badge that nothing overlaps; a kind
 // you have none of shrinks to a narrow empty slot. Development cards are distinct, so they stay a
 // small fan (like Slay the Spire): hovering or tapping a card lifts and enlarges it while its
-// neighbours slide aside. A card you may play now has a gold ring, and its lifted face carries the
-// Play button (the old "Play a card: X" pills in the action bar are gone). A changed resource count pops and shows "+N" / "-N".
+// neighbours slide aside. A card you may play now has a gold ring. A lifted card opens its face above
+// it: name, what it does (PO 2026-11-28: every card says its effect before it is used, like the
+// Strongholds advance cards) and the Play button. A changed resource count pops and shows "+N" / "-N".
 import { useEffect, useRef, useState } from 'react';
 import type { Action, PlayerView } from '@hexgame/engine';
 import { useI18n, resKey, cardKey, RESOURCE_ORDER } from '../i18n';
 import { art2dUrl, useAssets } from '../board/assets';
 import { ResourceIcon } from '../ui/ResourceIcon';
+import { devCardEffect } from './cardEffect';
 
 interface Delta {
   n: number;
@@ -181,6 +183,8 @@ export function HandPanel({ view, extraLabel, legal = [], onPlay }: HandPanelPro
             {[...groups.entries()].map(([c, g], i) => {
               const canPlay = playable.has(c) && !!onPlay;
               const label = `${t(cardKey(c))} × ${g.n}${g.fresh > 0 ? ` (${t('newCardMark')}: ${g.fresh})` : ''}${canPlay ? ` (${t('card_playable')})` : ''}`;
+              const fx = devCardEffect(c, view, t);
+              const faceId = `dev-card-face-${c}`;
               return (
                 <li
                   key={c}
@@ -188,23 +192,34 @@ export function HandPanel({ view, extraLabel, legal = [], onPlay }: HandPanelPro
                   data-card={c}
                   style={fanStyle(i, groups.size, 6, 3)}
                 >
-                  {canPlay && (
-                    <button
-                      type="button"
-                      className="dev-card-play"
-                      onClick={() => {
-                        setLifted(null);
-                        onPlay(c);
-                      }}
-                    >
-                      {t('card_play')}
-                    </button>
-                  )}
+                  {/* The card's face: shown while it is lifted (hover, focus, tap). */}
+                  <div className="dev-card-face" id={faceId} data-card={c}>
+                    <div className="dev-card-face-box">
+                      <div className="dev-card-face-name">
+                        {t(cardKey(c))}
+                        {g.n > 1 ? ` ×${g.n}` : ''}
+                      </div>
+                      <p className="dev-card-face-fx">{fx}</p>
+                      {g.fresh > 0 && <p className="dev-card-face-note">{t('card_freshNote')}</p>}
+                      {canPlay && (
+                        <button
+                          type="button"
+                          className="dev-card-play"
+                          onClick={() => {
+                            setLifted(null);
+                            onPlay(c);
+                          }}
+                        >
+                          {t('card_play')}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                   <button
                     type="button"
                     className="dev-card-btn"
-                    title={label}
                     aria-label={label}
+                    aria-describedby={faceId}
                     aria-pressed={lifted === c}
                     onClick={() => setLifted(lifted === c ? null : c)}
                   >

@@ -1,10 +1,10 @@
 // Dice cheat: a roll may carry the roller's chosen production dice (who may send it is the server's call).
 import { describe, expect, it } from 'vitest';
 import {
-  DICE_CHEAT_CODE, createGame, getLegalActions, getPlayerView, isDiceCheat, normalizeCheat, replay, validateAction,
-  type Action, type GameState, type ShState,
+  DICE_CHEAT_CODE, applyAction, createGame, getLegalActions, getPlayerView, isDiceCheat, isRollBonusCheat, normalizeCheat,
+  replay, validateAction, type Action, type GameState, type ShState,
 } from '../src';
-import { act, blankGame } from './helpers';
+import { act, blankGame, pl } from './helpers';
 
 const roll = (dice?: unknown): Action => ({ t: 'roll', player: 'p1', ...(dice !== undefined ? { dice } : {}) }) as Action;
 
@@ -79,5 +79,82 @@ describe('dice cheat', () => {
   it('Tidelands corsair coves: chosen dice', () => {
     const s = act(preRoll(['base', 'tidelands'], { scenario: 'corsairCoves' }), roll([4, 4]));
     expect(s.turn.roll).toEqual([4, 4]);
+  });
+});
+
+describe('roll bonus', () => {
+  const bonusRoll = (dice?: [number, number]): Action => ({ t: 'roll', player: 'p1', ...(dice ? { dice } : {}), bonus: true }) as Action;
+  const total = (bag: Record<string, number>) => Object.values(bag).reduce((a, n) => a + n, 0);
+
+  it('recognises the code only with its #', () => {
+    expect(isRollBonusCheat('#kie')).toBe(true);
+    expect(isRollBonusCheat('  #KIE ')).toBe(true);
+    expect(isRollBonusCheat('# k i e')).toBe(true);
+    for (const no of ['kie', '#ki', '#kiee', 'k#ie', '', '#kiê']) expect(isRollBonusCheat(no)).toBe(false);
+  });
+
+  it('adds one of every resource to the roll, joined to its production', () => {
+    const s = blankGame(3, { k: 'preRoll' });
+    const bank = { ...s.bank.hand };
+    const { state: t, events } = applyAction(s, bonusRoll([5, 4]));
+    const hand = pl(t, 'p1').hand;
+    for (const r of ['timber', 'clay', 'fiber', 'grain', 'stone']) {
+      expect(hand[r]).toBe(1); // empty board: no production of its own
+      expect(t.bank.hand[r]).toBe(bank[r] - 1);
+    }
+    const produced = events.filter((e) => e.e === 'produced');
+    expect(produced).toHaveLength(1);
+    expect(t.log.at(-1)!.gains).toEqual({ p1: { timber: 1, clay: 1, fiber: 1, grain: 1, stone: 1 } });
+  });
+
+  it('on a 7 the discard is counted before the bonus', () => {
+    const s = blankGame(3, { k: 'preRoll' });
+    pl(s, 'p1').hand = { timber: 8 };
+    const t = act(s, bonusRoll([3, 4]));
+    expect(t.phase).toMatchObject({ k: 'discard', owed: { p1: 4 } });
+    expect(total(pl(t, 'p1').hand)).toBe(13);
+  });
+
+  it('skips a kind the bank has run out of', () => {
+    const s = blankGame(3, { k: 'preRoll' });
+    s.bank.hand.stone = 0;
+    const t = act(s, bonusRoll([5, 4]));
+    expect(pl(t, 'p1').hand.stone ?? 0).toBe(0);
+    expect(total(pl(t, 'p1').hand)).toBe(4);
+  });
+
+  it('includes commodities (Strongholds) and goods (Highlands)', () => {
+    const sh = act(preRoll(['base', 'strongholds']), bonusRoll([5, 4]));
+    for (const r of ['books', 'linen', 'silver']) expect(pl(sh, 'p1').hand[r]).toBeGreaterThanOrEqual(1);
+    const hl = act(preRoll(['base', 'highlands']), bonusRoll([5, 4]));
+    for (const r of ['plume', 'herb', 'fish', 'timber']) expect(pl(hl, 'p1').hand[r]).toBeGreaterThanOrEqual(1);
+  });
+
+  it('only a roll may carry it, and only as true', () => {
+    const s = blankGame(3, { k: 'preRoll' });
+    expect(validateAction(s, { t: 'roll', player: 'p1', bonus: false } as unknown as Action)).toMatchObject({ ok: false, code: 'BAD_ACTION' });
+    const m = blankGame(3, { k: 'main' });
+    expect(validateAction(m, { t: 'endTurn', player: 'p1', bonus: true } as unknown as Action)).toMatchObject({ ok: false, code: 'BAD_ACTION' });
+    expect(validateAction(s, bonusRoll()).ok).toBe(true);
+  });
+
+  it('is hidden from the other players log and replays the same game', () => {
+    const s = blankGame(3, { k: 'preRoll' });
+    const t = act(s, bonusRoll([2, 2]));
+    expect(getPlayerView(t, 'p1').log.at(-1)!.action).toMatchObject({ bonus: true });
+    expect(getPlayerView(t, 'p2').log.at(-1)!.action).toEqual({ t: 'roll', player: 'p1' });
+
+    let g = createGame({ seed: 'bonus', playerCount: 3, firstPlayer: 'p1' });
+    const actions: Action[] = [];
+    while (g.phase.k === 'setup') {
+      const id = g.players.map((p) => p.id).find((p) => getLegalActions(g, p).length)!;
+      const a = getLegalActions(g, id)[0];
+      actions.push(a);
+      g = act(g, a);
+    }
+    const r = { t: 'roll', player: g.turn.current, bonus: true } as Action;
+    actions.push(r);
+    g = act(g, r);
+    expect(replay(g.init, actions).players).toEqual(g.players);
   });
 });

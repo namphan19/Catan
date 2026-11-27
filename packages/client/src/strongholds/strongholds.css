@@ -104,6 +104,14 @@
   color: var(--ink);
 }
 .sh-reveal-fx { margin: 0 0 12px; font-size: 1.05rem; line-height: 1.35; }
+/* A development card played by someone else shows its painted face above the name. */
+.sh-reveal-art {
+  display: block;
+  margin: 10px auto 0;
+  border-radius: 8px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  object-fit: cover;
+}
 .sh-reveal-timer {
   position: absolute;
   left: 0;

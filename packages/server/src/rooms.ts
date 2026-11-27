@@ -16,6 +16,7 @@ import {
   getLegalActions,
   getPlayerView,
   isDiceCheat,
+  isRollBonusCheat,
   replay,
   validateAction,
   type Action,
@@ -62,6 +63,8 @@ interface RoomPlayer {
   avatar?: AvatarId;
   /** The player sent the dice cheat code in chat: their rolls may carry chosen dice. Known only to them. */
   diceCheat?: boolean;
+  /** Set from chat (cheats.ts): each roll of this seat carries `bonus`. Known only to the server. */
+  rollBonus?: boolean;
 }
 
 /** Give every seat without a portrait a free one, in seat order (game start, restored rooms). */
@@ -272,6 +275,7 @@ export class Hub {
           ...(s.afk && !s.bot ? { afk: true } : {}),
           ...(s.avatar ? { avatar: s.avatar } : {}),
           ...(s.diceCheat && !s.bot ? { diceCheat: true } : {}),
+          ...(s.rollBonus && !s.bot ? { rollBonus: true } : {}),
         }));
         // Drop duplicates a hand-edited file might carry, then fill the gaps.
         const seen = new Set<AvatarId>();
@@ -636,6 +640,14 @@ export class Hub {
       for (const r of this.connsInRoom(room)) if (r.seat === rec.seat) r.conn.send({ type: 'room', ...this.roomMsg(room, r) });
       return;
     }
+    // Never shown to the room either, and nothing is sent back: the next roll tells.
+    if (isRollBonusCheat(msg.text)) {
+      if (!sender.rollBonus && !sender.bot) {
+        sender.rollBonus = true;
+        this.persist(room);
+      }
+      return;
+    }
     const message: ChatMessage = {
       id: ++room.chatSeq,
       seat: seatOf(idx),
@@ -753,13 +765,15 @@ export class Hub {
       this.error(rec.conn, msg.reqId, 'DICE_LOCKED', 'You cannot choose the dice.');
       return;
     }
-    const v = validateAction(game.state, msg.action as Action);
+    // Only the server sets `bonus` (in commit), never a client.
+    const { bonus: _bonus, ...sent } = msg.action as Action & { bonus?: unknown };
+    const v = validateAction(game.state, sent as Action);
     if (!v.ok) {
       this.error(rec.conn, msg.reqId, v.code, v.message);
       return;
     }
     try {
-      this.commit(room, msg.action as Action, rec.seat);
+      this.commit(room, sent as Action, rec.seat);
     } catch (e) {
       if (e instanceof IllegalActionError) {
         this.error(rec.conn, msg.reqId, e.code, e.message);
@@ -770,8 +784,10 @@ export class Hub {
   }
 
   /** Apply a validated action, persist, broadcast redacted results, then let bots move. */
-  private commit(room: Room, action: Action, by: PlayerId): void {
+  private commit(room: Room, given: Action, by: PlayerId): void {
     const game = room.game!;
+    const seat = room.players[Number(given.player.slice(1)) - 1];
+    const action: Action = given.t === 'roll' && seat?.rollBonus && !seat.bot ? { ...given, bonus: true } : given;
     const hadTrade = !!game.state.trade;
     const res = applyAction(game.state, action);
     game.state = res.state;
@@ -1028,6 +1044,7 @@ export class Hub {
         ...(s.afk ? { afk: true } : {}),
         ...(s.avatar ? { avatar: s.avatar } : {}),
         ...(s.diceCheat ? { diceCheat: true } : {}),
+        ...(s.rollBonus ? { rollBonus: true } : {}),
       })),
       init: room.game.state.init,
       actions: room.game.actions,

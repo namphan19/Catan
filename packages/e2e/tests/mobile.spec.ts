@@ -297,6 +297,12 @@ test('portrait: resources are stacks in one row; a tapped development card rises
   await page.waitForTimeout(300);
   const after = (await card.boundingBox())!;
   expect(after.width, 'a tapped card grows to be read').toBeGreaterThan(before.width * 1.4);
+  // Its face says what it does, inside the screen.
+  const face = card.locator('.dev-card-face');
+  await expect(face.locator('.dev-card-face-fx')).toBeVisible();
+  const fb = (await face.boundingBox())!;
+  expect(fb.x).toBeGreaterThanOrEqual(0);
+  expect(fb.x + fb.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   // The lifted playable card carries a finger-sized Play button inside the screen.
   const play = card.locator('.dev-card-play');
   await expect(play).toBeVisible();

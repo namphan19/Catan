@@ -36,9 +36,9 @@ export interface PlayerView {
 
 const clone = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
-/** A roll with chosen dice (dice cheat) looks like a normal roll to everyone but the roller, even after the game. */
+/** A roll with chosen dice or a bonus (cheats.ts) looks like a normal roll to everyone but the roller, even after the game. */
 function hideChosen(a: Action): Action {
-  const { dice: _dice, ...rest } = a as Action & { dice?: unknown };
+  const { dice: _dice, bonus: _bonus, ...rest } = a as Action & { dice?: unknown; bonus?: unknown };
   return rest as Action;
 }
 
@@ -61,7 +61,7 @@ export function getPlayerView(state: GameState, viewer: PlayerId | null): Player
   // Logged actions may hold private choices of extension rulesets; reveal all once the game is over.
   const log = (
     state.winner ? state.log : state.log.map((l) => ({ ...l, action: ctx.rules.redactAction(l.action, viewer) })) // roll/gains are public
-  ).map((l) => (l.action.t === 'roll' && 'dice' in l.action && l.action.player !== viewer ? { ...l, action: hideChosen(l.action) } : l));
+  ).map((l) => (l.action.t === 'roll' && ('dice' in l.action || 'bonus' in l.action) && l.action.player !== viewer ? { ...l, action: hideChosen(l.action) } : l));
   return clone({
     ...(Object.keys(ext).length ? { ext } : {}),
     viewer,
