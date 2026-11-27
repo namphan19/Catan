@@ -8,12 +8,13 @@
 // Right: ONE large primary button, "Roll" until the turn can be ended, then "End turn".
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { TL, baseConfig, type Action, type PlayerId, type PlayerView, type Validation } from '@hexgame/engine';
-import { useI18n, cardKey, resKey, RESOURCE_ORDER } from '../i18n';
+import { useI18n, resKey, RESOURCE_ORDER } from '../i18n';
 import { validationText } from '../net/errors';
 import { Button } from '../ui/Button';
 import { playerColor } from '../ui/colors';
 import { ResourceIcon } from '../ui/ResourceIcon';
 import { PieceIcon, UiIcon } from '../ui/Icon';
+import { art2dUrl } from '../board/assets';
 
 export type Pending = 'placeSettlement' | 'placeRoad' | 'buildCity' | 'moveBlocker' | 'tl:buildShip' | null;
 
@@ -25,7 +26,6 @@ interface ActionBarProps {
   pending: Pending;
   setPending: (p: Pending) => void;
   onOpenTrade: (tab: 'bank' | 'players') => void;
-  onOpenCards: (card: 'harvest' | 'claim') => void;
   /** Dice cheat unlocked: two die pickers next to Roll (? = random) set the roll's `dice`. */
   diceCheat?: boolean;
   /** Expansion build buttons (BuildSlot elements) after the base ones. */
@@ -130,7 +130,6 @@ export function ActionBar({
   pending,
   setPending,
   onOpenTrade,
-  onOpenCards,
   diceCheat,
   extraBuild,
 }: ActionBarProps) {
@@ -189,7 +188,6 @@ export function ActionBar({
 
   const toggle = (p: Exclude<Pending, null>) => setPending(pending === p ? null : p);
 
-  const playable = [...new Set(legal.filter((a) => a.t === 'playCard').map((a) => (a as { card: string }).card))];
   const mustRespond = has('respondTrade');
   const confirmables = legal.filter((a) => a.t === 'confirmTrade');
   const tradeHot = mustRespond || confirmables.length > 0;
@@ -270,7 +268,7 @@ export function ActionBar({
             {/* Strongholds has no base card deck (rules section 1): no "buy card" button there. */}
             {!view.ext?.strongholds && (
               <BuildSlot
-                icon={<UiIcon name="card" size={24} />}
+                icon={<img src={art2dUrl('ui', 'buy-card')} alt="" width={36} height={36} draggable={false} />}
                 label={t('act_buyCard')}
                 cost={baseConfig.costs.card as Record<string, number>}
                 hand={hand}
@@ -295,17 +293,6 @@ export function ActionBar({
           </Button>
         )}
 
-        {playable.map((card) => (
-          <Button
-            key={card}
-            className="btn-play act-pill"
-            onClick={() =>
-              card === 'harvest' || card === 'claim' ? onOpenCards(card) : send({ t: 'playCard', player: me, card } as Action)
-            }
-          >
-            <UiIcon name="card" size={18} /> {t('act_playCards')}: {t(cardKey(card))}
-          </Button>
-        ))}
 
         <div className="act-group act-trade">
           <Button
@@ -313,7 +300,7 @@ export function ActionBar({
             tip={tradeHot ? t('tradeBadge') : tradeOk ? undefined : reason('bankTrade')}
             onClick={() => onOpenTrade(tradeHot || view.trade ? 'players' : 'bank')}
           >
-            <UiIcon name="trade" size={24} />
+            <img src={art2dUrl('ui', 'trade')} alt="" width={36} height={36} draggable={false} />
             <span className="act-lbl">{t('act_trade')}</span>
             {mustRespond ? <span className="badge" aria-label={t('tradeBadge')}>1</span> : null}
           </Button>
@@ -351,7 +338,7 @@ export function ActionBar({
             className={legal.some((a) => BUILD_LIKE.has(a.t)) ? undefined : 'pulse'}
             onClick={() => send({ t: 'endTurn', player: me })}
           >
-            <UiIcon name="end" size={20} /> <span className="lbl-full">{t('act_endTurn')}</span>
+            <img className="btn-badge" src={art2dUrl('ui', 'end-turn')} alt="" width={34} height={34} draggable={false} /> <span className="lbl-full">{t('act_endTurn')}</span>
           </Button>
         ) : (
           <Button
@@ -361,7 +348,7 @@ export function ActionBar({
             tip={reason('roll')}
             onClick={rollNow}
           >
-            <UiIcon name="roll" size={20} /> <span className="lbl-full">{t('act_roll')}</span>
+            <img className="btn-badge" src={art2dUrl('ui', 'roll')} alt="" width={34} height={34} draggable={false} /> <span className="lbl-full">{t('act_roll')}</span>
           </Button>
         )}
       </div>

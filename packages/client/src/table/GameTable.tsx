@@ -27,7 +27,7 @@ import { useName } from '../shell/names';
 import { playerColor, playerEmblem } from '../ui/colors';
 import { Emblem } from '../ui/Emblem';
 import { Button } from '../ui/Button';
-import { UiIcon } from '../ui/Icon';
+import { PieceIcon, UiIcon } from '../ui/Icon';
 import { ToastStack, useToasts } from '../ui/Toast';
 import { Board } from '../board/Board';
 import { EMPTY_HIGHLIGHTS, type Highlights } from '../board/Highlights';
@@ -38,6 +38,7 @@ import { actorOf, statusOf } from './StatusBanner';
 import { DiceBox } from './DiceBox';
 import { HelpDialog } from './HelpDialog';
 import { HandPanel } from './HandPanel';
+import { GameIcon } from '../ui/GameIcon';
 import { ActionBar, BuildSlot, type Pending } from './ActionBar';
 import { describeEvent } from './describe';
 import { DiscardDialog, StealDialog, TradeDialog, CardDialog, type TradeTab, type PickCard } from '../dialogs';
@@ -90,6 +91,8 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const [helpOpen, setHelpOpen] = useState(false);
   /** Phones: the side column (log, trade, expansion panels) is a bottom sheet, open or not. */
   const [sheetOpen, setSheetOpen] = useState(false);
+  /** Tidelands + Strongholds together: which of the two panels the drawer shows (tabs). */
+  const [sheetTab, setSheetTab] = useState<'tl' | 'sh'>('tl');
   const [playerOpen, setPlayerOpen] = useState<PlayerId | null>(null);
   const [producing, setProducing] = useState<ReadonlySet<string> | undefined>(undefined);
   const phaseKey = view.phase.k;
@@ -473,7 +476,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const shBuild = sh ? (
     <>
       <BuildSlot
-        icon={<img src={art2dUrl('piece', 'rampart')} alt="" width={34} height={34} />}
+        icon={<PieceIcon kind="rampart" color={playerColor(view.viewer ?? "")} size={30} />}
         label={t('shact_rampart')}
         note={t('shhud_rampartNote')}
         cost={SH.costs.rampart as Record<string, number>}
@@ -484,7 +487,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
         data="rampart"
       />
       <BuildSlot
-        icon={<img src={art2dUrl('piece', 'warden')} alt="" width={32} height={32} />}
+        icon={<img src={art2dUrl('ui', 'recruit-warden')} alt="" width={38} height={38} draggable={false} />}
         label={t('shact_recruit')}
         cost={SH.costs.warden as Record<string, number>}
         hand={meHand}
@@ -589,7 +592,10 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
             {sh && <RaidLane view={view} sh={sh} />}
           </div>
           {sh && view.viewer && (
-            <TrackRail view={view} sh={sh} legal={legal} onStart={startChoice} onPanel={() => setSheetOpen(true)} />
+            <TrackRail view={view} sh={sh} legal={legal} onStart={startChoice} onPanel={() => {
+                setSheetTab('sh');
+                setSheetOpen(true);
+              }} />
           )}
           {/* The expansion panel: a drawer (Strongholds, and every expansion on phones). */}
           {hasSide && (
@@ -617,7 +623,16 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
           {boardOverlay}
           {reveals.current && <CardReveal reveal={reveals.current} onClose={reveals.close} t={t} name={name} />}
           <div className="table-bottom">
-            <HandPanel view={view} extraLabel={sh ? t('shhud_commodities') : hl ? t('hlhud_goodsLabel') : undefined} />
+            <HandPanel
+              view={view}
+              extraLabel={sh ? t('shhud_commodities') : hl ? t('hlhud_goodsLabel') : undefined}
+              legal={legal}
+              onPlay={(card) =>
+                card === 'harvest' || card === 'claim'
+                  ? setCardOpen(card)
+                  : view.viewer && onAction({ t: 'playCard', player: view.viewer, card } as Action)
+              }
+            />
             {sh && <AdvanceHand view={view} sh={sh} legal={legal} onStart={startChoice} />}
             <ActionBar
               view={view}
@@ -631,7 +646,6 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
                 autoOpened.current = false;
                 setTradeOpen(tab);
               }}
-              onOpenCards={(c) => setCardOpen(c)}
               diceCheat={diceCheat}
               extraBuild={extraBuild}
             />
@@ -647,10 +661,29 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
               onClick={() => setSheetOpen(false)}
             />
             <aside className="sidecol" id="expansion-sheet" aria-label={t('sheet_open')}>
-              <button type="button" className="btn btn-ghost sheet-close" onClick={() => setSheetOpen(false)}>
-                <UiIcon name="close" size={16} /> {t('sheet_close')}
-              </button>
-              {tl && (
+              <div className="sheet-bar">
+                {tl && sh && (
+                  <nav className="sheet-tabs" role="tablist" aria-label={t('sheet_open')}>
+                    {(['tl', 'sh'] as const).map((k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        role="tab"
+                        aria-selected={sheetTab === k}
+                        className={sheetTab === k ? 'on' : undefined}
+                        onClick={() => setSheetTab(k)}
+                      >
+                        {t(k === 'tl' ? 'tl_panelShort' : 'sh_title')}
+                        {sheetTab !== k && legal.some((a) => a.t.startsWith(`${k}:`)) && <i className="sheet-tab-dot" aria-hidden="true" />}
+                      </button>
+                    ))}
+                  </nav>
+                )}
+                <button type="button" className="sheet-close" aria-label={t('sheet_close')} title={t('sheet_close')} onClick={() => setSheetOpen(false)}>
+                  <GameIcon name="cross" size={16} />
+                </button>
+              </div>
+              {tl && (!sh || sheetTab === 'tl') && (
                 <TidelandsPanel
                   view={view}
                   tl={tl}
@@ -667,7 +700,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
                   }}
                 />
               )}
-              {sh && <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />}
+              {sh && (!tl || sheetTab === 'sh') && <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />}
               {hl && (
                 <HighlandsPanel
                   view={view}

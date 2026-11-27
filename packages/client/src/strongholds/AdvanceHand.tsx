@@ -1,5 +1,6 @@
 // The viewer's advance cards as a small fan of cards next to the hand (PO 2026-11-27 HUD; a coloured
-// band names the deck). Collapsed, each card shows only its name; a click opens the full
+// band names the deck). Hovering a card lifts it while its neighbours slide aside (the shared
+// `.card-fan`, table.css). Collapsed, each card shows only its name; a click opens the full
 // card (deck, effect, Play / Discard). Buttons are enabled only when getLegalActions contains a
 // matching action; clicking hands those actions to the staged chooser, like the expansion panel.
 import { useEffect, useRef, useState } from 'react';
@@ -114,13 +115,13 @@ export function AdvanceHand({ view, sh, legal, onStart }: AdvanceHandProps) {
         )}
       </div>
       {groups.size > 0 && (
-        <ul className="sh-hand-tabs">
+        <ul className="sh-hand-tabs card-fan">
           {[...groups.entries()].map(([card, n], i) => {
             const track = CARD_TRACK[card];
             const playable = of('sh:play', card).length > 0;
             const droppable = of('sh:discardCard', card).length > 0;
             return (
-              <li key={card} style={fanStyle(i, groups.size, 7, 3)}>
+              <li key={card} className={open === card ? 'lifted' : undefined} style={fanStyle(i, groups.size, 7, 3)}>
                 <button
                   type="button"
                   className={`sh-hand-tab sh-reveal-${track ?? 'none'}${playable ? ' playable' : ''}${droppable ? ' droppable' : ''}`}

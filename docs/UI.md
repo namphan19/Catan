@@ -80,6 +80,14 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
    link fills in the code; ?room=CODE opens this tab). Footer: the logbook (load a saved log) in a
    dialog, and a tip. The online client creates / joins at once from the tab's choice; its own form
    stays only as a fallback (errors, kicked).
+   Waiting room (PO mock 2026-11-27; src/shell/Lobby.tsx, lobby part of hub.css): same sea, the room code
+   as the hero (Copy code / Copy invite link, a check while copied), the mode line (modes · goal · seats),
+   the portrait picker (6, first come first served, taken ones dimmed with the owner's name), the room
+   chat inline (no bubble in the lobby; what it shows counts as read for the game's bubble) and ONE
+   parchment sheet: every seat with portrait, connection dot, you / host / bot level, ready state, x for
+   the host to remove it; the first empty seat offers "+ Add bot" with its level; at the foot "I'm ready"
+   (toggle) and the host's "Start game (waiting for N)". Phones: one column, code, mode, sheet, portraits,
+   chat. e2e: lobby.spec.ts answers the WebSocket with a small fake server.
 2. Game table ("HUD" layout, PO 2026-11-27; CSS in src/table/table.css; replaces the UX2 frames):
    the board fills the whole table and is fitted into the free middle; every control floats over its
    edges on dark scrims, without boxes. Top centre: turn label (+ shell info) and ONE guidance line
@@ -90,8 +98,11 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
    (pieces left, guards...). Top-right under the menu: the dice on the sea (no box). Bottom: round
    icon-only build buttons on the left (road, settlement, city, card; hovering one shows its name, its
    cost with the missing cards dimmed, and why it is not possible), ONE trade button (bank and player
-   trades are tabs of its dialog), the hand as a fan of painted cards in the middle (all resources
-   always shown, empty ones dimmed, +N/-N on change; development cards as a second, smaller fan) and
+   trades are tabs of its dialog), the hand in the middle (PO 2026-11-28): each resource kind is one
+   upright stack of painted cards (more cards = more edges behind it, the count on a corner nothing
+   covers, a kind you have none of is a narrow dashed slot, +N/-N on change); development cards are a
+   small fan where the hovered or tapped card rises and its neighbours slide aside, a playable card
+   has a gold ring and, lifted, a Play button (no "Play a card" pills in the bar) and
    ONE primary button on the right (Roll or End turn). Events read as a one-line narration over the hand
    (former toasts). The price card is gone (costs live in the build buttons). Number tokens carry
    probability pips; hexes that just produced pulse. Winner overlay.
@@ -110,12 +121,31 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
    powers (caravan, recall) as round buttons that glow while usable, and a "your tribe has declined" line
    over the board (fades after ~3 s) while the new tribe is founded.
    Every expansion panel (and both together: Tidelands + Strongholds) is the same drawer.
+   Drawers and dialogs (PO 2026-11-28, ui/chrome.css, ui/Drawer.tsx): "read on the sea, act on paper".
+   - The drawer is dark like the hub's mode cards: a painted terrain hero (Strongholds quarry, Tidelands
+     harbour, Highlands jungle) with kicker, title and one italic line; gold small-caps section labels;
+     actions as round buttons with their name under them (Tripo badges from art2d/ui and GameIcon, never
+     emoji); players as rows with their portrait (the viewer's row in gold). Strongholds: raid lane with
+     the raid-ship art and two number tiles (raiders / table defence), "Your cities" = one card per track
+     (level pips in the track colour, perk at 3, capital at 4, deck left, an Improve pill showing its cost
+     or "Need N"), warden actions, the table. Tidelands: scenario chips (goal, landfall...), "Your fleet"
+     round buttons, table progress rows, wonders. Tidelands + Strongholds: pill tabs over the hero (a gold
+     dot on the tab that has a legal action); the rail's panel link opens the Strongholds tab. The close
+     button is round, over the hero.
+   - Dialogs are a sheet of parchment: Tripo art (tools/art prompts x-*, build.py `chrome`):
+     art2d/ui/sheet.webp as a 9-slice border image (torn, toasted rim), paper.webp fibres, a wax seal
+     (seal.webp) left of the title and a gold flourish (flourish.webp) under it; pill buttons, the primary
+     one dark leather with a gold ring; tabs as a pill switch. The bank tab shows the painted cards
+     themselves: every kind stays visible, the best rate on each card you can give, the others dimmed
+     with what you hold; the confirm button reads "Trade 2 Wheat for 1 Ore".
+   - The Strongholds chooser prompt is a dark pill over the board (gold hairline), the revealed advance
+     card a parchment card ringed in its deck colour.
    Tablets (<= 1180 px) fold the build buttons behind "Xây" like phones, so long build rows (Tidelands +
    Strongholds) never push the hand. Online: room code in the turn line, AFK and leave in the menu, the
    away banner under the turn line, the chat bubble bottom-right.
    Online extras (2026-11-19, docs/PROTOCOL.md): portraits (6, picked in the lobby, first come first
-   served; hot-seat seats use the portrait matching their emblem), a floating chat bubble (lobby
-   bottom-right, game bottom-right above the zoom buttons, unread counter), and "Let a bot play for me" (AFK: a
+   served; hot-seat seats use the portrait matching their emblem), a floating chat bubble in the game
+   (bottom-right above the zoom buttons, unread counter; inline in the lobby), and "Let a bot play for me" (AFK: a
    'normal' stand-in bot plays the seat until "I'm back"; the others get a popup).
 3. Hot-seat: "Pass the device to <name>" cover between actors so hands stay hidden.
 4. Phone layout (HUD, 2026-11-27; CSS in src/table/mobile.css, e2e project "mobile"):
@@ -126,7 +156,7 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
      (name, cost, why not), "Đổi bài", Strongholds' "Nâng cấp" - and the primary Roll / End turn button
      pinned on the right. Controls have 44 px hit areas and respect safe-area insets.
    - landscape (<= 520 px tall): the desktop arrangement, smaller (players down the left edge).
-   - every expansion panel is a sheet behind the panel button (bottom sheet in portrait, from the right
+   - every expansion panel is a sheet behind the panel button (dark bottom sheet with a grab handle in portrait, from the right
      in landscape) with a backdrop; it closes with its button, Esc or a backdrop tap, and picking an
      action in it closes it so the board is in view.
 
@@ -135,7 +165,7 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
   buttons show the validateAction reason as a tooltip (e.g. "Not enough resources for: city").
 - Pick an action, then click the board: legal vertices / edges / hexes glow; Esc cancels.
 - Dialogs: discard (pick exactly N, counter), steal target, bank/harbor trade (best rate shown),
-  player trade (one table: card | you have | you give | you get, responses list, confirm; an incoming
+  player trade (PO 2026-11-28: two rows of painted cards, "You give" with what you hold and "You get"; a click on a card adds one, the - under it takes one back, the count sits on the card; the counter-offer uses the same rows; offers read as small cards with xN, answers with portraits; responses list, confirm; an incoming
   offer always pops up, also when the viewer lacks the cards - then accept is greyed out with the
   reason), card play (harvest: pick 2, claim: pick 1).
 - Feedback: dice roll animation (< 600 ms), resource chips fly to the receiving player, toasts for
@@ -149,6 +179,6 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
 ui/ (tokens.css, Button, Panel, Dialog, Toast, Tooltip), board/ (Board, HexTile, Token, Harbor, Piece,
 Highlights), board3d/ (Board3D, terrain, decor, pieces3d, strongholds3d), table/ (GameTable, TopBar, PlayerCards, PlayerDialog,
 ActionBar + BuildSlot, HandPanel), strongholds/ (Panel, Hud: RaidLane / TrackRail / ShLevels / warden ring, AdvanceHand, BoardExtras, ChoiceDialogs, chooser), tidelands/Hud (ScenarioBadge, TlSeatLine, GoldPicker, TlBuildSlots), highlands/Hud (HlSeatLine, HlBuildSlots, FoundMoment), dialogs/
-(DiscardDialog, StealDialog, TradeDialog, CardDialog), shell/ (HomeScreen, home.css (online home + lobby), OnlineHome, Lobby,
+(DiscardDialog, StealDialog, TradeDialog, CardDialog), shell/ (HomeScreen, home.css (online home fallback), OnlineHome, Lobby,
 ChatBubble, HotseatShell, PassDeviceCover, autosave, hub.css), ui/Avatar, i18n/. GameTable takes { view, legal, onAction, events } only, so the online
 client reuses it.

@@ -166,17 +166,26 @@ test('portrait: a player tile opens public details in a bottom sheet', async ({ 
   expect(errors()).toEqual([]);
 });
 
-test('portrait: the trade composer scrolls inside its dialog without widening the page', async ({ page }, testInfo) => {
+test('portrait: the trade composer is two rows of cards that fit the dialog (no sideways scroll)', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await loadFixture(page, 'city-game.json');
   await page.locator('.act-trade .btn').first().click();
   await page.getByRole('tab', { name: 'Người chơi' }).click();
-  const grid = page.locator('.trade-grid');
-  await expect(grid).toBeVisible();
+  // PO 2026-11-28: painted cards instead of the old table; every kind on both sides.
+  const give = page.locator('.tcard-give .tcard');
+  const get = page.locator('.tcard-get .tcard');
+  await expect(give).toHaveCount(5);
+  await expect(get).toHaveCount(5);
   await expectFitsScreen(page);
   const body = await box(page, '.dialog-body');
   expect(body.width).toBeLessThanOrEqual(page.viewportSize()!.width);
-  expect(await page.locator('.dialog-body').evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(true);
+  expect(await page.locator('.dialog-body').evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(false);
+  // A click on a card you hold adds one to the offer; the count shows on the card.
+  const held = page.locator('.tcard-give .tcard:not(.none) .tcard-face').first();
+  await held.click();
+  await expect(page.locator('.tcard-give .tcard.on .tcard-n')).toHaveText('1');
+  await page.locator('.tcard-get .tcard-face').first().click();
+  await expect(page.locator('.tcard-get .tcard.on')).toHaveCount(1);
   await page.screenshot({ path: shotPath('mobile-trade.png', testInfo.project.name) });
   expect(errors()).toEqual([]);
 });
@@ -271,5 +280,37 @@ test('narrow landscape: board and controls still fit without page overflow', asy
   expect(primary.y + primary.height).toBeLessThanOrEqual(320 + 0.5);
   await clearHover(page);
   await page.screenshot({ path: shotPath('mobile-narrow-landscape.png', testInfo.project.name) });
+  expect(errors()).toEqual([]);
+});
+
+test('portrait: resources are stacks in one row; a tapped development card rises with its Play button', async ({ page }, testInfo) => {
+  const errors = captureErrors(page);
+  await loadFixture(page, 'hand-cards.json');
+  await expectFitsScreen(page);
+  const stacks = await page.locator('.hand .res-card').evaluateAll((els) => els.map((e) => e.getBoundingClientRect()));
+  for (let i = 1; i < stacks.length; i++) expect(stacks[i].left).toBeGreaterThanOrEqual(stacks[i - 1].right);
+  const card = page.locator('.dev-cards.card-fan > li').first();
+  const before = (await card.boundingBox())!;
+  await card.locator('.dev-card-btn').tap();
+  await expect(card).toHaveClass(/lifted/);
+  await expect(card.locator('.dev-card-name')).toBeVisible();
+  await page.waitForTimeout(300);
+  const after = (await card.boundingBox())!;
+  expect(after.width, 'a tapped card grows to be read').toBeGreaterThan(before.width * 1.4);
+  // The lifted playable card carries a finger-sized Play button inside the screen.
+  const play = card.locator('.dev-card-play');
+  await expect(play).toBeVisible();
+  const pb = (await play.boundingBox())!;
+  expect(pb.height).toBeGreaterThanOrEqual(36);
+  expect(pb.x).toBeGreaterThanOrEqual(0);
+  expect(pb.x + pb.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await page.screenshot({ path: shotPath('mobile-hand-lifted.png', testInfo.project.name) });
+  // A tap on the board drops it again.
+  await page.locator('.board-area').tap({ position: { x: 20, y: 20 } });
+  await expect(card).not.toHaveClass(/lifted/);
+  // No "Play a card" pills crowd the button row any more.
+  await expect(page.locator('.actionbar .btn-play')).toHaveCount(0);
+  await expectFitsScreen(page);
+  await page.screenshot({ path: shotPath('mobile-hand-cards.png', testInfo.project.name) });
   expect(errors()).toEqual([]);
 });

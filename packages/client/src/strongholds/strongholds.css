@@ -1,49 +1,5 @@
 /* Strongholds expansion UI. Uses the tokens of ui/tokens.css (parchment, ink, gold, danger). */
-.sh-panel {
-  display: flex;
-  flex-direction: column;
-  /* Compact (playtest 2026-11-17): at 900 px the warden buttons were below the fold. */
-  gap: 6px;
-  padding: 8px 10px;
-  background: var(--parchment-dark);
-  border: 2px solid var(--ink);
-  border-radius: 6px;
-  font-size: 13px;
-  /* The side column has a fixed height and holds only this panel (the log was removed, PO
-     2026-11-19): it fills the whole column and scrolls inside it. */
-  flex: 1 1 auto;
-  min-height: 150px;
-  overflow-y: auto;
-}
-
-/* Track reference (perk, capital, deck) in the space the log used to take. Deck colours as on
-   the advance cards (.sh-reveal-*). */
-.sh-tracks { gap: 6px; }
-.sh-trackinfo {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 5px 8px 6px;
-  background: var(--parchment);
-  border: 1px solid color-mix(in srgb, var(--ink) 35%, transparent);
-  border-left: 4px solid var(--ink-soft);
-  border-radius: 4px;
-}
-.sh-trackinfo[data-track='commerce'] { border-left-color: var(--gold); }
-.sh-trackinfo[data-track='council'] { border-left-color: var(--sea); }
-.sh-trackinfo[data-track='learning'] { border-left-color: var(--forest); }
-.sh-trackinfo-head { display: flex; align-items: center; gap: 6px; }
-.sh-trackinfo-deck { margin-left: auto; font-size: 12px; }
-.sh-trackinfo-row { margin: 0; font-size: 12.5px; line-height: 1.35; }
-.sh-trackinfo-lvl { font-weight: 700; }
-.sh-trackinfo-owner { font-weight: 600; white-space: nowrap; }
-.sh-reached { color: #2f5d3a; }
-.sh-tick { margin-left: 4px; font-weight: 700; }
-.sh-head {
-  margin: 0;
-  font-size: 16px;
-  letter-spacing: 0.04em;
-}
+/* The drawer panel itself (StrongholdsPanel) is styled in ui/chrome.css. */
 .sh-label {
   font-weight: 700;
   font-size: 13px;
@@ -56,42 +12,6 @@
 .sh-good { color: #2f5d3a; font-weight: 700; }
 .sh-empty { margin: 2px 0; }
 
-.sh-raid { display: flex; flex-direction: column; gap: 4px; }
-.sh-raid-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.sh-raid-info { margin: 0; font-size: 13px; }
-.sh-track {
-  display: flex;
-  gap: 3px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.sh-track li {
-  width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  border: 2px solid var(--ink);
-  border-radius: 50%;
-  background: var(--parchment);
-  font-size: 13px;
-  line-height: 1;
-}
-.sh-track li.done { background: var(--sea); }
-.sh-track li.ship { background: var(--gold); }
-.sh-track li.shore { border-radius: 4px; background: var(--danger); color: var(--parchment); }
-
-.sh-levels { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.sh-levels th, .sh-levels td { padding: 2px 4px; text-align: center; border-bottom: 1px solid color-mix(in srgb, var(--ink) 25%, transparent); }
-.sh-levels th[scope='row'] { text-align: left; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
-.sh-levels tr.me { background: color-mix(in srgb, var(--gold) 22%, transparent); }
-.sh-star { color: var(--gold); margin-left: 2px; text-shadow: 0 0 1px var(--ink); }
-
-.sh-group { display: flex; flex-direction: column; gap: 4px; }
-.sh-buttons { display: flex; flex-wrap: wrap; gap: 4px; }
-.sh-panel .btn.sh-btn { padding: 2px 8px; font-size: 13px; min-height: 26px; }
-.sh-cost { display: inline-flex; align-items: center; gap: 1px; margin-left: 6px; font-weight: 700; }
-
 /* Prompt bar of the staged chooser, over the top of the board. */
 .sh-pickbar {
   position: absolute;
@@ -101,17 +21,28 @@
   z-index: 6;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   max-width: calc(100% - 140px);
-  padding: 6px 12px;
-  background: var(--gold);
-  color: var(--ink);
-  border: 2px solid var(--ink);
-  border-radius: 6px;
+  padding: 6px 8px 6px 18px;
+  border-radius: 999px;
+  background: rgba(13, 24, 27, 0.92);
+  color: #fff6e0;
   font-weight: 600;
-  box-shadow: 0 2px 0 var(--ink);
+  box-shadow: 0 0 0 1.5px rgba(232, 196, 103, 0.7), 0 6px 18px rgba(0, 0, 0, 0.45);
 }
-.sh-pickbar .btn { padding: 2px 8px; min-height: 26px; font-size: 13px; }
+.sh-pickbar .btn {
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1.5px solid rgba(255, 246, 224, 0.35);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff6e0;
+  font-size: 0.9rem;
+}
+.sh-pickbar .btn:hover:not(:disabled) {
+  background: rgba(255, 246, 224, 0.12);
+  color: #fff6e0;
+}
 
 .sh-options { max-height: 50vh; overflow-y: auto; }
 .sh-stepper { display: inline-flex; align-items: center; gap: 8px; }
@@ -138,10 +69,11 @@
   overflow: hidden;
   width: min(300px, calc(100% - 32px));
   padding: 14px 18px 18px;
-  border: 3px solid var(--deck);
-  border-radius: 14px;
-  background: var(--parchment);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 0 4px color-mix(in srgb, var(--deck) 18%, transparent);
+  border: 0;
+  border-radius: 16px;
+  background: url('/assets/art2d/ui/paper.webp') 0 0 / 280px, var(--parchment);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5), inset 0 0 0 3px var(--deck), inset 0 0 0 7px rgba(243, 233, 210, 0.9),
+    inset 0 0 0 8px color-mix(in srgb, var(--deck) 45%, transparent);
   text-align: center;
   cursor: pointer;
   pointer-events: auto;
@@ -225,11 +157,9 @@
   margin: 0;
   padding: 0;
 }
+/* Lift-and-spread on hover / open comes from the shared `.card-fan` (table.css). */
 .sh-hand-tabs > li {
-  position: relative;
   margin-left: -22px;
-  transform: translateY(var(--drop, 0px)) rotate(var(--rot, 0deg));
-  transform-origin: 50% 120%;
 }
 .sh-hand-tabs > li:first-child { margin-left: 0; }
 .sh-hand-tab {
@@ -249,11 +179,7 @@
   font: inherit;
   text-align: center;
   cursor: pointer;
-  transition: transform 140ms ease-out;
 }
-.sh-hand-tab:hover,
-.sh-hand-tab[aria-expanded='true'] { transform: translateY(-34px) scale(1.25); z-index: 5; }
-.sh-hand-tabs > li:has(.sh-hand-tab:hover) { z-index: 5; }
 .sh-hand-tab:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .sh-hand-tab.playable { box-shadow: 0 0 0 3px #e8c467, 0 6px 14px rgba(0, 0, 0, 0.5); }
 .sh-hand-tab.droppable { box-shadow: 0 0 0 3px var(--danger), 0 6px 14px rgba(0, 0, 0, 0.5); }
@@ -327,48 +253,62 @@
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
+/* Same look as the drawer's lane (PO 2026-11-28): dots on a dotted line, the ship art sitting on its
+   step with a gold glow, the shore a red tile with a flag. */
 .sh-lane-track {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 18px;
-  padding: 10px 2px 4px;
+  gap: 16px;
+  height: 44px;
+  padding: 0 2px;
 }
 .sh-lane-track::before {
   content: '';
   position: absolute;
   left: 8px;
-  right: 8px;
-  top: 17px;
-  border-top: 2px dashed rgba(243, 233, 210, 0.5);
+  right: 12px;
+  top: 21px;
+  border-top: 2px dotted rgba(255, 246, 224, 0.45);
 }
 .sh-lane-track i {
   position: relative;
-  width: 15px;
-  height: 15px;
+  flex: none;
+  width: 13px;
+  height: 13px;
+  box-sizing: border-box;
+  border: 2px solid #e3d3ae;
   border-radius: 50%;
-  background: rgba(20, 16, 14, 0.6);
-  box-shadow: inset 0 0 0 2px #e3d3ae;
+  background: rgba(13, 24, 27, 0.85);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 .sh-lane-track i.done { background: #e3d3ae; }
-.sh-lane-track i.ship { background: #e3d3ae; }
+.sh-lane-track i.ship {
+  width: 36px;
+  height: 36px;
+  margin: 0 -6px;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.sh-lane-track i.ship img {
+  display: block;
+  width: 36px;
+  height: 36px;
+  filter: drop-shadow(0 0 8px rgba(232, 196, 103, 0.65)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5));
+}
 .sh-lane-track i.shore {
-  width: 17px;
-  height: 17px;
-  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 5px;
   background: var(--danger);
-  box-shadow: 0 0 0 2px #e3d3ae;
+  color: #fff6e0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
-.sh-lane-ship {
-  position: absolute;
-  left: 50%;
-  bottom: 6px;
-  transform: translateX(-50%);
-  font-size: 1.6rem;
-  line-height: 1;
-  font-style: normal;
-  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.6));
-}
+.sh-lane-track i.shore .gameicon { display: block; }
 .sh-lane-power { font-size: 1rem; }
 .sh-lane-power em { font-style: italic; }
 .sh-lane-power .bad { color: #ffab96; }
@@ -487,6 +427,8 @@
 .sh-wmenu-btn:hover,
 .sh-wmenu-btn:focus-visible { background: #fffaf0; outline: none; box-shadow: 0 0 0 4px #e8c467, 0 0 16px rgba(232, 196, 103, 0.8); }
 .sh-wmenu-glyph { font-size: 1.3rem; font-weight: 700; line-height: 46px; }
+.sh-wmenu-glyph img { display: block; margin: auto; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35)); }
+.sh-wmenu-glyph:has(img) { display: grid; place-items: center; height: 100%; line-height: 1; }
 .sh-wmenu-label {
   position: absolute;
   top: 50%;
@@ -548,11 +490,13 @@
   .sh-rail-title .sm { display: inline; }
   .sh-lane { gap: 0; }
   .sh-lane-title, .sh-lane-note { display: none; }
-  .sh-lane-track { gap: 7px; padding-top: 4px; }
-  .sh-lane-track::before { top: 11px; }
+  .sh-lane-track { gap: 8px; height: 30px; }
+  .sh-lane-track::before { top: 14px; }
   .sh-lane-track i { width: 10px; height: 10px; }
-  .sh-lane-track i.shore { width: 11px; height: 11px; }
-  .sh-lane-ship { font-size: 1.05rem; bottom: 4px; }
+  .sh-lane-track i.ship, .sh-lane-track i.ship img { width: 26px; height: 26px; }
+  .sh-lane-track i.ship { margin: 0 -4px; }
+  .sh-lane-track i.shore { width: 18px; height: 18px; border-radius: 4px; }
+  .sh-lane-track i.shore .gameicon { width: 11px; height: 11px; }
   .sh-lane-power { font-size: 0.8rem; }
   .sh-lane-power em { display: none; }
   .sh-tray-grid { grid-template-columns: 1fr; gap: 14px; }
@@ -562,11 +506,7 @@
   .table-bottom:has(.sh-hand) .hand { grid-column: 1; justify-self: start; }
   .sh-hand-head { font-size: 0.72rem; }
   .sh-hand-tab { width: 46px; height: 64px; }
-  .table.hud .hand-res:has(.first-extra) .res-card,
-  .table.hud .hand-res:has(.first-extra) .res-card-art,
-  .table.hud .hand-res:has(.first-extra) .res-card-fallback { width: 42px; }
-  .table.hud .hand-res:has(.first-extra) .res-card { margin-left: -10px; }
-  .table.hud .hand-res:has(.first-extra) .res-card:first-child { margin-left: 0; }
+  .table.hud .hand-res:has(.first-extra) { --cw: 34px; --gap: 4px; }
   .sh-rail-title .lg { display: none; }
   .sh-hand-tab-name { font-size: 0.55rem; padding: 3px 2px 0; }
   .sh-hand-tab-deck { font-size: 0; padding: 3px 0; }
@@ -578,5 +518,4 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .sh-hand-face { animation: none; }
-  .sh-hand-tab { transition: none; }
 }
