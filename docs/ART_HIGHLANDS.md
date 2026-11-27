@@ -2,7 +2,7 @@
 
 Highlands follows the same art rules as the base game, Strongholds and Tidelands (`docs/ART_TIDELANDS.md`, style rules).
 Every file is made with Tripo **text prompts only** (`tools/art/prompts.tsv`, section "Highlands"), then built with
-`python -I tools/art/build.py <names>` into `packages/client/public/assets/art2d/`. Until a file exists the client
+`python -I tools/art/build.py <names>` into `packages/client/public/assets/art2d/`. Goods hexes also show the icon of their good above the number token (`GOODS_BADGE` in `HexTile.tsx`). Until a file exists the client
 draws a flat colour hex with an emoji mark (`HexTile.tsx` `PLACEHOLDER_GLYPH`, `ui/colors.ts`), so nothing breaks.
 
 Status 2026-11-25: all 10 images made by the PO on the Tripo website and built (icons had a checkerboard baked in: build.py clears it).
@@ -22,7 +22,7 @@ Status 2026-11-25: all 10 images made by the PO on the Tripo website and built (
 |---|---|---|---|---|
 | `terrain/jungle.webp` | t-jungle | terrain | rainforest canopy with a few bright feathers | jungle hexes (plume) |
 | `terrain/grove.webp` | t-grove | terrain | terraced herb gardens on a jungle slope | herb groves (herb) |
-| `terrain/fishery.webp` | t-fishery | terrain | open sea with a shoal of fish and a net float | fishing grounds (fish) |
+| `terrain/fishery.webp` | t-fishery | terrain | deep cobalt bay, big fish in a ring around an empty centre (the token covers the middle), net floats, small boat; v1 (fish only in the centre) looked like plain sea - redo pending | fishing grounds (fish) |
 | `terrain/wilds.webp` | t-wilds | terrain | dark impenetrable old jungle | the wilds hex (blocker rest) |
 | `icon/plume.webp` | i-plume | icon | one red feather with a blue tip | hand, dialogs, chips |
 | `icon/herb.webp` | i-herb | icon | three green leaves tied together | hand, dialogs, chips |
