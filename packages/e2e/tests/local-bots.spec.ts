@@ -14,8 +14,8 @@ test('one human against a hard and an expert bot', async ({ page }) => {
   await page.getByLabel('Tên người chơi 1').fill('Nam');
   await page.getByLabel('Ai điều khiển ghế 2').selectOption('hard');
   await page.getByLabel('Ai điều khiển ghế 3').selectOption('expert');
-  await expect(page.getByText('🤖 Bot 2 (Khó)')).toBeVisible();
-  await expect(page.getByText('🤖 Bot 3 (Siêu khó)')).toBeVisible();
+  await expect(page.getByText('Bot 2 (Khó)')).toBeVisible();
+  await expect(page.getByText('Bot 3 (Siêu khó)')).toBeVisible();
   await clearHover(page);
   await page.screenshot({ path: shotPath('local-bots-home.png', project), fullPage: true });
 

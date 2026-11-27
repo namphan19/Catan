@@ -19,6 +19,7 @@ import { BOT_LEVELS, type BotLevel, type RoomOptions } from '../net/protocol';
 import { NAME_KEY, isValidCode, normalizeCode } from './OnlineShell';
 import { forgetSave, readSave, savedRoom, summarize, type SaveSummary } from './autosave';
 import './hub.css';
+import { GameIcon } from '../ui/GameIcon';
 
 type SeatKind = 'human' | BotLevel;
 
@@ -420,7 +421,7 @@ export function HomeScreen({ onNew, onLoad, onOnline, onContinue, onLangToggle, 
                 </span>
                 {on[m.key] && (
                   <span className="hub-mode-check" aria-hidden="true">
-                    ✓
+                    <GameIcon name="check" size={16} />
                   </span>
                 )}
               </button>
@@ -482,7 +483,7 @@ export function HomeScreen({ onNew, onLoad, onOnline, onContinue, onLangToggle, 
                         onChange={(e) => setNames((ns) => ns.map((x, j) => (j === i ? e.target.value : x)))}
                       />
                     ) : (
-                      <span className="hub-bot-name">🤖 {t('bot_name', { n: i + 1, level: t(`bot_${kinds[i]}`) })}</span>
+                      <span className="hub-bot-name"><GameIcon name="bot" size={16} /> {t('bot_name', { n: i + 1, level: t(`bot_${kinds[i]}`) })}</span>
                     )}
                     <span className="hub-select hub-kind">
                       <select
@@ -493,7 +494,7 @@ export function HomeScreen({ onNew, onLoad, onOnline, onContinue, onLangToggle, 
                         <option value="human">{t('home_seatHuman')}</option>
                         {BOT_LEVELS.map((l) => (
                           <option key={l} value={l}>
-                            🤖 {t(`bot_${l}`)}
+                            {t(`bot_${l}`)}
                           </option>
                         ))}
                       </select>
@@ -502,7 +503,7 @@ export function HomeScreen({ onNew, onLoad, onOnline, onContinue, onLangToggle, 
                 ))}
               </fieldset>
               <button type="button" className="hub-adv-toggle" aria-expanded={advanced} onClick={() => setAdvanced((a) => !a)}>
-                {advanced ? '▾' : '▸'} {t('hub_advanced')}
+                <GameIcon name={advanced ? 'caretDown' : 'caretRight'} size={14} /> {t('hub_advanced')}
               </button>
               {advanced && (
                 <div className="hub-adv">
@@ -554,7 +555,7 @@ export function HomeScreen({ onNew, onLoad, onOnline, onContinue, onLangToggle, 
               )}
               {countPicker(t('hub_seats'))}
               <button type="button" className="hub-adv-toggle" aria-expanded={advanced} onClick={() => setAdvanced((a) => !a)}>
-                {advanced ? '▾' : '▸'} {t('hub_advancedOnline')}
+                <GameIcon name={advanced ? 'caretDown' : 'caretRight'} size={14} /> {t('hub_advancedOnline')}
               </button>
               {advanced && (
                 <div className="hub-adv">

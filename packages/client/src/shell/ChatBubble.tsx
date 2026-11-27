@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useI18n } from '../i18n';
 import { CHAT_MAX_LEN, type ChatMessage } from '../net/protocol';
 import { Avatar } from '../ui/Avatar';
+import { GameIcon } from '../ui/GameIcon';
 
 export interface ChatBubbleProps {
   messages: ChatMessage[];
@@ -25,6 +26,11 @@ function loadSeen(code: string): number {
   } catch {
     return 0;
   }
+}
+
+/** The lobby's inline chat marks what it showed as read, so the game's bubble does not count it. */
+export function markChatSeen(code: string, id: number): void {
+  saveSeen(code, id);
 }
 
 function saveSeen(code: string, id: number): void {
@@ -87,7 +93,7 @@ export function ChatBubble({ messages, you, onSend, placement, roomCode }: ChatB
         title={open ? t('chat_hide') : t('chat_open')}
         onClick={() => setOpen((o) => !o)}
       >
-        <span aria-hidden="true">💬</span>
+        <GameIcon name="chat" size={24} />
         {unread > 0 && (
           <span className="chat-count" aria-hidden="true">
             {unread > 99 ? '99+' : unread}
@@ -99,7 +105,7 @@ export function ChatBubble({ messages, you, onSend, placement, roomCode }: ChatB
           <header className="chat-head">
             <h2>{t('chat_title')}</h2>
             <button type="button" className="btn btn-icon" onClick={() => setOpen(false)} aria-label={t('chat_hide')}>
-              ✕
+              <GameIcon name="cross" size={16} />
             </button>
           </header>
           <ol className="chat-list" ref={listRef} aria-live="polite">

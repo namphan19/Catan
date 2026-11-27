@@ -8,6 +8,7 @@ import { isValidCode, normalizeCode } from './OnlineShell';
 import { useI18n } from '../i18n';
 import { Button } from '../ui/Button';
 import { Panel } from '../ui/Panel';
+import { GameIcon } from '../ui/GameIcon';
 
 export interface OnlineHomeProps {
   name: string;
@@ -67,7 +68,7 @@ export function OnlineHome({ name, onName, onCreate, onJoin, online, onBack, onL
         <h1 className="logo">{t('appTitle')}</h1>
         <p>{t('online_title')}</p>
         <Button variant="ghost" onClick={onLangToggle} aria-label={t('langToggle')}>
-          🌐 {t('langToggle')}
+          <GameIcon name="globe" size={16} /> {t('langToggle')}
         </Button>
       </header>
 

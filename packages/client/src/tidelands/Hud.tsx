@@ -12,6 +12,8 @@ import { ResourceIcon } from '../ui/ResourceIcon';
 import { BuildSlot } from '../table/ActionBar';
 import type { TlView } from './view';
 import './tidelands.css';
+import { GameIcon } from '../ui/GameIcon';
+import { art2dUrl } from '../board/assets';
 
 type TFn = (k: string, p?: Record<string, string | number>) => string;
 
@@ -176,18 +178,8 @@ export function GoldPicker({ golds, onAction }: { golds: Action[]; onAction: (a:
   );
 }
 
-function CogMoveIcon() {
-  return (
-    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3 15.5q6 3.5 12 0l-1.6 3.2q-4.4 2.4-8.8 0Z" fill="currentColor" fillOpacity=".2" />
-      <path d="M9 4v11M9 5q4 1.2 3.4 6L9 10" />
-      <path d="M15 8h6M18.5 5.5 21 8l-2.5 2.5" />
-    </svg>
-  );
-}
-
-function GlyphIcon({ g }: { g: string }) {
-  return <span className="tl-glyph">{g}</span>;
+function GlyphIcon({ g }: { g: 'anchor' | 'swords' | 'flag' | 'tower' }) {
+  return <GameIcon name={g} size={30} />;
 }
 
 /** Cog moves and the scenario's own actions, as round buttons in the build row. */
@@ -213,7 +205,7 @@ export function TlBuildSlots({
     slots.push(
       <BuildSlot
         key="move"
-        icon={<CogMoveIcon />}
+        icon={<img src={art2dUrl('ui', 'move-ship')} alt="" width={38} height={38} draggable={false} />}
         label={t('tl_moveShip')}
         note={t(tl.moved ? 'tlhud_movedAlready' : 'tlhud_moveRule')}
         enabled={moves.length > 0}
@@ -226,14 +218,14 @@ export function TlBuildSlots({
   if (tl.castaways) {
     const acts = of('tl:placeHarbor');
     slots.push(
-      <BuildSlot key="harbor" icon={<GlyphIcon g="⚓" />} label={t('tl_placeHarbor')} enabled={acts.length > 0}
+      <BuildSlot key="harbor" icon={<GlyphIcon g="anchor" />} label={t('tl_placeHarbor')} enabled={acts.length > 0}
         reason={t('act_unavailable')} onClick={() => onStart(acts, t('tl_placeHarbor'))} data="harbor" />,
     );
   }
   if (tl.coves) {
     const acts = of('tl:arm');
     slots.push(
-      <BuildSlot key="arm" icon={<GlyphIcon g="⚔" />} label={t('tl_arm')} enabled={acts.length > 0}
+      <BuildSlot key="arm" icon={<GlyphIcon g="swords" />} label={t('tl_arm')} enabled={acts.length > 0}
         reason={t('act_unavailable')} onClick={() => acts[0] && onAction(acts[0])} data="arm" />,
     );
   }
@@ -241,9 +233,9 @@ export function TlBuildSlots({
     const claim = of('tl:claimWonder');
     const build = of('tl:buildWonder');
     slots.push(
-      <BuildSlot key="claim" icon={<GlyphIcon g="⚑" />} label={t('tl_claimWonder')} enabled={claim.length > 0}
+      <BuildSlot key="claim" icon={<GlyphIcon g="flag" />} label={t('tl_claimWonder')} enabled={claim.length > 0}
         reason={t('act_unavailable')} onClick={() => onStart(claim, t('tl_claimWonder'))} data="claimWonder" />,
-      <BuildSlot key="wonder" icon={<GlyphIcon g="♜" />} label={t('tl_buildWonder')} enabled={build.length > 0}
+      <BuildSlot key="wonder" icon={<GlyphIcon g="tower" />} label={t('tl_buildWonder')} enabled={build.length > 0}
         reason={t('act_unavailable')} onClick={() => build[0] && onAction(build[0])} data="buildWonder" />,
     );
   }

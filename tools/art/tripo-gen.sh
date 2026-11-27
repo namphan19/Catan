@@ -19,6 +19,9 @@ style() {
     piecetop) echo "Single minimalist wooden board game piece made of smooth plain geometric shapes with gently rounded edges: no surface details, no planks, no ropes, no texture, no ornaments. Painted entirely in plain matte off-white. Seen from directly above in a strict top-down orthographic view (90 degrees, looking straight down, no perspective, no tilt), its long axis exactly horizontal, centered, filling about 85 percent of the frame width, isolated on a fully transparent background, soft studio light from the upper left, no ground, no cast shadow, no base plate, no text." ;;
     piecec) echo "Single minimalist board game piece made of smooth plain geometric shapes with gently rounded edges: no small details, no texture, no ornaments, seen from a three-quarter view from above (about 40 degrees), centered, filling about 80 percent of the frame, isolated on a fully transparent background, soft studio light from the upper left, no ground, no cast shadow, no base plate, no text." ;;
     icon) echo "Single game icon object made of a few smooth plain chunky shapes with gently rounded edges, bold simple silhouette that stays readable at 20 pixels, strong clear colour, seen from a three-quarter view from above, centered, filling 90 percent of the frame, isolated on a fully transparent background, soft studio light from the upper left, no ground, no cast shadow, no text, no small details." ;;
+    paper) echo "Flat texture photographed exactly straight on under soft even daylight, no perspective, no folds, no creases, no shadows, no objects, no text, no letters, no writing, no border, no frame, no vignette, the texture fills the entire square frame edge to edge." ;;
+    uibadge) echo "Painted game button icon in a rich gouache style with visible soft brush strokes, chunky simple shapes with a bold readable silhouette that still reads at 36 pixels, brushed steel and warm gold tones, soft light from the upper left, centered, filling 90 percent of the frame, isolated on a fully transparent background, no ground, no cast shadow, no text, no letters, no frame, no circle behind it." ;;
+    ornament) echo "Seen exactly straight on, flat, no perspective, centered, isolated on a fully transparent background, no ground, no cast shadow, no text, no letters, no frame." ;;
     card) echo "Storybook gouache illustration for a board game card, warm soft light, rich but slightly muted palette, one clear central subject with bold readable silhouette that still reads when shown very small, simple soft background. Full bleed: no border, no frame, no card outline, no text, no letters, no numbers." ;;
   esac
 }
@@ -26,7 +29,7 @@ style() {
 gen() {
   local name="$1" kind="$2" size="$3" prompt="$4"
   local bg=() full
-  [ "$kind" = piece ] || [ "$kind" = piecetop ] || [ "$kind" = piecec ] || [ "$kind" = icon ] && bg=(-p background=transparent -p output_format=png)
+  [ "$kind" = piece ] || [ "$kind" = piecetop ] || [ "$kind" = piecec ] || [ "$kind" = icon ] || [ "$kind" = ornament ] || [ "$kind" = uibadge ] && bg=(-p background=transparent -p output_format=png)
   full="$prompt $(style "$kind")"
   local run="data/raw/tripo/runs/$name"
   rm -rf "$run"; mkdir -p "$run"

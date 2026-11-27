@@ -787,7 +787,578 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hub-mode {
+  .hub-mode,
+  .lobby .avatar-pick {
     transition: none;
+  }
+}
+
+/* ======================================================================
+   Waiting room (Lobby.tsx, PO mock 2026-11-27): same sea, the code as the hero,
+   one parchment sheet for the players. Desktop: left column (code, mode, portraits,
+   chat) | sheet. Phones: one column, code, mode, sheet, portraits, chat.
+   ====================================================================== */
+.lobby-head {
+  position: relative;
+}
+.lobby-kicker {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--hud-muted);
+  font-size: 0.9rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.lobby-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(400px, 560px);
+  grid-template-rows: auto auto auto 1fr;
+  grid-template-areas:
+    'hero sheet'
+    'mode sheet'
+    'pics sheet'
+    'chat sheet';
+  align-items: start;
+  gap: 22px 48px;
+}
+.lobby-hero {
+  grid-area: hero;
+  min-height: 196px;
+  background-size: 460px;
+  background-position: right -40px center;
+}
+/* Dark over the left 55 % so the picture's own left edge never shows behind the code. */
+.lobby-hero::before {
+  background: linear-gradient(90deg, rgba(14, 22, 26, 0.97) 55%, rgba(14, 22, 26, 0.5) 80%, rgba(14, 22, 26, 0.15));
+}
+.lobby-mode {
+  grid-area: mode;
+}
+.lobby-sheet {
+  grid-area: sheet;
+}
+.lobby-pics {
+  grid-area: pics;
+}
+.lobby-chat {
+  grid-area: chat;
+}
+
+/* The code. */
+.lobby-code {
+  font-family: var(--font-logo);
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.22em;
+  margin: 2px 0 12px;
+  user-select: all;
+}
+.lobby-copy {
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1.5px solid rgba(232, 196, 103, 0.8);
+  border-radius: 22px;
+  background: rgba(20, 16, 14, 0.55);
+  color: var(--hud-text);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.lobby-copy:hover {
+  background: rgba(20, 16, 14, 0.8);
+}
+.lobby-share {
+  min-height: 44px;
+  padding: 0 22px;
+  font-size: 1rem;
+  box-shadow: none;
+}
+.lobby-code-hint {
+  font-style: italic;
+}
+
+/* What is played. */
+.lobby-mode {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.lobby-mode img {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 0 0 2px var(--hud-gold);
+}
+.lobby-mode div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.lobby-mode b {
+  font-size: 1.35rem;
+}
+.lobby-mode span {
+  color: var(--hud-muted);
+  font-size: 0.95rem;
+  font-style: italic;
+}
+
+/* Portraits, on the sea. */
+.lobby-pics h2,
+.lobby-chat h2 {
+  margin: 0 0 10px;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+.lobby-pics h2 span {
+  color: var(--hud-muted);
+  font-size: 0.95rem;
+  font-weight: 400;
+  font-style: italic;
+}
+.lobby .avatar-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lobby .avatar-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--hud-muted);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.lobby .avatar-pick .avatar {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+.lobby .avatar-pick:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+.lobby .avatar-pick:focus-visible {
+  outline: 3px solid var(--hud-gold);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+.lobby .avatar-pick.mine {
+  color: var(--hud-gold);
+}
+.lobby .avatar-pick.mine .avatar {
+  box-shadow: 0 0 0 3px var(--hud-gold), 0 0 22px rgba(232, 196, 103, 0.7);
+}
+.lobby .avatar-pick.taken {
+  cursor: not-allowed;
+}
+.lobby .avatar-pick.taken .avatar {
+  filter: grayscale(0.8);
+  opacity: 0.4;
+}
+.avatar-pick-label {
+  max-width: 84px;
+  overflow: hidden;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The chat, inline. */
+.lobby-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: rgba(10, 16, 18, 0.55);
+}
+.lobby-chat h2 {
+  margin: 0;
+  color: var(--hud-muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.lobby-chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 170px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  font-size: 1.02rem;
+}
+.lobby-chat-line {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.lobby-chat-line .avatar {
+  display: inline-flex;
+  margin-right: 6px;
+  vertical-align: -5px;
+}
+.lobby-chat-line b {
+  color: var(--hud-gold);
+}
+.lobby-chat-line.mine b {
+  color: #f0c9a0;
+}
+.lobby-chat-empty {
+  color: var(--hud-muted);
+  font-style: italic;
+}
+.lobby-chat-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.lobby-chat-form input {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1.5px solid rgba(243, 233, 210, 0.3);
+  border-radius: 21px;
+  background: rgba(20, 16, 14, 0.5);
+  color: var(--hud-text);
+  font: inherit;
+  font-size: 1rem;
+}
+.lobby-chat-form input::placeholder {
+  color: rgba(227, 211, 174, 0.7);
+}
+.lobby-chat-form input:focus {
+  border-color: var(--hud-gold);
+  outline: none;
+}
+.lobby-chat-form button {
+  min-height: 42px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 21px;
+  background: var(--parchment);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.lobby-chat-form button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* The sheet. */
+.lobby-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.lobby-sheet-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+.lobby-sheet-head h2 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+.lobby-sheet-head span {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+.lobby-seats {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lobby-seat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 52px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(59, 47, 47, 0.15);
+}
+.lobby-seat-pic {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+}
+.lobby-dot {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--parchment);
+}
+.lobby-dot.on {
+  background: #3f9a4a;
+}
+.lobby-dot.off {
+  background: var(--parchment);
+  border: 2.5px solid var(--danger);
+  box-sizing: border-box;
+}
+.lobby-seat-who {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.lobby-seat-name {
+  overflow: hidden;
+  font-size: 1.18rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lobby-seat-tags {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+.lobby-ready {
+  flex: none;
+  color: #7a6a58;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.lobby-ready.on {
+  color: #2e6b2e;
+}
+.lobby-kick {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1.5px solid #c9b996;
+  border-radius: 50%;
+  background: none;
+  color: #8f2f22;
+  font: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.lobby-kick:hover {
+  border-color: #8f2f22;
+  background: rgba(143, 47, 34, 0.08);
+}
+.lobby-seat-hole {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  box-sizing: border-box;
+  border: 2px dashed #b9a98c;
+  border-radius: 50%;
+}
+.lobby-seat-wait {
+  flex: 1;
+  min-width: 0;
+  color: #7a6a58;
+  font-size: 1.05rem;
+  font-style: italic;
+}
+.lobby-bot-add {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lobby-bot-btn {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1.5px solid var(--ink);
+  border-radius: 19px;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.lobby-bot-btn:hover {
+  background: rgba(43, 33, 28, 0.08);
+}
+.lobby-foot-note {
+  margin: -4px 0 0;
+}
+.lobby-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+.lobby-ready-btn {
+  flex: 1;
+  min-height: 58px;
+  padding: 0 18px;
+  border: 2px solid var(--ink);
+  border-radius: 29px;
+  background: var(--parchment);
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.lobby-ready-btn:hover {
+  background: rgba(43, 33, 28, 0.06);
+}
+.lobby-ready-btn.on {
+  border-color: #2e6b2e;
+  background: #e6f0dc;
+  color: #2e6b2e;
+}
+.lobby-start {
+  flex: 1.3;
+  min-height: 58px;
+  padding: 0 18px;
+  font-size: 1.15rem;
+}
+.lobby-start:disabled {
+  box-shadow: none;
+}
+.lobby-wait-host {
+  flex: 1.3;
+  color: var(--ink-soft);
+  font-style: italic;
+  text-align: center;
+}
+
+@media (max-width: 1100px) {
+  .lobby-main {
+    grid-template-columns: minmax(0, 1fr) minmax(360px, 460px);
+    gap: 20px 28px;
+  }
+  .lobby-code {
+    font-size: 3.2rem;
+  }
+  /* Six portraits on one line in the narrower left column. */
+  .lobby .avatar-picker {
+    gap: 12px;
+  }
+  .lobby .avatar-pick .avatar {
+    width: 60px !important;
+    height: 60px !important;
+  }
+}
+
+/* One column from tablet portrait down: code, mode, sheet, portraits, chat. */
+@media (max-width: 860px) {
+  .lobby-main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: 'hero' 'mode' 'sheet' 'pics' 'chat';
+  }
+}
+
+@media (max-width: 640px) {
+  .lobby-head {
+    flex-wrap: nowrap;
+  }
+  .lobby-kicker {
+    display: none;
+  }
+  .lobby-main {
+    gap: 16px;
+  }
+  .lobby-hero {
+    min-height: 0;
+  }
+  .lobby-code {
+    font-size: 2.6rem;
+    margin-bottom: 8px;
+  }
+  .lobby-code-hint {
+    display: none;
+  }
+  .lobby .hub-hero-actions {
+    gap: 8px;
+  }
+  .lobby-copy,
+  .lobby-share {
+    padding: 0 14px;
+    font-size: 0.95rem;
+  }
+  .lobby-mode img {
+    width: 44px;
+    height: 44px;
+  }
+  .lobby-mode b {
+    font-size: 1.08rem;
+  }
+  .lobby-mode span {
+    font-size: 0.85rem;
+  }
+  .lobby-sheet-head h2 {
+    font-size: 1.4rem;
+  }
+  .lobby-seat {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .lobby-seat-name {
+    font-size: 1.05rem;
+  }
+  .lobby-ready {
+    font-size: 0.85rem;
+  }
+  .lobby-kick {
+    width: 44px;
+    height: 44px;
+  }
+  /* Empty seat: the bot row goes under the "waiting" line. */
+  .lobby-bot-add {
+    flex-basis: 100%;
+    padding-left: 58px;
+  }
+  .lobby-bot-btn,
+  .lobby .lobby-bot-add select {
+    min-height: 44px;
+  }
+  .lobby-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .lobby-ready-btn,
+  .lobby-start {
+    flex: none;
+    min-height: 54px;
+  }
+  .lobby .avatar-picker {
+    justify-content: space-between;
+    gap: 10px;
+  }
+  /* Six portraits across a phone: smaller than the 72 px Avatar size (inline style). */
+  .lobby .avatar-pick .avatar {
+    width: 48px !important;
+    height: 48px !important;
+  }
+  .lobby-chat-form input,
+  .lobby-chat-form button {
+    min-height: 44px;
   }
 }

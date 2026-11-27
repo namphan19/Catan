@@ -608,7 +608,7 @@ button {
 }
 
 .blocker-glyph {
-  fill: var(--parchment);
+  color: var(--parchment);
   font-size: 26px;
   text-anchor: middle;
 }
@@ -871,44 +871,6 @@ button {
   margin-top: 10px;
 }
 
-/* Offer / counter composer: one table, a row per card kind (card | have | give | get). */
-.trade-grid {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-.trade-grid th,
-.trade-grid td {
-  padding: 3px 4px;
-  text-align: center;
-  white-space: nowrap;
-}
-.trade-grid thead th {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: var(--ink-soft);
-  border-bottom: 2px solid var(--ink);
-}
-.trade-grid tbody tr + tr > * {
-  border-top: 1px solid rgba(59, 47, 47, 0.15);
-}
-.trade-grid tbody th {
-  text-align: left;
-  font-weight: normal;
-}
-.trade-grid .col-give { background: rgba(178, 34, 34, 0.06); }
-.trade-grid .col-get { background: rgba(46, 125, 50, 0.07); }
-.trade-grid .col-have { color: var(--ink-soft); }
-.trade-grid .stepper { gap: 4px; }
-.trade-grid .stepper .btn {
-  min-height: 26px;
-  padding: 1px 7px;
-}
-.trade-grid .stepper output { color: var(--ink-soft); }
-.trade-grid .stepper output.on { color: var(--ink); }
-
 .trade-from {
   margin: 0 0 8px;
   display: flex;
@@ -1064,153 +1026,6 @@ button {
 .online-buttons {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
-}
-
-.lobby-code-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.lobby-code {
-  font-family: var(--font-logo);
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: 0.3em;
-  padding: 4px 10px 4px 14px;
-  border: 2px solid var(--ink);
-  border-radius: 8px;
-  background: var(--paper, #fdf8ee);
-}
-
-.lobby-codeHint {
-  margin-top: 6px;
-}
-
-.lobby-seats {
-  list-style: none;
-  margin: 0 0 12px;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.lobby-seat {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.lobby-seat-name {
-  font-weight: 600;
-}
-
-/* Portrait picker: six round portraits, taken ones dimmed with the owner's name under them. */
-.avatar-picker {
-  list-style: none;
-  margin: 0 0 6px;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.avatar-pick {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 6px;
-  border: 2px solid transparent;
-  border-radius: 12px;
-  background: transparent;
-  cursor: pointer;
-  font: inherit;
-  color: var(--ink);
-}
-.avatar-pick:hover:not(:disabled),
-.avatar-pick:focus-visible {
-  border-color: var(--ink-soft);
-  background: rgba(255, 255, 255, 0.4);
-}
-.avatar-pick.mine {
-  border-color: var(--gold);
-  background: rgba(201, 162, 39, 0.18);
-}
-.avatar-pick.mine .avatar {
-  box-shadow: 0 0 0 1px var(--ink), 0 0 0 4px var(--gold);
-}
-.avatar-pick.taken {
-  cursor: not-allowed;
-}
-.avatar-pick.taken .avatar {
-  filter: grayscale(0.9);
-  opacity: 0.45;
-}
-.avatar-pick-label {
-  max-width: 84px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.lobby-seat .seat-you {
-  flex-basis: auto;
-  margin-left: 4px;
-}
-
-.lobby-ready {
-  margin-left: auto;
-  font-size: 0.85rem;
-  opacity: 0.85;
-}
-
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex: none;
-}
-
-.dot-on {
-  background: #2a7d3b;
-  box-shadow: 0 0 0 2px #2a7d3b33;
-}
-
-.dot-off {
-  background: transparent;
-  border: 2px solid #a33;
-}
-
-.lobby-bot-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-  margin: 4px 0 12px;
-}
-
-/* Word labels in the seat list (host, bot level): a pill, not the round count badge. */
-.lobby-seat .badge {
-  display: inline-block;
-  height: auto;
-  border-radius: 999px;
-  padding: 1px 8px;
-  white-space: nowrap;
-  line-height: 1.4;
-}
-
-.lobby-seat .badge-bot {
-  background: var(--ink, #3b2f2a);
-}
-
-.lobby-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
   flex-wrap: wrap;
 }
 

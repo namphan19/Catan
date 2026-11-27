@@ -349,12 +349,11 @@ export function OnlineShell({ onHome, onLangToggle, intent }: OnlineShellProps) 
           onKick={kickSeat}
           onAddBot={addBot}
           onAvatar={setAvatar}
+          chat={chat}
+          onChat={sendChat}
           notice={notice}
           onLangToggle={onLangToggle}
         />
-      )}
-      {screen === 'lobby' && room && (
-        <ChatBubble messages={chat} you={room.you} onSend={sendChat} placement="page" roomCode={room.code} />
       )}
       {screen === 'game' && room && (
         <NamesProvider names={names} avatars={avatars}>

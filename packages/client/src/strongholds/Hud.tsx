@@ -13,7 +13,10 @@ import { resKey, useI18n } from '../i18n';
 import { useName } from '../shell/names';
 import { ResourceIcon } from '../ui/ResourceIcon';
 import { trackName } from './labels';
+import { WARDEN_ART } from './StrongholdsPanel';
 import './strongholds.css';
+import { GameIcon, type GameIconName } from '../ui/GameIcon';
+import { art2dUrl } from '../board/assets';
 
 type OnStart = (cands: Action[], title: string) => void;
 
@@ -37,10 +40,12 @@ export function RaidLane({ view, sh }: { view: PlayerView; sh: StrongholdsView }
       <span className="sh-lane-track" aria-hidden="true">
         {Array.from({ length: SH.raidTrack }, (_, i) => (
           <i key={i} className={i < sh.raid.pos ? 'done' : i === sh.raid.pos ? 'ship' : ''}>
-            {i === sh.raid.pos && <span className="sh-lane-ship">⛵</span>}
+            {i === sh.raid.pos && <img src={art2dUrl('ui', 'raid-ship')} alt="" width={34} height={34} draggable={false} />}
           </i>
         ))}
-        <i className="shore" />
+        <i className="shore">
+          <GameIcon name="flag" size={14} />
+        </i>
       </span>
       <span className="sh-lane-power">
         {t('shhud_raiders')} <b>{raiders}</b> · {t('shhud_defence')} <b>{defenders}</b>
@@ -131,7 +136,7 @@ export function TrackRail({
             <h3>{t('sh_improve')}</h3>
             <span className="hud-tray-note">{t('shhud_costRule')}</span>
             <button type="button" className="hud-tray-close" aria-label={t('sh_cardClose')} onClick={() => setOpen(false)}>
-              ×
+              <GameIcon name="cross" size={16} />
             </button>
           </div>
           <div className="sh-tray-grid">
@@ -236,7 +241,7 @@ export function wardenActions(legal: Action[]): Map<string, Map<string, Action[]
   return out;
 }
 
-const GLYPH: Record<string, string> = { promote: '⇈', activate: '⚡', moveWarden: '✥', displace: '⇥', chase: '✕' };
+const GLYPH: Record<string, GameIconName> = { promote: 'promote', activate: 'bolt', moveWarden: 'move', displace: 'push', chase: 'target' };
 
 /** The selected warden: its vertex and its centre in board-area pixels (for the HTML action ring). */
 export interface WardenPick {
@@ -361,7 +366,11 @@ export function WardenMenu({
             }}
           >
             <span className="sh-wmenu-glyph" aria-hidden="true">
-              {GLYPH[kind]}
+              {WARDEN_ART[kind] ? (
+                <img src={art2dUrl('ui', WARDEN_ART[kind])} alt="" width={34} height={34} draggable={false} />
+              ) : (
+                GLYPH[kind] && <GameIcon name={GLYPH[kind]} size={22} />
+              )}
             </span>
             <span className="sh-wmenu-label">{t(`shact_${kind}`)}</span>
           </button>

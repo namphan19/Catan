@@ -17,6 +17,7 @@ import { Blocker, PieceTintDefs, PiecesLayer } from './Piece';
 import { EMPTY_HIGHLIGHTS, HighlightsLayer, type Highlights } from './Highlights';
 import { art2dUrl, useAssets } from './assets';
 import { useI18n } from '../i18n';
+import { GameIcon } from '../ui/GameIcon';
 
 export interface BoardProps {
   layout: LayoutId;
@@ -349,10 +350,10 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
       </svg>
       <div className="board-zoom">
         <button type="button" className="btn btn-icon" onClick={() => zoomBy(1.25)} aria-label={t('board_zoomIn')}>
-          ＋
+          <GameIcon name="plus" size={18} />
         </button>
         <button type="button" className="btn btn-icon" onClick={() => zoomBy(0.8)} aria-label={t('board_zoomOut')}>
-          －
+          <GameIcon name="minus" size={18} />
         </button>
         <button
           type="button"
@@ -360,7 +361,7 @@ export function Board({ layout, board, pieces, highlights, onVertex, onEdge, onH
           onClick={() => setTf({ s: 1, tx: 0, ty: 0 })}
           aria-label={t('board_reset')}
         >
-          ⤢
+          <GameIcon name="fit" size={18} />
         </button>
       </div>
     </div>

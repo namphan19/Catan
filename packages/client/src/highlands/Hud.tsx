@@ -12,6 +12,9 @@ import { BuildSlot } from '../table/ActionBar';
 import { Track } from './HighlandsPanel';
 import type { HlView } from './labels';
 import './highlands.css';
+import { GameIcon } from '../ui/GameIcon';
+import { PieceIcon } from '../ui/Icon';
+import { playerColor } from '../ui/colors';
 
 export function HlSeatLine({ hl, id }: { hl: HlView; id: PlayerId }) {
   const { t } = useI18n();
@@ -24,8 +27,8 @@ export function HlSeatLine({ hl, id }: { hl: HlView; id: PlayerId }) {
   );
 }
 
-function Glyph({ g }: { g: string }) {
-  return <span className="hl-glyph">{g}</span>;
+function Glyph({ g }: { g: 'undo' }) {
+  return <GameIcon name={g} size={30} />;
 }
 
 export function HlBuildSlots({
@@ -64,7 +67,7 @@ export function HlBuildSlots({
       {holdsRoute && (
         <span className={`hl-power${has('hl:caravan') ? ' ready' : ''}`}>
           <BuildSlot
-            icon={<img src={art2dUrl('piece', 'caravan')} alt="" width={36} height={36} />}
+            icon={<PieceIcon kind="caravan" color={playerColor(view.viewer ?? "")} size={32} />}
             label={t('hl_caravan')}
             note={t('hl_caravanHint')}
             enabled={has('hl:caravan')}
@@ -77,7 +80,7 @@ export function HlBuildSlots({
       {holdsForce && (
         <span className={`hl-power${recall ? ' ready' : ''}`}>
           <BuildSlot
-            icon={<Glyph g="↺" />}
+            icon={<Glyph g="undo" />}
             label={t('hl_recall')}
             note={t('hl_recallHint')}
             enabled={!!recall}

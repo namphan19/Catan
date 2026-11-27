@@ -31,7 +31,7 @@ export function assetUrl(kind: string, name: string): string {
 }
 
 /** Painted raster art made with Tripo (tools/art/build.py): /assets/art2d/<kind>/<name>.webp. */
-export function art2dUrl(kind: 'terrain' | 'piece' | 'card' | 'icon', name: string): string {
+export function art2dUrl(kind: 'terrain' | 'piece' | 'card' | 'icon' | 'ui', name: string): string {
   return `/assets/art2d/${kind}/${name}.webp`;
 }
 

@@ -1,0 +1,1255 @@
+/* Drawers and dialogs (PO 2026-11-28): "read on the sea, act on paper".
+   - Expansion drawers (Strongholds, Tidelands, Highlands) are dark and translucent like the hub's
+     mode cards: a painted hero strip, gold small-caps labels, round action buttons, portraits.
+   - Dialogs are a sheet of parchment (Tripo art, art2d/ui/sheet.webp as a 9-slice border image with
+     torn, toasted edges; paper.webp fibres; a wax seal and a gold flourish under the title).
+   Tokens from ui/tokens.css; the HUD words colours from table.css (.hud). */
+
+:root {
+  --xp-bg: #0d181b;
+  --xp-card: #1b2a2e;
+  --xp-text: #fff6e0;
+  --xp-muted: #e3d3ae;
+  --xp-dim: #c2b293;
+  --xp-gold: #e8c467;
+  --xp-good: #8fd19e;
+  --xp-bad: #f08a73;
+  --paper-ink: #3b2f2f;
+  --paper-label: #7d5f17;
+}
+
+/* ============================== Drawer shell ============================== */
+.table.hud.has-drawer .sidecol {
+  width: min(440px, 94vw);
+  background: var(--xp-bg);
+  color: var(--xp-text);
+  border-left: 1px solid rgba(232, 196, 103, 0.35);
+  box-shadow: -24px 0 48px rgba(0, 0, 0, 0.5);
+  scrollbar-color: rgba(232, 196, 103, 0.35) transparent;
+}
+/* Close (and the tabs when Tidelands and Strongholds play together) float over the hero art. */
+.table.hud.has-drawer .sheet-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 14px;
+}
+.table.hud.has-drawer .sheet-close {
+  display: grid;
+  place-items: center;
+  align-self: flex-start;
+  width: 40px;
+  height: 40px;
+  min-height: 0;
+  margin: 14px 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(10, 19, 22, 0.65);
+  color: var(--xp-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.table.hud.has-drawer .sheet-close:hover {
+  background: rgba(10, 19, 22, 0.9);
+  color: var(--xp-gold);
+}
+.sheet-tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: 14px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(10, 19, 22, 0.72);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+.sheet-tabs button {
+  position: relative;
+  min-height: 34px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--xp-muted);
+  font: 500 1rem var(--font-body);
+}
+.sheet-tabs button.on {
+  background: var(--parchment);
+  color: var(--ink);
+  font-weight: 600;
+}
+.sheet-tab-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--xp-gold);
+  box-shadow: 0 0 6px var(--xp-gold);
+}
+
+/* ============================== Drawer panels ============================== */
+.xp-panel {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  color: var(--xp-text);
+  font-family: var(--font-body);
+  font-size: 1rem;
+}
+.xp-hero {
+  position: relative;
+  min-height: 168px;
+  padding: 64px 24px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: linear-gradient(180deg, rgba(10, 19, 22, 0.05) 0%, rgba(10, 19, 22, 0.55) 55%, #0d181b 100%), var(--hero) center 45% / cover,
+    #1b2a2e;
+}
+.xp-kicker,
+.xp-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--xp-gold);
+}
+.xp-kicker {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+.xp-title {
+  margin: 2px 0 0;
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.05;
+  color: var(--xp-text);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+}
+.xp-sub {
+  margin: 5px 0 0;
+  font-size: 1rem;
+  font-style: italic;
+  line-height: 1.3;
+  color: var(--xp-muted);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+.xp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 16px 24px 28px;
+}
+.xp-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.xp-sec-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.xp-aside {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--xp-dim);
+  text-align: right;
+}
+.xp-note {
+  margin: 0;
+  font-size: 0.9rem;
+  font-style: italic;
+  color: var(--xp-dim);
+}
+.xp-muted {
+  color: var(--xp-dim);
+}
+.xp-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+/* Two number tiles (raiders / defence). */
+.xp-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.xp-stat {
+  padding: 8px 14px;
+  border-radius: 12px;
+  background: rgba(255, 246, 224, 0.06);
+}
+.xp-stat span {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--xp-muted);
+}
+.xp-stat b {
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.xp-stat.good b {
+  color: var(--xp-good);
+}
+.xp-stat.bad b {
+  color: var(--xp-bad);
+}
+
+/* Goal / rule chips. */
+.xp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.xp-chips li {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 246, 224, 0.07);
+  font-size: 0.92rem;
+}
+.xp-chips li.gold {
+  background: rgba(232, 196, 103, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(232, 196, 103, 0.5);
+}
+
+/* Round action buttons, the name under them (the whole thing is the button). */
+.xp-acts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px 6px;
+}
+.xp-act {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--xp-muted);
+  font: inherit;
+}
+.xp-act-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--parchment);
+  color: var(--ink);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.xp-act-icon img {
+  display: block;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+}
+.xp-act-icon .gameicon {
+  display: block;
+}
+.xp-act-lbl {
+  font-size: 0.85rem;
+  line-height: 1.15;
+  text-align: center;
+}
+.xp-act:hover:not(:disabled) .xp-act-icon {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 2px var(--xp-gold), 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+.xp-act:hover:not(:disabled) .xp-act-lbl {
+  color: var(--xp-text);
+}
+.xp-act.hot .xp-act-icon {
+  box-shadow: 0 0 0 2px var(--xp-gold), 0 0 18px rgba(232, 196, 103, 0.45), 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+.xp-act:disabled {
+  cursor: not-allowed;
+}
+.xp-act:disabled .xp-act-icon {
+  background: rgba(243, 233, 210, 0.38);
+  box-shadow: none;
+}
+.xp-act:disabled .xp-act-icon > * {
+  opacity: 0.6;
+  filter: grayscale(0.5);
+}
+.xp-act:disabled .xp-act-lbl {
+  opacity: 0.6;
+}
+
+/* Pill buttons on the dark drawer (Improve, bazaar, Highlands powers). */
+.xp-pill,
+.xp-panel .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1.5px solid rgba(255, 246, 224, 0.22);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--xp-muted);
+  font: 600 0.95rem var(--font-body);
+  white-space: nowrap;
+}
+.xp-pill.hot,
+.xp-panel .btn:not(:disabled) {
+  border-color: var(--xp-gold);
+  background: #2a1f17;
+  color: var(--xp-text);
+  box-shadow: 0 0 14px rgba(232, 196, 103, 0.3);
+}
+.xp-pill.hot:hover,
+.xp-panel .btn:hover:not(:disabled) {
+  background: #3d2c1d;
+  color: var(--xp-text);
+}
+.xp-pill:disabled,
+.xp-panel .btn:disabled,
+.xp-panel .btn:disabled:hover {
+  border-color: rgba(255, 246, 224, 0.18);
+  background: transparent;
+  color: #a99a80;
+  cursor: not-allowed;
+}
+.xp-pill-wide {
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* Seats: portrait + name rows (table or list). */
+.xp-seat {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.xp-seat-name {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.xp-seats {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+.xp-seats th,
+.xp-seats td {
+  padding: 5px 6px;
+  border: 0;
+  text-align: center;
+  font-weight: 400;
+}
+.xp-seats thead th {
+  padding-bottom: 0;
+  color: var(--xp-dim);
+}
+.xp-seats tbody > tr > * {
+  background: rgba(255, 246, 224, 0.04);
+}
+.xp-seats tbody th[scope='row'] {
+  text-align: left;
+  border-radius: 12px 0 0 12px;
+  max-width: 170px;
+}
+.xp-seats tbody > tr > :last-child {
+  border-radius: 0 12px 12px 0;
+}
+.xp-seats tbody tr.me > * {
+  background: rgba(232, 196, 103, 0.13);
+}
+.xp-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.xp-rows > li,
+.tl-wonders > li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 246, 224, 0.04);
+}
+.xp-rows > li.me {
+  background: rgba(232, 196, 103, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(232, 196, 103, 0.4);
+}
+.xp-row-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.xp-row-main b {
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+.xp-row-sub {
+  font-size: 0.86rem;
+  line-height: 1.3;
+  color: var(--xp-dim);
+}
+.xp-row-num {
+  color: var(--xp-gold);
+  font-variant-numeric: tabular-nums;
+}
+.xp-row-num.zero {
+  color: #8f816a;
+}
+.xp-panel .avatar {
+  flex: none;
+}
+
+/* ---------- Strongholds ---------- */
+.sh-panel .sh-track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  margin: 0;
+  padding: 0 2px;
+  list-style: none;
+}
+.sh-panel .sh-track::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 14px;
+  top: 21px;
+  border-top: 2px dotted rgba(255, 246, 224, 0.4);
+}
+.sh-panel .sh-track li {
+  position: relative;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--xp-muted);
+  border-radius: 50%;
+  background: #0d181b;
+}
+.sh-panel .sh-track li.done {
+  background: var(--xp-muted);
+}
+.sh-panel .sh-track li.ship {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: none;
+}
+.sh-panel .sh-track li.ship img {
+  display: block;
+  filter: drop-shadow(0 0 8px rgba(232, 196, 103, 0.6));
+}
+.sh-panel .sh-track li.shore {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--danger);
+  color: var(--xp-text);
+}
+.sh-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sh-panel .sh-trackinfo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--xp-card);
+}
+.sh-panel .sh-trackinfo.ready {
+  box-shadow: inset 0 0 0 1px rgba(232, 196, 103, 0.55);
+}
+.sh-trackinfo-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.sh-trackinfo-head b {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.sh-trackinfo-deck {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: var(--xp-dim);
+}
+.sh-lvl {
+  display: inline-flex;
+  gap: 3px;
+}
+.sh-lvl i {
+  width: 9px;
+  height: 13px;
+  border: 1px solid rgba(255, 246, 224, 0.3);
+  border-radius: 3px;
+}
+.sh-lvl i.mark {
+  border-color: rgba(232, 196, 103, 0.75);
+}
+.sh-lvl i.on {
+  border-color: var(--track, var(--xp-gold));
+  background: var(--track, var(--xp-gold));
+}
+.sh-trackinfo[data-track='commerce'] {
+  --track: #6a9bd3;
+}
+.sh-trackinfo[data-track='council'] {
+  --track: #c3cad1;
+}
+.sh-trackinfo[data-track='learning'] {
+  --track: #c07448;
+}
+.sh-panel .sh-trackinfo-row {
+  margin: 2px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.3;
+  color: var(--xp-muted);
+}
+.sh-panel .sh-trackinfo-lvl {
+  color: var(--xp-text);
+  font-weight: 600;
+}
+.sh-panel .sh-reached .sh-trackinfo-lvl,
+.sh-panel .sh-tick {
+  color: var(--xp-good);
+}
+.sh-panel .sh-tick {
+  margin-left: 4px;
+}
+.sh-trackinfo-owner {
+  color: var(--xp-text);
+  font-weight: 600;
+}
+.sh-panel .sh-star {
+  margin-left: 3px;
+  color: var(--xp-gold);
+}
+@media (max-width: 640px) {
+  .sh-panel .sh-trackinfo {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .sh-panel .sh-trackinfo .xp-pill {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+/* ---------- Tidelands ---------- */
+.tl-wonders {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tl-wonder-art {
+  flex: none;
+  width: 34px;
+  height: 48px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+.tl-wonder-owner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+/* ---------- Highlands ---------- */
+.hl-panel .hl-players {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 4px;
+}
+.hl-panel .hl-players th,
+.hl-panel .hl-players td {
+  padding: 6px 8px;
+  background: rgba(255, 246, 224, 0.04);
+  font-weight: 400;
+  white-space: nowrap;
+}
+.hl-panel .hl-players th {
+  text-align: left;
+  border-radius: 12px 0 0 12px;
+}
+.hl-panel .hl-players td:last-child {
+  border-radius: 0 12px 12px 0;
+}
+.hl-panel .hl-players tr.me > * {
+  background: rgba(232, 196, 103, 0.13);
+}
+.hl-panel .hl-total {
+  color: var(--xp-gold);
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.hl-panel .hl-tribe.active {
+  border-color: var(--xp-gold);
+  background: rgba(232, 196, 103, 0.15);
+}
+.hl-panel .hl-tribe i {
+  border-color: var(--xp-muted);
+}
+.hl-panel .hl-tribe i.on {
+  background: var(--xp-muted);
+}
+.hl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.hl-info {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.35;
+  color: var(--xp-muted);
+}
+.hl-info b {
+  color: var(--xp-text);
+}
+.hl-muted {
+  color: var(--xp-dim);
+  font-style: italic;
+}
+
+/* Phones: the drawer is a bottom sheet (portrait) or a right sheet (landscape). */
+@media (max-width: 640px) {
+  .table.hud.has-drawer .sidecol {
+    width: auto;
+    border-left: 0;
+    border-radius: 20px 20px 0 0;
+    max-height: 86dvh;
+  }
+  .table.hud.has-drawer .sidecol::before {
+    content: '';
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: block;
+    width: 44px;
+    height: 5px;
+    margin: 8px auto -13px;
+    border-radius: 3px;
+    background: rgba(255, 246, 224, 0.55);
+  }
+  .xp-hero {
+    min-height: 140px;
+    padding: 64px 18px 12px;
+  }
+  .xp-title {
+    font-size: 1.7rem;
+  }
+  .xp-body {
+    gap: 18px;
+    padding: 14px 18px 24px;
+  }
+  .xp-act-icon {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* Phone landscape: a narrower right sheet. */
+@media (max-height: 520px) and (min-width: 641px) {
+  .table.hud.has-drawer .sidecol {
+    width: min(380px, 62vw);
+  }
+  .xp-hero {
+    min-height: 120px;
+  }
+}
+
+/* ============================== Dialogs: a sheet of parchment ============================== */
+.dialog-overlay {
+  background: rgba(8, 16, 20, 0.55);
+  backdrop-filter: blur(2px);
+}
+.dialog-overlay.docked {
+  backdrop-filter: none;
+}
+.dialog-overlay .dialog {
+  position: relative;
+  /* The whole Tripo sheet stretched (torn, toasted rim). Not a 9-slice border image: its slice seams
+     showed as thin lines on phones with a fractional pixel ratio. */
+  border: 0;
+  border-radius: 0;
+  padding: 22px;
+  background: url('/assets/art2d/ui/sheet.webp') center / 100% 100% no-repeat;
+  box-shadow: none;
+  filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.55));
+  color: var(--paper-ink);
+  max-width: 660px;
+}
+/* Paper fibres over the middle, fading out before the rim. */
+.dialog-overlay .dialog::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: url('/assets/art2d/ui/paper.webp') 0 0 / 320px;
+  mix-blend-mode: multiply;
+  opacity: 0.32;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent),
+    linear-gradient(to bottom, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 36px, #000 calc(100% - 36px), transparent),
+    linear-gradient(to bottom, transparent, #000 36px, #000 calc(100% - 36px), transparent);
+  mask-composite: intersect;
+}
+.dialog-overlay .dialog > * {
+  position: relative;
+  z-index: 1;
+}
+.dialog-overlay .dialog-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 6px 10px 0;
+  border-bottom: 0;
+}
+.dialog-overlay .dialog-seal {
+  display: block;
+  width: 42px;
+  height: 42px;
+  filter: drop-shadow(0 2px 3px rgba(59, 47, 47, 0.45));
+}
+.dialog-overlay .dialog-head h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  color: var(--paper-ink);
+}
+.dialog-overlay .dialog-head::after {
+  content: '';
+  grid-column: 1 / -1;
+  height: 20px;
+  margin: 2px 8% 0;
+  background: url('/assets/art2d/ui/flourish.webp') center / contain no-repeat;
+  opacity: 0.9;
+}
+.dialog-overlay .dialog-head .btn-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(59, 47, 47, 0.08);
+  color: var(--paper-ink);
+}
+.dialog-overlay .dialog-head .btn-icon:hover:not(:disabled) {
+  background: rgba(59, 47, 47, 0.16);
+  color: var(--paper-ink);
+}
+.dialog-overlay .dialog-body {
+  padding: 10px 12px 8px;
+}
+.dialog-overlay .dialog .hint {
+  font-size: 0.95rem;
+  font-style: italic;
+  color: #6b5b4e;
+}
+
+/* Buttons on paper: pills. Primary = dark leather with a gold ring (the hub's Start button). */
+.dialog-overlay .dialog .btn {
+  min-height: 40px;
+  padding: 0.35em 1.1em;
+  border: 1.5px solid rgba(59, 47, 47, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 250, 235, 0.55);
+  color: var(--paper-ink);
+}
+.dialog-overlay .dialog .btn:hover:not(:disabled) {
+  background: #f3dc9a;
+  color: var(--paper-ink);
+}
+.dialog-overlay .dialog .btn-primary {
+  min-height: 46px;
+  padding: 0.4em 1.5em;
+  border: 0;
+  background: #2a1f17;
+  color: #fff6e0;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px var(--gold), 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+.dialog-overlay .dialog .btn-primary:hover:not(:disabled) {
+  background: #3d2c1d;
+  color: #fff6e0;
+}
+.dialog-overlay .dialog .btn:disabled,
+.dialog-overlay .dialog .btn:disabled:hover {
+  border: 1.5px dashed rgba(59, 47, 47, 0.3);
+  background: transparent;
+  color: #8a7a68;
+  box-shadow: none;
+}
+.dialog-overlay .dialog .btn[aria-pressed='true'],
+.dialog-overlay .dialog .btn.active {
+  background: #f3dc9a;
+  color: var(--paper-ink);
+  box-shadow: inset 0 0 0 2px var(--gold);
+}
+.dialog-overlay .dialog .btn-danger {
+  border-color: rgba(162, 59, 42, 0.6);
+  color: var(--danger);
+}
+.dialog-overlay .dialog .stepper .btn,
+.dialog-overlay .dialog .btn-icon {
+  min-height: 32px;
+  padding: 0 10px;
+}
+.dialog-overlay .dialog-actions {
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* Tabs on paper: a pill switch. */
+.dialog-overlay .dialog .tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin: 0 0 12px;
+  padding: 4px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(59, 47, 47, 0.1);
+}
+.dialog-overlay .dialog .tab {
+  min-height: 34px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--paper-ink);
+  font-size: 1rem;
+}
+.dialog-overlay .dialog .tab.active,
+.dialog-overlay .dialog .tab[aria-selected='true'] {
+  background: #2a1f17;
+  color: #fff6e0;
+}
+
+/* Fieldsets on paper: a small gold-brown label, no box. */
+.dialog-overlay .dialog .fieldset {
+  padding: 0;
+  border: 0;
+  gap: 8px;
+}
+.dialog-overlay .dialog .fieldset legend {
+  margin-bottom: 6px;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--paper-label);
+}
+.dialog-overlay .dialog .trade-terms-box {
+  border: 0;
+  border-radius: 14px;
+  background: rgba(59, 47, 47, 0.07);
+}
+/* Player trade composer: the same painted cards, a count on the card, small - / + under it. */
+.tcard-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(54px, 1fr));
+  gap: 10px 6px;
+  padding-top: 8px;
+}
+.tcard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.tcard-face {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 64px;
+  aspect-ratio: 5 / 7;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  box-shadow: 0 3px 8px rgba(59, 47, 47, 0.3);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.tcard-face .res-card-art,
+.tcard-face .res-card-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background: var(--parchment-dark);
+}
+.tcard-face:hover:not(:disabled) {
+  transform: translateY(-3px);
+}
+.tcard-face:disabled {
+  cursor: default;
+}
+.tcard.on .tcard-face {
+  box-shadow: 0 0 0 3px var(--gold), 0 0 18px rgba(201, 162, 39, 0.5);
+}
+.tcard-give.tcard-row .tcard.on .tcard-face {
+  box-shadow: 0 0 0 3px #b4553c, 0 0 16px rgba(180, 85, 60, 0.45);
+}
+.tcard.none .tcard-face {
+  opacity: 0.4;
+  filter: grayscale(0.4);
+  box-shadow: none;
+}
+.tcard-n {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #2a1f17;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 26px;
+  box-shadow: 0 0 0 2px #f3e9d2;
+}
+.tcard-give .tcard-n {
+  background: #b4553c;
+  color: #fff6e0;
+}
+.tcard-step {
+  display: flex;
+  gap: 6px;
+}
+.tcard-step button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 30px;
+  padding: 0;
+  border: 1.5px solid rgba(59, 47, 47, 0.35);
+  border-radius: 50%;
+  background: rgba(255, 250, 235, 0.6);
+  color: var(--paper-ink);
+}
+.tcard-step button:hover:not(:disabled) {
+  background: #f3dc9a;
+}
+.tcard-step button:disabled {
+  border-style: dashed;
+  background: transparent;
+  color: #a5967f;
+  cursor: not-allowed;
+}
+.tcard small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  color: #6b5b4e;
+}
+.tcard.on small {
+  color: var(--paper-ink);
+  font-weight: 600;
+}
+
+/* Offer summaries: small painted cards with the count. */
+.dialog-overlay .dialog .bag-chips {
+  gap: 6px 12px;
+}
+.bag-chip {
+  gap: 5px;
+}
+.bag-card {
+  display: block;
+  width: 26px;
+  height: 36px;
+}
+.bag-card .res-card-art,
+.bag-card .res-card-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(59, 47, 47, 0.35);
+}
+.bag-card .res-card-fallback svg {
+  width: 18px;
+  height: 18px;
+}
+.dialog-overlay .dialog .trade-responses li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(59, 47, 47, 0.06);
+  font-size: 0.95rem;
+}
+.dialog-overlay .dialog .trade-responses li .btn {
+  margin-left: auto;
+}
+.dialog-overlay .dialog .trade-from {
+  gap: 10px;
+}
+
+/* Strongholds improvement tray (slides up from the foot of the board): the same paper. */
+.table.hud .hud-tray {
+  padding: 26px 34px 26px;
+  border-radius: 0;
+  background: url('/assets/art2d/ui/sheet.webp') center top / 100% 135% no-repeat;
+  box-shadow: none;
+  filter: drop-shadow(0 -10px 26px rgba(0, 0, 0, 0.5));
+}
+.table.hud .hud-tray-head {
+  align-items: center;
+}
+.table.hud .hud-tray-head::before {
+  content: '';
+  flex: none;
+  width: 36px;
+  height: 36px;
+  background: url('/assets/art2d/ui/seal.webp') center / contain no-repeat;
+  filter: drop-shadow(0 2px 3px rgba(59, 47, 47, 0.45));
+}
+.table.hud .hud-tray-head h3 {
+  font-size: 1.45rem;
+  font-weight: 600;
+}
+.table.hud .hud-tray-note {
+  font-style: italic;
+}
+.table.hud .hud-tray-close {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(59, 47, 47, 0.08);
+  color: var(--paper-ink);
+}
+.table.hud .sh-tray-grid {
+  padding-top: 18px;
+  background: url('/assets/art2d/ui/flourish.webp') center top / auto 16px no-repeat;
+}
+.table.hud .hud-tray .btn {
+  min-height: 42px;
+  border: 1.5px solid rgba(59, 47, 47, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 250, 235, 0.55);
+  color: var(--paper-ink);
+}
+.table.hud .hud-tray .btn:hover:not(:disabled) {
+  background: #f3dc9a;
+  color: var(--paper-ink);
+}
+.table.hud .hud-tray .btn-primary {
+  border: 0;
+  background: #2a1f17;
+  color: #fff6e0;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px var(--gold), 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+.table.hud .hud-tray .btn-primary:hover:not(:disabled) {
+  background: #3d2c1d;
+  color: #fff6e0;
+}
+.table.hud .hud-tray .btn:disabled {
+  border-style: dashed;
+  background: transparent;
+  color: #8a7a68;
+}
+
+/* Bank trade: the painted cards themselves, best rate on each. */
+.bank-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+.bank-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 78px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--paper-ink);
+  font: inherit;
+}
+.bank-card-face {
+  position: relative;
+  display: block;
+  width: 64px;
+  height: 90px;
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(59, 47, 47, 0.3);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.bank-card-face .res-card-art,
+.bank-card-face .res-card-fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background: var(--parchment-dark);
+}
+.bank-rate {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  min-width: 32px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #2a1f17;
+  color: #fff6e0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+  box-shadow: 0 0 0 2px #f3e9d2;
+}
+.bank-card small {
+  font-size: 0.8rem;
+  color: #6b5b4e;
+  white-space: nowrap;
+}
+.bank-card:hover:not(:disabled) .bank-card-face {
+  transform: translateY(-3px);
+}
+.bank-card[aria-pressed='true'] .bank-card-face {
+  box-shadow: 0 0 0 3px var(--gold), 0 0 20px rgba(201, 162, 39, 0.55);
+}
+.bank-card[aria-pressed='true'] .bank-rate {
+  background: var(--gold);
+  color: #2a1f17;
+}
+.bank-card[aria-pressed='true'] small {
+  color: var(--paper-ink);
+  font-weight: 600;
+}
+.bank-card:disabled {
+  cursor: not-allowed;
+}
+.bank-card:disabled .bank-card-face {
+  opacity: 0.4;
+  filter: grayscale(0.4);
+  box-shadow: none;
+}
+.bank-swap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0;
+  color: var(--paper-label);
+}
+.bank-swap::before,
+.bank-swap::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid rgba(125, 95, 23, 0.35);
+}
+.bank-do {
+  width: 100%;
+}
+.bank-do img {
+  width: 18px;
+  height: 25px;
+  border-radius: 2px;
+  object-fit: cover;
+}
+
+@media (max-width: 640px) {
+  .dialog-overlay .dialog {
+    padding: 16px;
+  }
+  .dialog-overlay .dialog-head h2 {
+    font-size: 1.3rem;
+  }
+  .dialog-overlay .dialog-head .btn-icon {
+    width: 44px;
+    height: 44px;
+  }
+  .dialog-overlay .dialog-seal {
+    width: 34px;
+    height: 34px;
+  }
+  .bank-row {
+    justify-content: center;
+  }
+  .bank-card {
+    width: 60px;
+  }
+  .bank-card-face {
+    width: 52px;
+    height: 73px;
+  }
+  .tcard-row {
+    gap: 8px 4px;
+  }
+  .tcard-step button {
+    width: 44px;
+    height: 34px;
+  }
+  .tcard-n {
+    min-width: 22px;
+    height: 22px;
+    line-height: 22px;
+    font-size: 0.85rem;
+  }
+}

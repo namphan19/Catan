@@ -1,36 +1,5 @@
 /* Highlands expansion UI. Uses the tokens of ui/tokens.css (parchment, ink, gold). */
-.hl-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 8px 10px;
-  background: var(--parchment-dark);
-  border: 2px solid var(--ink);
-  border-radius: 6px;
-  font-size: 13px;
-  flex: 0 1 auto;
-  max-height: 100%;
-  min-height: 120px;
-  overflow-y: auto;
-}
-.hl-head { margin: 0; font-size: 15px; letter-spacing: 0.03em; }
-.hl-goal { margin: 0; font-weight: 700; line-height: 1.3; }
-.hl-info { margin: 0; line-height: 1.3; font-size: 12px; }
-.hl-muted { color: var(--ink-soft); }
-.hl-actions { display: flex; flex-wrap: wrap; gap: 4px; }
-.hl-actions .btn { padding: 3px 8px; font-size: 13px; }
-.hl-players { border-collapse: collapse; width: 100%; }
-.hl-players th {
-  text-align: left;
-  white-space: nowrap;
-  padding: 2px 6px 2px 0;
-  font-size: 12px;
-  max-width: 96px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.hl-players td { padding: 2px 4px 2px 0; font-size: 12px; white-space: nowrap; }
-.hl-total { font-weight: 700; text-align: right; }
+/* The drawer panel (HighlandsPanel) is styled in ui/chrome.css. */
 
 /* Culture track: three groups of dots (4, 4, 3); the active tribe is framed in gold. */
 .hl-track { display: inline-flex; gap: 3px; }

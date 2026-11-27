@@ -7,9 +7,10 @@ import { assetUrl } from '../board/assets';
 import { playerColor } from '../ui/colors';
 import { Avatar } from '../ui/Avatar';
 import { Dialog } from '../ui/Dialog';
-import { GuardIcon, HandIcon, PieceIcon, StarIcon, UiIcon } from '../ui/Icon';
+import { GuardIcon, HandIcon, PieceIcon, UiIcon } from '../ui/Icon';
 import { awardKey } from './describe';
 import { actorsOf } from './StatusBanner';
+import { art2dUrl } from '../board/assets';
 
 export function PlayerDialog({ view, playerId, onClose }: { view: PlayerView; playerId: PlayerId; onClose: () => void }) {
   const { t } = useI18n();
@@ -41,7 +42,7 @@ export function PlayerDialog({ view, playerId, onClose }: { view: PlayerView; pl
             aria-label={t('stat_vp', { n: vp, m: view.init.vpToWin })}
             role="img"
           >
-            <StarIcon size={24} />
+            <img src={art2dUrl('ui', 'trophy-vp')} alt="" width={28} height={28} draggable={false} />
             <strong>{vp}</strong>
             <small>/{view.init.vpToWin}</small>
           </div>

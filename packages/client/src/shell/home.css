@@ -1,4 +1,4 @@
-/* Online home + lobby: a parchment sheet on the dark desk. The home screen itself is hub.css
+/* Online home (the fallback form): a parchment sheet on the dark desk. The home screen and the lobby are hub.css
    (PO 2026-11-27); scoped to .home so the game table is untouched. */
 
 body:has(.home),
@@ -6,7 +6,7 @@ body:has(.hub) {
   background: #241d1a;
 }
 
-/* ---------- online home + lobby (same desk, simpler sheet) ---------- */
+/* ---------- online home (same desk, simpler sheet) ---------- */
 .home {
   max-width: 880px;
   margin: 30px auto;

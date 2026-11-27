@@ -15,6 +15,7 @@ import { edgeGeom, hexCenter, SIZE, vertexPos } from './geom';
 import { playerColor, seatIndex } from '../ui/colors';
 import { PIECE_ART, type Art } from './pieceArt';
 import { art2dUrl, useAssets } from './assets';
+import { GameIcon } from '../ui/GameIcon';
 
 // ---- Painted sprites (Tripo art, tools/art/build.py) -------------------------------------
 // Player pieces are painted in neutral grey; a multiply filter tints them with the seat
@@ -297,9 +298,7 @@ export function Blocker({ hexId }: { hexId: string }) {
       ) : (
         <>
           <circle r={SIZE * 0.3} fill={INK} stroke="var(--gold)" strokeWidth={3} />
-          <text y={4} textAnchor="middle" className="blocker-glyph">
-            ☠
-          </text>
+          <GameIcon name="skull" size={SIZE * 0.42} x={-SIZE * 0.21} y={-SIZE * 0.21} className="blocker-glyph" />
         </>
       )}
     </g>

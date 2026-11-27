@@ -11,12 +11,13 @@
 import { useEffect, useState } from 'react';
 import { BOT_TRADE_WAIT_MS, type Action, type Bag, type PlayerView, type Validation } from '@hexgame/engine';
 import { useI18n, resKey, resourceKinds } from '../i18n';
-import { useName } from '../shell/names';
-import { playerColor, playerEmblem, RESOURCE_COLORS } from '../ui/colors';
-import { Emblem } from '../ui/Emblem';
-import { ResourceIcon } from '../ui/ResourceIcon';
+import { useAvatar, useName } from '../shell/names';
+import { Avatar } from '../ui/Avatar';
+import { playerColor } from '../ui/colors';
 import { Dialog } from '../ui/Dialog';
 import { Button, Fieldset } from '../ui/Button';
+import { GameIcon } from '../ui/GameIcon';
+import { ResourceArt } from '../table/HandPanel';
 
 export type TradeTab = 'bank' | 'players';
 
@@ -94,79 +95,71 @@ function BankTab({ view, legal, onAction }: { view: PlayerView; legal: Action[];
     actions.set(`${r}>${s}`, a);
   }
 
-  const pairs = selGive ? [...(gets[selGive] ?? [])] : [];
   const chosen = selGive && selGet ? actions.get(`${selGive}>${selGet}`) : undefined;
-  const giveKinds = resourceKinds(view.bank.hand).filter((r) => rates[r] != null);
-
-  if (giveKinds.length === 0) {
-    // Say why: not your turn / roll first / simply not enough cards of one kind.
-    const why =
-      view.turn.current !== me
-        ? 'dlg_bankNotTurn'
-        : legal.some((a) => a.t === 'roll')
-          ? 'dlg_bankRollFirst'
-          : 'dlg_bankNone';
-    return (
-      <div className="trade-bank">
-        <p className="hint">{t(why)}</p>
-      </div>
-    );
-  }
+  // Every card kind stays on the table (PO 2026-11-28): the ones you cannot give are dimmed with
+  // what you hold, so "not enough" is visible at a glance instead of an empty dialog.
+  const kinds = resourceKinds(view.bank.hand);
+  const canGive = kinds.some((r) => rates[r] != null);
+  const why =
+    view.turn.current !== me ? 'dlg_bankNotTurn' : legal.some((a) => a.t === 'roll') ? 'dlg_bankRollFirst' : 'dlg_bankNone';
 
   return (
     <div className="trade-bank">
-      <p className="hint">{t('dlg_bankTabHint')}</p>
+      <p className="hint">{t(canGive ? 'dlg_bankTabHint' : why)}</p>
       <Fieldset label={t('dlg_youGive')}>
-        <ul className="option-list">
-          {giveKinds.map((r) => (
-            <li key={r}>
-              <Button
-                variant="ghost"
-                className="option-btn"
-                aria-pressed={selGive === r}
-                onClick={() => {
-                  setSelGive(r);
-                  setSelGet(null);
-                }}
-              >
-                <span className="option-chip" title={t(resKey(r))}>
-                  <ResourceIcon res={r} size={20} />
-                  <span>
-                    {rates[r]}× {t(resKey(r))}
-                  </span>
-                  <small className="option-sub">{t('dlg_bankHave', { n: hand[r] ?? 0, r: rates[r] })}</small>
-                </span>
-              </Button>
-            </li>
+        <div className="bank-row">
+          {kinds.map((r) => (
+            <button
+              key={r}
+              type="button"
+              className="bank-card"
+              data-res={r}
+              disabled={rates[r] == null}
+              aria-pressed={selGive === r}
+              aria-label={`${t(resKey(r))}${rates[r] != null ? ` ${rates[r]}:1` : ''}`}
+              onClick={() => {
+                setSelGive(r);
+                setSelGet(null);
+              }}
+            >
+              <span className="bank-card-face">
+                <ResourceArt res={r} />
+                {rates[r] != null && <span className="bank-rate">{rates[r]}:1</span>}
+              </span>
+              <small>{t('dlg_bankHold', { n: hand[r] ?? 0 })}</small>
+            </button>
           ))}
-        </ul>
+        </div>
       </Fieldset>
-      {selGive && (
-        <Fieldset label={t('dlg_youGet')}>
-          <ul className="option-list">
-            {pairs.map((s) => (
-              <li key={s}>
-                <Button
-                  variant="ghost"
-                  className="option-btn"
-                  aria-pressed={selGet === s}
-                  onClick={() => setSelGet(s)}
-                >
-                  <span className="option-chip" title={t(resKey(s))}>
-                    <ResourceIcon res={s} size={20} />
-                    <span>1× {t(resKey(s))}</span>
-                  </span>
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </Fieldset>
-      )}
+      <div className="bank-swap" aria-hidden="true">
+        <GameIcon name="swap" size={20} />
+      </div>
+      <Fieldset label={t('dlg_youGet')}>
+        <div className="bank-row">
+          {kinds.map((s) => (
+            <button
+              key={s}
+              type="button"
+              className="bank-card"
+              data-get={s}
+              disabled={!selGive || !gets[selGive]?.has(s)}
+              aria-pressed={selGet === s}
+              aria-label={t(resKey(s))}
+              onClick={() => setSelGet(s)}
+            >
+              <span className="bank-card-face">
+                <ResourceArt res={s} />
+              </span>
+              <small>{t(resKey(s))}</small>
+            </button>
+          ))}
+        </div>
+      </Fieldset>
       <div className="dialog-actions">
-        <Button variant="primary" disabled={!chosen} onClick={() => chosen && onAction(chosen)}>
+        <Button variant="primary" className="bank-do" disabled={!chosen} onClick={() => chosen && onAction(chosen)}>
           {chosen && selGive && selGet
             ? t('dlg_bankDo', { n: rates[selGive], give: t(resKey(selGive)), get: t(resKey(selGet)) })
-            : t('dlg_confirm')}
+            : t('dlg_bankPick')}
         </Button>
       </div>
     </div>
@@ -239,7 +232,7 @@ function Terms({ getLabel, get, giveLabel, give }: { getLabel: string; get: Bag;
         <BagChips bag={get} t={t} />
       </div>
       <span className="trade-terms-arrow" aria-hidden="true">
-        ⇄
+        <GameIcon name="swap" size={22} />
       </span>
       <div>
         <span className="trade-terms-label">{giveLabel}</span>
@@ -264,6 +257,7 @@ function ResponderMode({
 }) {
   const { t } = useI18n();
   const name = useName();
+  const avatar = useAvatar();
   const me = view.viewer ?? 'p1';
   const trade = view.trade!;
   const hand = view.players.find((p) => p.id === me)?.hand ?? {};
@@ -286,7 +280,7 @@ function ResponderMode({
   return (
     <div className="trade-respond">
       <p className="trade-from">
-        <Emblem id={playerEmblem(trade.from)} size={16} color={playerColor(trade.from)} />{' '}
+        <Avatar id={avatar(trade.from)} seat={trade.from} size={30} />{' '}
         <strong>{t('dlg_theirOffer', { name: name(trade.from) })}</strong>
       </p>
       <Terms getLabel={t('dlg_youGet')} get={trade.give} giveLabel={t('dlg_youGive')} give={trade.get} />
@@ -304,10 +298,10 @@ function ResponderMode({
           </Button>
         )}
         <Button variant="danger" disabled={!decline} onClick={() => decline && onAction(decline)}>
-          ✖ {t('dlg_decline')}
+          <GameIcon name="cross" size={14} /> {t('dlg_decline')}
         </Button>
         <Button variant="primary" disabled={!accept} onClick={() => accept && onAction(accept)}>
-          ✔ {t('dlg_accept')}
+          <GameIcon name="check" size={14} /> {t('dlg_accept')}
         </Button>
       </div>
       {canCounter && countering && (
@@ -331,6 +325,7 @@ function ResponderMode({
 function OffererMode({ view, legal, onAction }: { view: PlayerView; legal: Action[]; onAction: (a: Action) => void }) {
   const { t } = useI18n();
   const name = useName();
+  const avatar = useAvatar();
   const me = view.viewer ?? 'p1';
   const trade = view.trade!;
   const confirms = legal.filter((a) => a.t === 'confirmTrade');
@@ -359,7 +354,7 @@ function OffererMode({ view, legal, onAction }: { view: PlayerView; legal: Actio
                   : t('side_pending');
           return (
             <li key={p.id} style={{ borderColor: playerColor(p.id) }}>
-              <Emblem id={playerEmblem(p.id)} size={14} color={playerColor(p.id)} /> {name(p.id)}:{' '}
+              <Avatar id={avatar(p.id)} seat={p.id} size={28} /> <b>{name(p.id)}</b>:{' '}
               <span className={`resp-${r?.response ?? 'pending'}`}>{label}</span>
               {c && (
                 <Button variant="primary" onClick={() => onAction(c)}>
@@ -376,7 +371,7 @@ function OffererMode({ view, legal, onAction }: { view: PlayerView; legal: Actio
       {cancel && (
         <div className="dialog-actions">
           <Button variant="danger" onClick={() => onAction(cancel)}>
-            ✖ {t('act_cancelOffer')}
+            <GameIcon name="cross" size={14} /> {t('act_cancelOffer')}
           </Button>
         </div>
       )}
@@ -444,12 +439,25 @@ function OfferComposer({
       }}
     >
       <p className="hint">{t(mode === 'offer' ? 'dlg_offerHint' : 'dlg_counterHint')}</p>
-      <TradeGrid
-        give={give}
-        get={get}
+      <CardPicker
+        side="give"
+        label={t('dlg_youGive')}
+        bag={give}
         hand={hand}
-        onGive={(r, d) => bump(give, setGive, r, d, hand[r] ?? 0)}
-        onGet={(r, d) => bump(get, setGet, r, d, mode === 'offer' ? 99 : partnerHand)}
+        cap={(r) => hand[r] ?? 0}
+        onBump={(r, d) => bump(give, setGive, r, d, hand[r] ?? 0)}
+        t={t}
+      />
+      <div className="bank-swap" aria-hidden="true">
+        <GameIcon name="swap" size={20} />
+      </div>
+      <CardPicker
+        side="get"
+        label={t('dlg_youGet')}
+        bag={get}
+        hand={hand}
+        cap={() => (mode === 'offer' ? 99 : partnerHand)}
+        onBump={(r, d) => bump(get, setGet, r, d, mode === 'offer' ? 99 : partnerHand)}
         t={t}
       />
       {empty ? (
@@ -471,59 +479,58 @@ function OfferComposer({
   );
 }
 
-/** One table for both sides of an offer: card | you give | you get | you have (one row per kind). */
-function TradeGrid({
-  give,
-  get,
+/**
+ * One side of an offer as a row of painted cards (PO 2026-11-28, same look as the bank tab): a click
+ * on a card adds one, the − under it takes one back; the count sits on the card. On the give side
+ * each card says how many you hold and cards you have none of are dimmed.
+ */
+function CardPicker({
+  side,
+  label,
+  bag,
   hand,
-  onGive,
-  onGet,
+  cap,
+  onBump,
   t,
 }: {
-  give: Bag;
-  get: Bag;
+  side: 'give' | 'get';
+  label: string;
+  bag: Bag;
   hand: Bag;
-  onGive: (r: string, d: number) => void;
-  onGet: (r: string, d: number) => void;
+  cap: (r: string) => number;
+  onBump: (r: string, d: number) => void;
   t: TFn;
 }) {
-  const step = (r: string, bag: Bag, sideName: string, onBump: (r: string, d: number) => void, maxed: boolean) => (
-    <div className="stepper">
-      <Button aria-label={`− ${t(resKey(r))} (${sideName})`} disabled={(bag[r] ?? 0) === 0} onClick={() => onBump(r, -1)}>
-        −
-      </Button>
-      <output className={(bag[r] ?? 0) > 0 ? 'on' : undefined}>{bag[r] ?? 0}</output>
-      <Button aria-label={`+ ${t(resKey(r))} (${sideName})`} disabled={maxed} onClick={() => onBump(r, +1)}>
-        +
-      </Button>
-    </div>
-  );
   return (
-    <table className="trade-grid">
-      <thead>
-        <tr>
-          <th scope="col">{t('dlg_colCard')}</th>
-          <th scope="col" className="col-have" title={t('dlg_inHand')}>{t('dlg_colHave')}</th>
-          <th scope="col" className="col-give">{t('dlg_youGive')}</th>
-          <th scope="col" className="col-get">{t('dlg_youGet')}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {resourceKinds(hand).map((r) => (
-          <tr key={r}>
-            <th scope="row">
-              <span className="res-chip" style={{ '--res': RESOURCE_COLORS[r] } as React.CSSProperties}>
-                <ResourceIcon res={r} size={18} />
-                <span className="res-name">{t(resKey(r))}</span>
+    <Fieldset label={label}>
+      <div className={`tcard-row tcard-${side}`}>
+        {resourceKinds(hand).map((r) => {
+          const n = bag[r] ?? 0;
+          const max = cap(r);
+          const none = side === 'give' && (hand[r] ?? 0) === 0;
+          return (
+            <div key={r} className={`tcard${n > 0 ? ' on' : ''}${none ? ' none' : ''}`} data-res={r}>
+              <button
+                type="button"
+                className="tcard-face"
+                disabled={n >= max}
+                aria-label={`+ ${t(resKey(r))} (${label})`}
+                onClick={() => onBump(r, +1)}
+              >
+                <ResourceArt res={r} />
+                {n > 0 && <span className="tcard-n">{n}</span>}
+              </button>
+              <span className="tcard-step">
+                <button type="button" aria-label={`− ${t(resKey(r))} (${label})`} disabled={n === 0} onClick={() => onBump(r, -1)}>
+                  <GameIcon name="minus" size={12} />
+                </button>
               </span>
-            </th>
-            <td className="col-have res-count">{hand[r] ?? 0}</td>
-            <td className="col-give">{step(r, give, t('dlg_youGive'), onGive, (give[r] ?? 0) >= (hand[r] ?? 0))}</td>
-            <td className="col-get">{step(r, get, t('dlg_youGet'), onGet, false)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+              <small>{side === 'give' ? t('dlg_bankHold', { n: hand[r] ?? 0 }) : t(resKey(r))}</small>
+            </div>
+          );
+        })}
+      </div>
+    </Fieldset>
   );
 }
 
@@ -533,8 +540,12 @@ function BagChips({ bag, t }: { bag: Bag | undefined; t: TFn }) {
   return (
     <span className="bag-chips">
       {parts.map(([r, n]) => (
-        <span key={r} className="bag-chip">
-          <ResourceIcon res={r} size={18} /> {n}× {t(resKey(r))}
+        <span key={r} className="bag-chip" title={t(resKey(r))}>
+          <span className="bag-card">
+            <ResourceArt res={r} />
+          </span>
+          <b>×{n}</b>
+          <span className="xp-sr">{t(resKey(r))}</span>
         </span>
       ))}
     </span>

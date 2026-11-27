@@ -13,7 +13,7 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 HERE = os.path.join(ROOT, 'tools', 'art')
 OUT = os.path.join(ROOT, 'data', 'raw', 'tripo', 'out')
-TRANSPARENT = {'piece', 'piecetop', 'piecec', 'icon'}
+TRANSPARENT = {'piece', 'piecetop', 'piecec', 'icon', 'ornament', 'uibadge'}
 RAW_EXT = ('.png', '.jpg', '.jpeg', '.webp')
 
 

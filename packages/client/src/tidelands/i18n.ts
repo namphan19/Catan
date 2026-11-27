@@ -77,6 +77,11 @@ export const tlVi: Record<string, string> = {
   tl_stealSilk: 'Cướp 1 lụa của {name}',
 
   tl_panel: 'Vùng Biển Đảo',
+  tl_myFleet: 'Đội thuyền của bạn',
+  tl_panelShort: 'Biển đảo',
+  tl_progress: 'Tiến độ cả bàn',
+  tl_wondersLabel: 'Kỳ quan',
+  tl_landfallChip: 'Cập bến đảo mới: +{n}',
   tl_landfall: 'Cập bến: +{n} điểm cho làng đầu tiên trên mỗi đảo mới',
   tl_home: 'Đảo nhà',
   tl_explored: 'Đã cập bến',
@@ -221,6 +226,11 @@ export const tlEn: Record<string, string> = {
   tl_stealSilk: 'Take 1 silk from {name}',
 
   tl_panel: 'Tidelands',
+  tl_myFleet: 'Your fleet',
+  tl_panelShort: 'Tidelands',
+  tl_progress: 'Table progress',
+  tl_wondersLabel: 'Wonders',
+  tl_landfallChip: 'New island: +{n}',
   tl_landfall: 'Landfall: +{n} points for your first settlement on each new island',
   tl_home: 'Home',
   tl_explored: 'Landfalls',

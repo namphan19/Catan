@@ -7,6 +7,7 @@ import { RESOURCE_COLORS } from '../ui/colors';
 import { ResourceIcon } from '../ui/ResourceIcon';
 import { Dialog } from '../ui/Dialog';
 import { Button } from '../ui/Button';
+import { GameIcon } from '../ui/GameIcon';
 
 interface DiscardDialogProps {
   view: PlayerView;
@@ -57,7 +58,7 @@ export function DiscardDialog({ view, legal, validate, onAction, onClose }: Disc
             </span>
             <div className="stepper">
               <Button aria-label={`− ${t(resKey(r))}`} disabled={(pick[r] ?? 0) === 0} onClick={() => bump(r, -1)}>
-                −
+                <GameIcon name="minus" size={14} />
               </Button>
               <output aria-live="polite">{pick[r] ?? 0}</output>
               <Button
