@@ -16,10 +16,16 @@ test('a new expansion game: option, setup with a city, panel and raid track', as
   await confirmCover(page);
   await playSetupUntilRoll(page);
 
+  // the raid lane is on the board (7 steps + the shore); the full panel is a drawer
+  await expect(page.locator('.sh-lane-track i')).toHaveCount(8);
   const panel = page.locator('.sh-panel');
+  await expect(panel).toBeHidden();
+  await page.locator('.sheet-toggle').click();
   await expect(panel).toBeVisible();
-  await expect(panel.locator('.sh-track li')).toHaveCount(8); // 7 steps + the shore
+  await expect(panel.locator('.sh-track li')).toHaveCount(8);
   await expect(panel.locator('.sh-levels tbody tr')).toHaveCount(4);
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
   // every player starts with one settlement and one city
   await expect(page.locator('.piece-city')).toHaveCount(4);
   // commodities are part of the hand

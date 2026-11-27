@@ -117,7 +117,7 @@ test('portrait: six players share one swipeable rail, names readable', async ({ 
   for (const b of boxes) expect(b.w).toBeGreaterThanOrEqual(56);
   await seats.last().scrollIntoViewIfNeeded();
   await expect(seats.last()).toBeInViewport();
-  expect(await page.locator('.seat-strip .seats').evaluate((e) => e.scrollLeft)).toBeGreaterThan(0);
+  expect(await page.locator('.seat-strip').evaluate((e) => e.scrollLeft)).toBeGreaterThan(0);
   await clearHover(page);
   await page.screenshot({ path: shotPath('mobile-six.png', testInfo.project.name) });
   expect(errors()).toEqual([]);

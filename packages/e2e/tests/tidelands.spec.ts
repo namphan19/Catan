@@ -112,7 +112,8 @@ for (const [file, shot, check] of [
   ['tidelands-greatWorks.json', 'tidelands-works.png', '.tl-wonders'],
   ['tidelands-corsairCoves.json', 'tidelands-coves.png', '.tl-fleet-loop'],
   ['tidelands-islesOfMist.json', 'tidelands-mist.png', '.tl-panel'],
-  ['tidelands-scatteredIsles-both.json', 'tidelands-with-strongholds.png', '.sh-panel'],
+  // with Strongholds the panels are a drawer; the raid lane shows on the board
+  ['tidelands-scatteredIsles-both.json', 'tidelands-with-strongholds.png', '.sh-lane'],
 ] as const) {
   test(`scenario position renders without errors: ${file}`, async ({ page }, testInfo) => {
     test.setTimeout(90_000);
