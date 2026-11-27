@@ -1,6 +1,7 @@
-// Slim top bar: wordmark, turn label, help, language (the 2D/3D toggle was removed with the
-// 3D board, see archive/3d). The "what to do now"
-// sentence lives in StatusBanner, the dice in DiceBox, the players in PlayerCards.
+// Top of the table, drawn over the board on a dark scrim (no bar, no frame; PO 2026-11-27 HUD):
+// the turn label (plus shell info) and the "what do I do now" line in the centre, help and a
+// menu in the right corner. The menu holds the shell buttons (pass device, export log, home) and
+// the language toggle on every screen size. The wordmark stays for screen readers only.
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { PlayerView } from '@hexgame/engine';
 import { useI18n, type Lang } from '../i18n';
@@ -11,13 +12,19 @@ export function TopBar({
   info,
   actions,
   onHelp,
+  guide,
+  badge,
 }: {
   view: PlayerView;
   /** Shell info (who is viewing / room code), shown after the turn label. */
   info?: ReactNode;
-  /** Shell buttons (pass device, export log, home), right-aligned before help + language. */
+  /** Shell buttons (pass device, export log, home), inside the menu. */
   actions?: ReactNode;
   onHelp?: () => void;
+  /** The guidance line under the turn label ("your turn - roll", a board pick, waiting for X). */
+  guide?: ReactNode;
+  /** Expansion line after the turn label (Tidelands: scenario + goal). */
+  badge?: ReactNode;
 }) {
   const { t, lang, setLang } = useI18n();
   const ph = view.phase;
@@ -28,8 +35,6 @@ export function TopBar({
         ? t('phase_over')
         : t('turn', { n: view.turn.n });
 
-  // Phones: the shell buttons and the language toggle fold into a menu (mobile.css hides the
-  // toggle on wider screens, where .topbar-menu is display: contents).
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -50,39 +55,46 @@ export function TopBar({
 
   return (
     <header className="topbar">
-      <div className="topbar-left">
-        <h1 className="game-title">{t('appTitle')}</h1>
-        <span className="turn-label">{turnLabel}</span>
-        {info && <span className="topbar-info">{info}</span>}
+      <h1 className="game-title sr-only">{t('appTitle')}</h1>
+      <div className="topbar-center">
+        <p className="topbar-turn">
+          <span className="turn-label">{turnLabel}</span>
+          {badge}
+          {info && <span className="topbar-info">{info}</span>}
+        </p>
+        {guide}
       </div>
-      <div className="topbar-menu-wrap" ref={menuRef}>
-        <button
-          type="button"
-          className="btn btn-ghost topbar-menu-btn"
-          aria-label={t('menu')}
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((o) => !o)}
-        >
-          <UiIcon name="menu" size={20} />
-        </button>
-        {/* A click on any item (pass device, export, home, language) also closes the menu. */}
-        <div className={menuOpen ? 'topbar-menu open' : 'topbar-menu'} onClick={() => setMenuOpen(false)}>
-          {actions && <div className="topbar-actions">{actions}</div>}
+      <div className="topbar-right">
+        {onHelp && (
+          <button type="button" className="hud-icon btn-help" onClick={onHelp} aria-label={t('help_title')} title={t('help_title')}>
+            ?
+          </button>
+        )}
+        <div className="topbar-menu-wrap" ref={menuRef}>
           <button
             type="button"
-            className="btn btn-ghost btn-lang"
-            onClick={() => setLang(lang === 'vi' ? ('en' as Lang) : ('vi' as Lang))}
-            aria-label={t('langToggle')}
+            className="hud-icon topbar-menu-btn"
+            aria-label={t('menu')}
+            title={t('menu')}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((o) => !o)}
           >
-            {t('langToggle')}
+            <UiIcon name="menu" size={20} />
           </button>
+          {/* A click on any item (pass device, export, home, language) also closes the menu. */}
+          <div className={menuOpen ? 'topbar-menu open' : 'topbar-menu'} onClick={() => setMenuOpen(false)}>
+            {actions && <div className="topbar-actions">{actions}</div>}
+            <button
+              type="button"
+              className="btn btn-ghost btn-lang"
+              onClick={() => setLang(lang === 'vi' ? ('en' as Lang) : ('vi' as Lang))}
+              aria-label={t('langToggle')}
+            >
+              {t('langToggle')}
+            </button>
+          </div>
         </div>
       </div>
-      {onHelp && (
-        <button type="button" className="btn btn-ghost btn-help" onClick={onHelp} aria-label={t('help_title')} title={t('help_title')}>
-          ?
-        </button>
-      )}
     </header>
   );
 }

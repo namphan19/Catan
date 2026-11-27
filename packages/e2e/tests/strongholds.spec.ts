@@ -3,23 +3,29 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { test, expect } from '@playwright/test';
-import { VI, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
+import { VI, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath, setPlayers, setSeed, openLogBox, pickMode } from './helpers';
 
 test('a new expansion game: option, setup with a city, panel and raid track', async ({ page }, testInfo) => {
   test.setTimeout(120_000);
   const errors = captureErrors(page);
   await page.goto('/');
-  await page.getByLabel(VI.players).selectOption('4');
-  await page.getByLabel(VI.seed).fill('e2e-sh');
-  await page.locator('#home-expansion').check();
+  await setPlayers(page, '4');
+  await setSeed(page, 'e2e-sh');
+  await pickMode(page, 'sh');
   await page.getByRole('button', { name: VI.start }).click();
   await confirmCover(page);
   await playSetupUntilRoll(page);
 
+  // the raid lane is on the board (7 steps + the shore); the full panel is a drawer
+  await expect(page.locator('.sh-lane-track i')).toHaveCount(8);
   const panel = page.locator('.sh-panel');
+  await expect(panel).toBeHidden();
+  await page.locator('.sheet-toggle').click();
   await expect(panel).toBeVisible();
-  await expect(panel.locator('.sh-track li')).toHaveCount(8); // 7 steps + the shore
+  await expect(panel.locator('.sh-track li')).toHaveCount(8);
   await expect(panel.locator('.sh-levels tbody tr')).toHaveCount(4);
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
   // every player starts with one settlement and one city
   await expect(page.locator('.piece-city')).toHaveCount(4);
   // commodities are part of the hand
@@ -39,34 +45,46 @@ test('a mid-game position: wardens on the board and the staged chooser', async (
   const errors = captureErrors(page);
   const log = fs.readFileSync(path.resolve(__dirname, '..', 'fixtures', 'strongholds-game.json'), 'utf8');
   await page.goto('/');
+  await openLogBox(page);
   await page.locator('.export-box').first().fill(log);
   await page.getByRole('button', { name: VI.loadReplay }).click();
   await confirmCover(page);
 
-  await expect(page.locator('.sh-panel')).toBeVisible();
   expect(await page.locator('.sh-warden').count()).toBeGreaterThanOrEqual(2);
-  // The panel fills the side column (the log was removed) and ends with the track reference:
-  // perk, capital and deck count for each of the 3 tracks, then the caravan.
-  await expect(page.locator('.sh-panel .sh-trackinfo')).toHaveCount(3);
-  await expect(page.locator('.sh-panel .sh-trackinfo').first()).toContainText('Cấp 3');
-  await expect(page.locator('.sh-panel .sh-trackinfo').first()).toContainText('Kinh đô');
-  const fill = await page.evaluate(() => {
-    const col = document.querySelector('.sidecol')!.getBoundingClientRect();
-    const panel = document.querySelector('.sh-panel')!.getBoundingClientRect();
-    return { col: col.height, panel: panel.height };
-  });
-  expect(fill.panel, `panel ${fill.panel}px of column ${fill.col}px`).toBeGreaterThanOrEqual(fill.col - 4);
+  // HUD (PO 2026-11-27): the essentials sit on the board's edges, the full panel is a drawer.
+  await expect(page.locator('.sh-lane')).toBeVisible();
+  await expect(page.locator('.sh-lane-track i')).toHaveCount(8); // 7 steps + the shore
+  await expect(page.locator('.sh-rail .sh-rail-row')).toHaveCount(3);
+  await expect(page.locator('.seats .sh-seat-levels')).toHaveCount(4);
+  await expect(page.locator('.act-build button[data-build="rampart"]')).toHaveCount(1);
+  await expect(page.locator('.act-build button[data-build="recruit"]')).toHaveCount(1);
+  await expect(page.locator('.sh-panel')).toBeHidden();
+  // The closed drawer waits off-screen: it must not widen the page (no white strip, no side scroll).
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, view: window.innerWidth }));
+  expect(widths.page, 'page width').toBeLessThanOrEqual(widths.view);
   await clearHover(page);
   await page.screenshot({ path: shotPath('strongholds-midgame.png', testInfo.project.name), fullPage: true });
 
-  // Advance cards sit in the bottom-left of the board, above the hand, by name only (PO 2026-11-18):
-  // a click opens the full card with its effect and the Play button; Esc closes it again.
+  // The drawer holds the full panel and ends with the track reference: perk, capital and deck
+  // count for each of the 3 tracks, then the caravan.
+  await page.locator('.sheet-toggle').click();
+  await expect(page.locator('.sh-panel')).toBeVisible();
+  await expect(page.locator('.sh-panel .sh-trackinfo')).toHaveCount(3);
+  await expect(page.locator('.sh-panel .sh-trackinfo').first()).toContainText('Cấp 3');
+  await expect(page.locator('.sh-panel .sh-trackinfo').first()).toContainText('Kinh đô');
+  await page.waitForTimeout(300); // slide-in
+  await page.screenshot({ path: shotPath('strongholds-drawer.png', testInfo.project.name), fullPage: true });
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.sh-panel')).toBeHidden();
+
+  // Advance cards are a small fan in the bottom bar, right of the hand: a click opens the full
+  // card with its effect and the Play button; Esc closes it again.
   await expect(page.locator('.sh-panel .sh-card')).toHaveCount(0);
   const tab = page.locator('.sh-hand .sh-hand-tab').first();
   await expect(tab).toBeVisible();
   const boardBox = (await page.locator('.board-area').boundingBox())!;
   const tabBox = (await tab.boundingBox())!;
-  expect(tabBox.x - boardBox.x, 'cards in the left part of the board').toBeLessThan(boardBox.width / 3);
+  expect(tabBox.x - boardBox.x, 'cards in the right half of the board').toBeGreaterThan(boardBox.width / 2);
   expect(boardBox.y + boardBox.height - (tabBox.y + tabBox.height), 'cards at the bottom of the board').toBeLessThan(40);
   await expect(page.locator('.sh-hand-face')).toHaveCount(0);
   await tab.click();
@@ -79,7 +97,15 @@ test('a mid-game position: wardens on the board and the staged chooser', async (
   await page.keyboard.press('Escape');
   await expect(face).toHaveCount(0);
 
+  // The improvement rail opens a tray with the three tracks.
+  await page.locator('.sh-rail').click();
+  await expect(page.locator('.sh-tray .sh-tray-track')).toHaveCount(3);
+  await page.screenshot({ path: shotPath('strongholds-improve.png', testInfo.project.name), fullPage: true });
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.sh-tray')).toHaveCount(0);
+
   // Start any enabled expansion action: the chooser must ask for a spot on the board or show options.
+  await page.locator('.sheet-toggle').click();
   const button = page.locator('.sh-panel button[data-sh]:not([disabled]), .sh-panel button[data-improve]:not([disabled])').first();
   if ((await button.count()) > 0) {
     await button.click();
@@ -93,5 +119,37 @@ test('a mid-game position: wardens on the board and the staged chooser', async (
       else await page.locator('.sh-options button').first().click();
     }
   }
+  expect(errors()).toEqual([]);
+});
+
+test('your warden on the board: a click opens its actions around it', async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
+  const errors = captureErrors(page);
+  const log = fs.readFileSync(path.resolve(__dirname, '..', 'fixtures', 'strongholds-warden.json'), 'utf8');
+  await page.goto('/');
+  await openLogBox(page);
+  await page.locator('.export-box').first().fill(log);
+  await page.getByRole('button', { name: VI.loadReplay }).click();
+  await confirmCover(page);
+
+  const hit = page.locator('.sh-warden-hit').first();
+  await expect(hit).toHaveCount(1);
+  await hit.click({ force: true });
+  const acts = page.locator('.sh-wmenu-btn');
+  expect(await acts.count()).toBeGreaterThanOrEqual(2);
+  await expect(page.locator('.sh-wmenu-btn[data-sh-warden="activate"]')).toBeVisible();
+  // finger-sized whatever the board zoom (after the 160 ms pop-in)
+  await page.waitForTimeout(250);
+  const box = (await acts.first().boundingBox())!;
+  expect(box.width).toBeGreaterThanOrEqual(44);
+  await clearHover(page);
+  await page.screenshot({ path: shotPath('strongholds-warden.png', testInfo.project.name), fullPage: true });
+  // Esc closes the ring; activating the warden is one click and changes the piece.
+  await page.keyboard.press('Escape');
+  await expect(acts).toHaveCount(0);
+  await hit.click({ force: true });
+  const active = await page.locator('.sh-warden.active').count();
+  await page.locator('.sh-wmenu-btn[data-sh-warden="activate"]').click();
+  await expect.poll(() => page.locator('.sh-warden.active').count()).toBe(active + 1);
   expect(errors()).toEqual([]);
 });

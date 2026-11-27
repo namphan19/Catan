@@ -3,12 +3,13 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { test, expect, type Page } from '@playwright/test';
-import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath, setPlayers, setSeed, openLogBox } from './helpers';
 
 const fixture = (name: string) => fs.readFileSync(path.resolve(__dirname, '..', 'fixtures', name), 'utf8');
 
 async function loadFixture(page: Page, name: string): Promise<void> {
   await page.goto('/');
+  await openLogBox(page);
   await page.locator('.export-box').first().fill(fixture(name));
   await page.getByRole('button', { name: VI.loadReplay }).click();
   await confirmCover(page);
@@ -37,31 +38,44 @@ test('portrait: setup and first roll fit one screen, all players and buttons vis
   test.setTimeout(120_000);
   const errors = captureErrors(page);
   await page.goto('/');
-  await page.getByLabel(VI.players).selectOption('4');
-  await page.getByLabel(VI.seed).fill('e2e-mobile');
+  await setPlayers(page, '4');
+  await setSeed(page, 'e2e-mobile');
   await page.getByRole('button', { name: VI.start }).click();
   await confirmCover(page);
 
   await expect(page.locator('.board-hint')).toBeVisible();
   await expectFitsScreen(page);
+  // the board-pick line sits under the players row, never on top of it
+  const strip = await box(page, '.seat-strip');
+  const hint = await box(page, '.board-hint');
+  expect(hint.y).toBeGreaterThanOrEqual(strip.y + strip.height - 1);
   // The four players share one row above the board.
   const seats = page.locator('.seat-strip .seat');
   await expect(seats).toHaveCount(4);
   const tops = await seats.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
   expect(new Set(tops).size).toBe(1);
-  // The side column is a closed sheet; the hand and the action bar sit under the board.
-  await expect(page.locator('.sidecol')).toBeHidden();
-  const board = await box(page, '.board-area');
-  const bar = await box(page, '.actionbar');
-  expect(bar.y).toBeGreaterThanOrEqual(board.y + board.height - 1);
-  // Compact visuals still get finger-sized hit areas on the utility controls.
+  // HUD (PO 2026-11-27): the board fills the screen; the hand and the buttons float over its foot,
+  // below the fitted island.
+  await expect(page.locator('.sidecol')).toHaveCount(0);
+  const vh = page.viewportSize()!.height;
+  const primary = await box(page, '.act-primary');
+  expect(primary.y + primary.height).toBeLessThanOrEqual(vh + 0.5);
+  const island = await page.evaluate(() => {
+    let bottom = -Infinity;
+    document.querySelectorAll('.hex-tile').forEach((el) => (bottom = Math.max(bottom, el.getBoundingClientRect().bottom)));
+    return bottom;
+  });
+  expect(primary.y, 'buttons below the island').toBeGreaterThan(island);
+  // Compact visuals still get finger-sized hit areas on every visible control.
   const measure = (els: HTMLElement[]) =>
-    els.map((e) => {
-      const r = e.getBoundingClientRect();
-      return { cls: e.className, w: Math.round(r.width), h: Math.round(r.height) };
-    });
+    els
+      .map((e) => {
+        const r = e.getBoundingClientRect();
+        return { cls: e.className, w: Math.round(r.width), h: Math.round(r.height) };
+      })
+      .filter((m) => m.w > 0);
   const targets = [
-    ...(await page.locator('.topbar-menu-btn, .btn-help, .board-zoom .btn, .cost-card-head').evaluateAll(measure)),
+    ...(await page.locator('.topbar-menu-btn, .btn-help').evaluateAll(measure)),
     ...(await page.locator('.actionbar button').evaluateAll(measure)),
   ];
   for (const target of targets) {
@@ -76,7 +90,9 @@ test('portrait: setup and first roll fit one screen, all players and buttons vis
   await expectFitsScreen(page);
   // Every action button (End turn included) is on screen without scrolling the bar.
   const vw = page.viewportSize()!.width;
-  const rights = await page.locator('.actionbar .btn').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().right));
+  const rights = await page
+    .locator('.actionbar .btn')
+    .evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().width > 0).map((e) => e.getBoundingClientRect().right));
   for (const r of rights) expect(r).toBeLessThanOrEqual(vw + 0.5);
   await clearHover(page);
   await page.screenshot({ path: shotPath('mobile-midgame.png', testInfo.project.name) });
@@ -86,8 +102,8 @@ test('portrait: setup and first roll fit one screen, all players and buttons vis
 test('portrait: six players share one swipeable rail, names readable', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await page.goto('/');
-  await page.getByLabel(VI.players).selectOption('6');
-  await page.getByLabel(VI.seed).fill('e2e-mobile-six');
+  await setPlayers(page, '6');
+  await setSeed(page, 'e2e-mobile-six');
   await page.getByRole('button', { name: VI.start }).click();
   await confirmCover(page);
   await expectFitsScreen(page);
@@ -103,10 +119,10 @@ test('portrait: six players share one swipeable rail, names readable', async ({ 
     }),
   );
   expect(new Set(boxes.map((b) => b.top)).size).toBe(1);
-  for (const b of boxes) expect(b.w).toBeGreaterThan(100);
+  for (const b of boxes) expect(b.w).toBeGreaterThanOrEqual(56);
   await seats.last().scrollIntoViewIfNeeded();
   await expect(seats.last()).toBeInViewport();
-  expect(await page.locator('.seat-strip .seats').evaluate((e) => e.scrollLeft)).toBeGreaterThan(0);
+  expect(await page.locator('.seat-strip').evaluate((e) => e.scrollLeft)).toBeGreaterThan(0);
   await clearHover(page);
   await page.screenshot({ path: shotPath('mobile-six.png', testInfo.project.name) });
   expect(errors()).toEqual([]);
@@ -115,8 +131,8 @@ test('portrait: six players share one swipeable rail, names readable', async ({ 
 test('portrait: two players share one row, the page fits the screen', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await page.goto('/');
-  await page.getByLabel(VI.players).selectOption('2');
-  await page.getByLabel(VI.seed).fill('e2e-mobile-duo');
+  await setPlayers(page, '2');
+  await setSeed(page, 'e2e-mobile-duo');
   await page.getByRole('button', { name: VI.start }).click();
   await confirmCover(page);
   await expectFitsScreen(page);
@@ -133,7 +149,7 @@ test('portrait: two players share one row, the page fits the screen', async ({ p
 test('portrait: a player tile opens public details in a bottom sheet', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await page.goto('/');
-  await page.getByLabel(VI.seed).fill('e2e-mobile');
+  await setSeed(page, 'e2e-mobile');
   await page.getByRole('button', { name: VI.start }).click();
   await confirmCover(page);
 
@@ -150,16 +166,26 @@ test('portrait: a player tile opens public details in a bottom sheet', async ({ 
   expect(errors()).toEqual([]);
 });
 
-test('portrait: the trade composer scrolls inside its dialog without widening the page', async ({ page }, testInfo) => {
+test('portrait: the trade composer is two rows of cards that fit the dialog (no sideways scroll)', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await loadFixture(page, 'city-game.json');
-  await page.locator('.act-trade .btn').nth(1).click();
-  const grid = page.locator('.trade-grid');
-  await expect(grid).toBeVisible();
+  await page.locator('.act-trade .btn').first().click();
+  await page.getByRole('tab', { name: 'Người chơi' }).click();
+  // PO 2026-11-28: painted cards instead of the old table; every kind on both sides.
+  const give = page.locator('.tcard-give .tcard');
+  const get = page.locator('.tcard-get .tcard');
+  await expect(give).toHaveCount(5);
+  await expect(get).toHaveCount(5);
   await expectFitsScreen(page);
   const body = await box(page, '.dialog-body');
   expect(body.width).toBeLessThanOrEqual(page.viewportSize()!.width);
-  expect(await page.locator('.dialog-body').evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(true);
+  expect(await page.locator('.dialog-body').evaluate((e) => e.scrollWidth > e.clientWidth)).toBe(false);
+  // A click on a card you hold adds one to the offer; the count shows on the card.
+  const held = page.locator('.tcard-give .tcard:not(.none) .tcard-face').first();
+  await held.click();
+  await expect(page.locator('.tcard-give .tcard.on .tcard-n')).toHaveText('1');
+  await page.locator('.tcard-get .tcard-face').first().click();
+  await expect(page.locator('.tcard-get .tcard.on')).toHaveCount(1);
   await page.screenshot({ path: shotPath('mobile-trade.png', testInfo.project.name) });
   expect(errors()).toEqual([]);
 });
@@ -215,18 +241,19 @@ test('portrait: the Tidelands sheet opens over the board, closes, and building a
   expect(errors()).toEqual([]);
 });
 
-test('landscape: board on the left at full height, controls on the right, sheet closable', async ({ page }, testInfo) => {
+test('landscape: board at full height, controls on its edges, sheet closable', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await page.setViewportSize({ width: 844, height: 390 });
   await loadFixture(page, 'strongholds-active.json');
   await expectFitsScreen(page);
 
   const board = await box(page, '.board-area');
-  const top = await box(page, '.topbar');
-  const bar = await box(page, '.actionbar');
+  const primary = await box(page, '.act-primary');
   expect(board.height).toBeGreaterThan(380);
-  expect(top.x).toBeGreaterThanOrEqual(board.x + board.width - 1);
-  expect(bar.x).toBeGreaterThanOrEqual(board.x + board.width - 1);
+  // the primary button sits in the bottom-right corner, on screen
+  expect(primary.x + primary.width).toBeLessThanOrEqual(844 + 0.5);
+  expect(primary.y + primary.height).toBeLessThanOrEqual(390 + 0.5);
+  expect(primary.x).toBeGreaterThan(844 / 2);
   await clearHover(page);
   await page.screenshot({ path: shotPath('mobile-landscape.png', testInfo.project.name) });
 
@@ -247,10 +274,43 @@ test('narrow landscape: board and controls still fit without page overflow', asy
   await expectFitsScreen(page);
 
   const board = await box(page, '.board-area');
-  const bar = await box(page, '.actionbar');
+  const primary = await box(page, '.act-primary');
   expect(board.height).toBeGreaterThanOrEqual(318);
-  expect(bar.x).toBeGreaterThanOrEqual(board.x + board.width - 1);
+  expect(primary.x + primary.width).toBeLessThanOrEqual(568 + 0.5);
+  expect(primary.y + primary.height).toBeLessThanOrEqual(320 + 0.5);
   await clearHover(page);
   await page.screenshot({ path: shotPath('mobile-narrow-landscape.png', testInfo.project.name) });
+  expect(errors()).toEqual([]);
+});
+
+test('portrait: resources are stacks in one row; a tapped development card rises with its Play button', async ({ page }, testInfo) => {
+  const errors = captureErrors(page);
+  await loadFixture(page, 'hand-cards.json');
+  await expectFitsScreen(page);
+  const stacks = await page.locator('.hand .res-card').evaluateAll((els) => els.map((e) => e.getBoundingClientRect()));
+  for (let i = 1; i < stacks.length; i++) expect(stacks[i].left).toBeGreaterThanOrEqual(stacks[i - 1].right);
+  const card = page.locator('.dev-cards.card-fan > li').first();
+  const before = (await card.boundingBox())!;
+  await card.locator('.dev-card-btn').tap();
+  await expect(card).toHaveClass(/lifted/);
+  await expect(card.locator('.dev-card-name')).toBeVisible();
+  await page.waitForTimeout(300);
+  const after = (await card.boundingBox())!;
+  expect(after.width, 'a tapped card grows to be read').toBeGreaterThan(before.width * 1.4);
+  // The lifted playable card carries a finger-sized Play button inside the screen.
+  const play = card.locator('.dev-card-play');
+  await expect(play).toBeVisible();
+  const pb = (await play.boundingBox())!;
+  expect(pb.height).toBeGreaterThanOrEqual(36);
+  expect(pb.x).toBeGreaterThanOrEqual(0);
+  expect(pb.x + pb.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await page.screenshot({ path: shotPath('mobile-hand-lifted.png', testInfo.project.name) });
+  // A tap on the board drops it again.
+  await page.locator('.board-area').tap({ position: { x: 20, y: 20 } });
+  await expect(card).not.toHaveClass(/lifted/);
+  // No "Play a card" pills crowd the button row any more.
+  await expect(page.locator('.actionbar .btn-play')).toHaveCount(0);
+  await expectFitsScreen(page);
+  await page.screenshot({ path: shotPath('mobile-hand-cards.png', testInfo.project.name) });
   expect(errors()).toEqual([]);
 });

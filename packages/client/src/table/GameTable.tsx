@@ -2,7 +2,7 @@
 // client can reuse it. Every button, highlight and dialog option derives from getLegalActions;
 // disabled reasons come from validateAction. No rules logic lives here.
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { BOT_TRADE_WAIT_MS } from '@hexgame/engine';
+import { BOT_TRADE_WAIT_MS, SH } from '@hexgame/engine';
 import type { Action, GameEvent, PlayerId, PlayerView, StrongholdsView, Validation } from '@hexgame/engine';
 import { StrongholdsPanel } from '../strongholds/StrongholdsPanel';
 import { AdvanceHand } from '../strongholds/AdvanceHand';
@@ -17,12 +17,17 @@ import { tlOf } from '../tidelands/view';
 import { HighlandsPanel } from '../highlands/HighlandsPanel';
 import { hlOf } from '../highlands/labels';
 import { getBoardGraph } from '../board/geom';
+import { art2dUrl } from '../board/assets';
+import { RaidLane, ShLevels, TrackRail, WardenLayer, WardenMenu, type WardenPick } from '../strongholds/Hud';
+import { GoldPicker, ScenarioBadge, TlBuildSlots, TlSeatLine } from '../tidelands/Hud';
+import { FoundMoment, HlBuildSlots, HlSeatLine } from '../highlands/Hud';
+import { HlTradeDialog } from '../highlands/HighlandsPanel';
 import { useI18n, resKey } from '../i18n';
 import { useName } from '../shell/names';
 import { playerColor, playerEmblem } from '../ui/colors';
 import { Emblem } from '../ui/Emblem';
 import { Button } from '../ui/Button';
-import { UiIcon } from '../ui/Icon';
+import { PieceIcon, UiIcon } from '../ui/Icon';
 import { ToastStack, useToasts } from '../ui/Toast';
 import { Board } from '../board/Board';
 import { EMPTY_HIGHLIGHTS, type Highlights } from '../board/Highlights';
@@ -31,10 +36,10 @@ import { PlayerCards } from './PlayerCards';
 import { PlayerDialog } from './PlayerDialog';
 import { actorOf, statusOf } from './StatusBanner';
 import { DiceBox } from './DiceBox';
-import { CostCard } from './CostCard';
 import { HelpDialog } from './HelpDialog';
 import { HandPanel } from './HandPanel';
-import { ActionBar, type Pending } from './ActionBar';
+import { GameIcon } from '../ui/GameIcon';
+import { ActionBar, BuildSlot, type Pending } from './ActionBar';
 import { describeEvent } from './describe';
 import { DiscardDialog, StealDialog, TradeDialog, CardDialog, type TradeTab, type PickCard } from '../dialogs';
 
@@ -86,6 +91,8 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const [helpOpen, setHelpOpen] = useState(false);
   /** Phones: the side column (log, trade, expansion panels) is a bottom sheet, open or not. */
   const [sheetOpen, setSheetOpen] = useState(false);
+  /** Tidelands + Strongholds together: which of the two panels the drawer shows (tabs). */
+  const [sheetTab, setSheetTab] = useState<'tl' | 'sh'>('tl');
   const [playerOpen, setPlayerOpen] = useState<PlayerId | null>(null);
   const [producing, setProducing] = useState<ReadonlySet<string> | undefined>(undefined);
   const phaseKey = view.phase.k;
@@ -94,9 +101,6 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   const tl = tlOf(view);
   const [roadOrCog, setRoadOrCog] = useState<Action[] | null>(null);
   const golds = useMemo(() => legal.filter((a) => a.t === 'tl:gold'), [legal]);
-  const goldNeed = golds.length ? Object.values((golds[0] as unknown as { bag: Record<string, number> }).bag).reduce((x, y) => x + y, 0) : 0;
-  const bankBase: Record<string, number> = {};
-  for (const r of ['timber', 'clay', 'fiber', 'grain', 'stone']) bankBase[r] = view.bank.hand[r] ?? 0;
   const silkSteals = useMemo(() => legal.filter((a) => a.t === 'tl:stealSilk'), [legal]);
 
   // ---- Highlands expansion: tribes, goods and award powers -------------------------------------
@@ -425,16 +429,104 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
         ? t('tl_winSilk', { n: winVP })
         : t('winner_vp', { n: winVP });
 
-  return (
-    <div className="table" data-sheet={sheetOpen ? 'open' : undefined}>
-      <TopBar view={view} info={barInfo} actions={barActions} onHelp={() => setHelpOpen(true)} />
-      {/* PO 2026-11-17: the players sit in one row on top (no status sentence any more); whose turn
-          it is shows as the gold ring, what to do next as a pulsing Roll / End turn button. */}
-      <div className="seat-strip">
-        <PlayerCards view={view} onSelect={setPlayerOpen} />
+  // Strongholds: a click on one of the viewer's wardens opens its actions around it.
+  const [wardenAt, setWardenAt] = useState<WardenPick | null>(null);
+  useEffect(() => setWardenAt(null), [legal]);
+  // Highlands: the goods-set / caravan dialog (opened from the build row).
+  const [hlDialog, setHlDialog] = useState<'hl:goodsSet' | 'hl:caravan' | null>(null);
+  const boardBusy = pending !== null || (!!choice && !!stage?.board);
+
+  // The guidance line under the turn label: a running board choice, a board pick (with Cancel),
+  // or simply what the viewer can do / whom the table waits for.
+  const guide =
+    choice && stage?.board ? (
+      <div className="hud-guide sh-pickbar" role="status">
+        <span>
+          {choice.title}: {choice.cands[0]?.t.startsWith('tl:') ? t('tl_pick_' + stage.field) : stagePrompt(stage.field, t)}
+        </span>
+        {stage.optional && (
+          <Button variant="primary" onClick={() => pickValue(undefined)}>
+            {valueLabel(stage.field, undefined, t, name)}
+          </Button>
+        )}
+        {!choice.mandatory && (
+          <Button variant="ghost" onClick={() => setChoice(null)}>
+            {t('sh_cancel')}
+          </Button>
+        )}
       </div>
+    ) : boardHint ? (
+      <div className="hud-guide board-hint" role="status">
+        <span>{boardHint.text}</span>
+        {boardHint.cancellable && (
+          <Button variant="ghost" onClick={() => setPending(null)}>
+            {t('status_cancel')}
+          </Button>
+        )}
+      </div>
+    ) : (
+      <p className="hud-guide" data-mine={hintStatus.mine ? 'true' : 'false'} role="status" aria-live="polite">
+        {hintStatus.text}
+      </p>
+    );
+
+  // Strongholds builds next to the base ones: rampart and recruiting a warden.
+  const meHand = view.players.find((p) => p.id === view.viewer)?.hand;
+  const shOf = (tt: string) => legal.filter((a) => a.t === tt);
+  const shBuild = sh ? (
+    <>
+      <BuildSlot
+        icon={<PieceIcon kind="rampart" color={playerColor(view.viewer ?? "")} size={30} />}
+        label={t('shact_rampart')}
+        note={t('shhud_rampartNote')}
+        cost={SH.costs.rampart as Record<string, number>}
+        hand={meHand}
+        enabled={shOf('sh:rampart').length > 0}
+        reason={t('shcost_rampart')}
+        onClick={() => startChoice(shOf('sh:rampart'), t('shact_rampart'))}
+        data="rampart"
+      />
+      <BuildSlot
+        icon={<img src={art2dUrl('ui', 'recruit-warden')} alt="" width={38} height={38} draggable={false} />}
+        label={t('shact_recruit')}
+        cost={SH.costs.warden as Record<string, number>}
+        hand={meHand}
+        enabled={shOf('sh:recruit').length > 0}
+        reason={t('shcost_recruit')}
+        onClick={() => startChoice(shOf('sh:recruit'), t('shact_recruit'))}
+        data="recruit"
+      />
+    </>
+  ) : undefined;
+  const extraBuild =
+    sh || tl || hl ? (
+      <>
+        {tl && <TlBuildSlots view={view} tl={tl} legal={legal} onStart={startChoice} onAction={onAction} />}
+        {shBuild}
+        {hl && <HlBuildSlots view={view} hl={hl} legal={legal} onAction={onAction} onDialog={setHlDialog} />}
+      </>
+    ) : undefined;
+  // Under each player's name: what the expansions track per player.
+  const seatExtra =
+    sh || tl || hl
+      ? (id: string) => (
+          <>
+            {sh && <ShLevels sh={sh} id={id} />}
+            {tl && <TlSeatLine tl={tl} id={id} />}
+            {hl && <HlSeatLine hl={hl} id={id} />}
+          </>
+        )
+      : undefined;
+  const founding = choice?.cands[0]?.t === 'hl:found';
+
+  // Expansion panels are drawers on every screen: the HUD shows their essentials, the drawer the rest.
+  const hasSide = !!(sh || tl || hl);
+  const tableClass = `table hud${sh ? ' has-sh' : ''}${tl ? ' has-tl' : ''}${hl ? ' has-hl' : ''}${hasSide ? ' has-drawer' : ''}`;
+
+  return (
+    <div className={tableClass} data-sheet={sheetOpen ? 'open' : undefined}>
       <div className="table-main">
-        <div className={sh ? 'board-area has-sh-hand' : 'board-area'}>
+        <div className="board-area">
           <Board
             overlay={
               sh || tl ? (
@@ -442,6 +534,11 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
                   {tl && <SeaExtras graph={getBoardGraph(view.init.layout)} pieces={view.pieces} tl={tl} />}
                   {sh && <BoardExtras pieces={view.pieces} sh={sh} />}
                 </>
+              ) : undefined
+            }
+            overlayTop={
+              sh ? (
+                <WardenLayer legal={legal} open={wardenAt} setOpen={setWardenAt} enabled={!boardBusy} />
               ) : undefined
             }
             layout={view.init.layout}
@@ -467,62 +564,94 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
                 tryTarget((a) => (a.t === 'moveBlocker' || a.t === 'tl:moveCorsair') && (a as { hex?: string }).hex === h, 'hex');
             }}
             onMiss={() => {
+              setWardenAt(null);
               if (choice && !choice.mandatory) setChoice(null);
               if (!mandatoryPick) setPending(null);
             }}
             producing={producing}
           />
-          <DiceBox view={view} sh={sh} />
-          {/* Phones only (mobile.css): the side column (expansion panels) becomes a bottom sheet
-              behind this button. The base game has no side column since the log was removed. */}
-          {(sh || tl || hl) && (
+          {/* Dark scrims on the edges: the HUD reads on any part of the map (display only). */}
+          <span className="hud-scrim hud-scrim-top" aria-hidden="true" />
+          <span className="hud-scrim hud-scrim-left" aria-hidden="true" />
+          <span className="hud-scrim hud-scrim-bottom" aria-hidden="true" />
+          {sh && <span className="hud-scrim hud-scrim-right" aria-hidden="true" />}
+
+          <TopBar
+            view={view}
+            info={barInfo}
+            actions={barActions}
+            onHelp={() => setHelpOpen(true)}
+            guide={guide}
+            badge={tl ? <ScenarioBadge view={view} tl={tl} /> : undefined}
+          />
+          <div className="seat-strip">
+            <PlayerCards view={view} onSelect={setPlayerOpen} extra={seatExtra} />
+          </div>
+          <div className="hud-tr">
+            <DiceBox view={view} sh={sh} />
+            {sh && <RaidLane view={view} sh={sh} />}
+          </div>
+          {sh && view.viewer && (
+            <TrackRail view={view} sh={sh} legal={legal} onStart={startChoice} onPanel={() => {
+                setSheetTab('sh');
+                setSheetOpen(true);
+              }} />
+          )}
+          {/* The expansion panel: a drawer (Strongholds, and every expansion on phones). */}
+          {hasSide && (
             <button
               type="button"
-              className="btn sheet-toggle"
+              className="hud-icon sheet-toggle"
               aria-expanded={sheetOpen}
               aria-controls="expansion-sheet"
+              aria-label={t('sheet_open')}
+              title={t('sheet_open')}
               onClick={() => setSheetOpen((o) => !o)}
             >
-              <UiIcon name="sheet" size={16} /> {t('sheet_open')}
+              <UiIcon name="sheet" size={18} />
+              <span className="sheet-toggle-text">{t('sheet_open')}</span>
             </button>
           )}
-          <CostCard
-            view={view}
-            picking={highlights.vertices.size + highlights.edges.size + highlights.hexes.size > 0}
-          />
-          {sh && <AdvanceHand view={view} sh={sh} legal={legal} onStart={startChoice} />}
+          {sh && wardenAt && !boardBusy && (
+            <WardenMenu legal={legal} open={wardenAt} onClose={() => setWardenAt(null)} onStart={startChoice} />
+          )}
+          {founding && <FoundMoment />}
+          {golds.length > 0 && view.viewer && (
+            <GoldPicker key={'gold:' + String(view.log.length)} golds={golds} onAction={onAction} />
+          )}
           <ToastStack toasts={toasts} />
           {boardOverlay}
           {reveals.current && <CardReveal reveal={reveals.current} onClose={reveals.close} t={t} name={name} />}
-          {boardHint && !(choice && stage?.board) && (
-            <div className="board-hint" role="status">
-              <span>{boardHint.text}</span>
-              {boardHint.cancellable && (
-                <Button variant="ghost" onClick={() => setPending(null)}>
-                  {t('status_cancel')}
-                </Button>
-              )}
-            </div>
-          )}
-          {choice && stage?.board && (
-            <div className="sh-pickbar" role="status">
-              <span>
-                {choice.title}: {choice.cands[0]?.t.startsWith('tl:') ? t('tl_pick_' + stage.field) : stagePrompt(stage.field, t)}
-              </span>
-              {stage.optional && (
-                <Button variant="primary" onClick={() => pickValue(undefined)}>
-                  {valueLabel(stage.field, undefined, t, name)}
-                </Button>
-              )}
-              {!choice.mandatory && (
-                <Button variant="ghost" onClick={() => setChoice(null)}>
-                  {t('sh_cancel')}
-                </Button>
-              )}
-            </div>
-          )}
+          <div className="table-bottom">
+            <HandPanel
+              view={view}
+              extraLabel={sh ? t('shhud_commodities') : hl ? t('hlhud_goodsLabel') : undefined}
+              legal={legal}
+              onPlay={(card) =>
+                card === 'harvest' || card === 'claim'
+                  ? setCardOpen(card)
+                  : view.viewer && onAction({ t: 'playCard', player: view.viewer, card } as Action)
+              }
+            />
+            {sh && <AdvanceHand view={view} sh={sh} legal={legal} onStart={startChoice} />}
+            <ActionBar
+              view={view}
+              legal={legal}
+              onAction={onAction}
+              validate={validate}
+              pending={pending}
+              setPending={setPending}
+              onOpenTrade={(tab) => {
+                setTradeTab(tab);
+                autoOpened.current = false;
+                setTradeOpen(tab);
+              }}
+              diceCheat={diceCheat}
+              extraBuild={extraBuild}
+            />
+          </div>
         </div>
-        {(sh || tl || hl) && (
+        {hasSide && (
           <>
             <button
               type="button"
@@ -532,10 +661,29 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
               onClick={() => setSheetOpen(false)}
             />
             <aside className="sidecol" id="expansion-sheet" aria-label={t('sheet_open')}>
-              <button type="button" className="btn btn-ghost sheet-close" onClick={() => setSheetOpen(false)}>
-                <UiIcon name="close" size={16} /> {t('sheet_close')}
-              </button>
-              {tl && (
+              <div className="sheet-bar">
+                {tl && sh && (
+                  <nav className="sheet-tabs" role="tablist" aria-label={t('sheet_open')}>
+                    {(['tl', 'sh'] as const).map((k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        role="tab"
+                        aria-selected={sheetTab === k}
+                        className={sheetTab === k ? 'on' : undefined}
+                        onClick={() => setSheetTab(k)}
+                      >
+                        {t(k === 'tl' ? 'tl_panelShort' : 'sh_title')}
+                        {sheetTab !== k && legal.some((a) => a.t.startsWith(`${k}:`)) && <i className="sheet-tab-dot" aria-hidden="true" />}
+                      </button>
+                    ))}
+                  </nav>
+                )}
+                <button type="button" className="sheet-close" aria-label={t('sheet_close')} title={t('sheet_close')} onClick={() => setSheetOpen(false)}>
+                  <GameIcon name="cross" size={16} />
+                </button>
+              </div>
+              {tl && (!sh || sheetTab === 'tl') && (
                 <TidelandsPanel
                   view={view}
                   tl={tl}
@@ -552,7 +700,7 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
                   }}
                 />
               )}
-              {sh && <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />}
+              {sh && (!tl || sheetTab === 'sh') && <StrongholdsPanel view={view} sh={sh} legal={legal} onStart={startChoice} />}
               {hl && (
                 <HighlandsPanel
                   view={view}
@@ -568,24 +716,6 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
           </>
         )}
       </div>
-      <div className="table-bottom">
-        <HandPanel view={view} />
-        <ActionBar
-          view={view}
-          legal={legal}
-          onAction={onAction}
-          validate={validate}
-          pending={pending}
-          setPending={setPending}
-          onOpenTrade={(tab) => {
-            setTradeTab(tab);
-            autoOpened.current = false;
-            setTradeOpen(tab);
-          }}
-          onOpenCards={(c) => setCardOpen(c)}
-          diceCheat={diceCheat}
-        />
-      </div>
 
       {mustDiscard && <DiscardDialog view={view} legal={legal} validate={check} onAction={onAction} onClose={() => {}} />}
       {mustSteal && !mustDiscard && stealTargets.length > 1 && silkSteals.length === 0 && (
@@ -600,16 +730,6 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
             return { key: String(i), value: a, label: t(a.t === 'steal' ? 'tl_stealRes' : 'tl_stealSilk', { name: name(target) }) };
           })}
           onPick={(a) => onAction(a as Action)}
-        />
-      )}
-      {golds.length > 0 && view.viewer && (
-        <BagDialog
-          key={'gold:' + String(view.log.length)}
-          title={t('tl_goldTitle', { n: goldNeed })}
-          hint={t('tl_goldHint')}
-          hand={bankBase}
-          need={goldNeed}
-          onSubmit={(bag) => onAction({ t: 'tl:gold', player: view.viewer ?? 'p1', bag } as Action)}
         />
       )}
       {roadOrCog && (
@@ -670,6 +790,9 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
         />
       )}
 
+      {hlDialog && (
+        <HlTradeDialog kind={hlDialog} view={view} legal={legal} onAction={onAction} onClose={() => setHlDialog(null)} />
+      )}
       {helpOpen && <HelpDialog view={view} onClose={() => setHelpOpen(false)} />}
       {playerOpen && <PlayerDialog view={view} playerId={playerOpen} onClose={() => setPlayerOpen(null)} />}
 

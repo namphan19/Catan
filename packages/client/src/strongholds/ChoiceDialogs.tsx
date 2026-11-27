@@ -4,6 +4,7 @@ import { resKey, resourceKinds, useI18n } from '../i18n';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
 import { ResourceIcon } from '../ui/ResourceIcon';
+import { GameIcon } from '../ui/GameIcon';
 
 export interface Option {
   key: string;
@@ -81,7 +82,7 @@ export function BagDialog({
             </span>
             <span className="sh-stepper">
               <button type="button" className="btn btn-icon" aria-label={`- ${t(resKey(r))}`} onClick={() => bump(r, -1)}>
-                −
+                <GameIcon name="minus" size={14} />
               </button>
               <b data-pick={r}>{pick[r] ?? 0}</b>
               <button

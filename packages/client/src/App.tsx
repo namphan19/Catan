@@ -19,7 +19,8 @@ import {
 } from '@hexgame/engine';
 import { I18nProvider, useI18n } from './i18n';
 import { HotseatShell } from './shell/HotseatShell';
-import { HomeScreen, type GameSetup } from './shell/HomeScreen';
+import { HomeScreen, type GameSetup, type OnlineIntent } from './shell/HomeScreen';
+import { readSave, saveGame } from './shell/autosave';
 import { OnlineShell, forgetStoredRoom } from './shell/OnlineShell';
 
 type Mode = 'menu' | 'hotseat' | 'online';
@@ -254,14 +255,40 @@ function GameApp() {
   }, []);
 
   const goMenu = useCallback(() => setMode('menu'), []);
-  const goOnline = useCallback((fresh = false) => {
-    if (fresh) forgetStoredRoom();
+  const [intent, setIntent] = useState<OnlineIntent | undefined>(undefined);
+  const goOnline = useCallback((next?: OnlineIntent) => {
+    // A new room starts fresh; joining or rejoining keeps the stored seat.
+    if (next?.kind === 'create') forgetStoredRoom();
+    setIntent(next);
     setMode('online');
+  }, []);
+
+  // Auto-save the hot-seat game after every change (home screen: "Continue").
+  useEffect(() => {
+    if (mode === 'hotseat' && state) saveGame(state, names, bots);
+  }, [mode, state, names, bots]);
+
+  const onContinue = useCallback(() => {
+    const save = readSave();
+    if (!save) return;
+    try {
+      const s = replay(save.init, save.actions);
+      setState(s);
+      setNames(save.names);
+      setBots(save.bots ?? {});
+      setActor(null);
+      setEvents(getEventsView([], null));
+      setErrors([]);
+      setError(null);
+      setMode('hotseat');
+    } catch (e) {
+      setError(`Load failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }, []);
   const toggleLang = useCallback(() => setLang(lang === 'vi' ? 'en' : 'vi'), [lang, setLang]);
 
   if (mode === 'online') {
-    return <OnlineShell onHome={goMenu} onLangToggle={toggleLang} />;
+    return <OnlineShell onHome={goMenu} onLangToggle={toggleLang} intent={intent} />;
   }
 
   if (mode === 'hotseat' && state && view) {
@@ -282,5 +309,7 @@ function GameApp() {
     );
   }
 
-  return <HomeScreen onNew={onNew} onLoad={onLoad} onOnline={goOnline} onLangToggle={toggleLang} error={error} />;
+  return (
+    <HomeScreen onNew={onNew} onLoad={onLoad} onOnline={goOnline} onContinue={onContinue} onLangToggle={toggleLang} error={error} />
+  );
 }

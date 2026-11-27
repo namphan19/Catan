@@ -4,14 +4,15 @@
 import { useState } from 'react';
 import type { Action, PlayerView } from '@hexgame/engine';
 import { resKey, useI18n } from '../i18n';
-import { useName } from '../shell/names';
+import { useAvatar, useName } from '../shell/names';
+import { Avatar } from '../ui/Avatar';
+import { PanelHero } from '../ui/Drawer';
 import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
-import { playerColor, playerEmblem } from '../ui/colors';
-import { Emblem } from '../ui/Emblem';
 import { ResourceIcon } from '../ui/ResourceIcon';
 import type { HlView } from './labels';
 import './highlands.css';
+import { GameIcon } from '../ui/GameIcon';
 
 const GOALS = [4, 4, 3];
 const KINDS = ['timber', 'clay', 'fiber', 'grain', 'stone', 'plume', 'herb', 'fish'];
@@ -22,7 +23,7 @@ const same = (a: Bag | undefined, b: Bag) => JSON.stringify(clean(a ?? {}), Obje
   JSON.stringify(clean(b), Object.keys(clean(b)).sort());
 
 /** Culture track of one player: three tribes, filled dots for points, the active tribe framed. */
-function Track({ tribe, cp }: { tribe: number; cp: number[] }) {
+export function Track({ tribe, cp }: { tribe: number; cp: number[] }) {
   return (
     <span className="hl-track">
       {GOALS.map((goal, i) => (
@@ -58,7 +59,7 @@ function Picker({ label, pools, kinds, pick, setPick, need }: {
             <span className="sh-stepper">
               <button type="button" className="btn btn-icon" aria-label={`- ${t(resKey(r))}`}
                 onClick={() => setPick({ ...pick, [r]: Math.max(0, (pick[r] ?? 0) - 1) })}>
-                −
+                <GameIcon name="minus" size={14} />
               </button>
               <b data-pick={r}>{pick[r] ?? 0}</b>
               <button type="button" className="btn btn-icon" aria-label={`+ ${t(resKey(r))}`}
@@ -75,7 +76,7 @@ function Picker({ label, pools, kinds, pick, setPick, need }: {
 }
 
 /** Goods set (pick 2 resources) or caravan (give 2 cards, take 1): sends the matching legal action. */
-function HlTradeDialog({ kind, view, legal, onAction, onClose }: {
+export function HlTradeDialog({ kind, view, legal, onAction, onClose }: {
   kind: 'hl:goodsSet' | 'hl:caravan'; view: PlayerView; legal: Action[]; onAction: (a: Action) => void; onClose: () => void;
 }) {
   const { t } = useI18n();
@@ -118,11 +119,12 @@ export function HighlandsPanel({ view, hl, legal, onAction }: {
   const [dialog, setDialog] = useState<'hl:goodsSet' | 'hl:caravan' | null>(null);
   const has = (type: string) => legal.some((a) => a.t === type);
   const recall = legal.find((a) => a.t === 'hl:recall');
+  const avatar = useAvatar();
   const me = view.viewer;
   return (
-    <section className="hl-panel" aria-label={t('hl_panel')}>
-      <h3 className="hl-head">{t('hl_panel')}</h3>
-      <p className="hl-goal">{t('hl_goal')}</p>
+    <section className="hl-panel xp-panel" aria-label={t('hl_panel')}>
+      <PanelHero art="jungle" kicker={t('xp_kicker')} title={t('hl_panel')} sub={t('hl_goal')} />
+      <div className="xp-body">
 
       <table className="hl-players">
         <tbody>
@@ -131,9 +133,12 @@ export function HighlandsPanel({ view, hl, legal, onAction }: {
             if (!s) return null;
             const total = s.cp.reduce((a, b) => a + b, 0);
             return (
-              <tr key={p.id} data-hl-player={p.id}>
+              <tr key={p.id} data-hl-player={p.id} className={p.id === me ? 'me' : undefined}>
                 <th scope="row" title={name(p.id)}>
-                  <Emblem id={playerEmblem(p.id)} size={14} color={playerColor(p.id)} /> {name(p.id)}
+                  <span className="xp-seat">
+                    <Avatar id={avatar(p.id)} seat={p.id} size={30} />
+                    <span className="xp-seat-name">{name(p.id)}</span>
+                  </span>
                 </th>
                 <td title={t('hl_tribe', { n: s.tribe })}>
                   <Track tribe={s.tribe} cp={s.cp} />
@@ -173,6 +178,7 @@ export function HighlandsPanel({ view, hl, legal, onAction }: {
       </p>
       <p className="hl-info hl-muted">{hl.stack2Joined ? t('hl_stack2In') : t('hl_stack2', { n: hl.stack2Left })}</p>
 
+      </div>
       {dialog && <HlTradeDialog kind={dialog} view={view} legal={legal} onAction={onAction} onClose={() => setDialog(null)} />}
     </section>
   );

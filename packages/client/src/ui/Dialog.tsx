@@ -1,5 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { useI18n } from '../i18n';
+import { GameIcon } from './GameIcon';
+import './chrome.css';
 
 interface DialogProps {
   title: string;
@@ -51,10 +53,11 @@ export function Dialog({ title, children, locked, onClose, docked, className }: 
     >
       <div className={`dialog${className ? ` ${className}` : ''}`} role="dialog" aria-modal={docked ? 'false' : 'true'} aria-label={title} ref={boxRef}>
         <div className="dialog-head">
+          <img className="dialog-seal" src="/assets/art2d/ui/seal.webp" alt="" width={42} height={42} draggable={false} />
           <h2>{title}</h2>
           {!locked && (
             <button type="button" className="btn btn-icon" onClick={onClose} aria-label={t('dlg_close')}>
-              <span aria-hidden="true">✕</span>
+              <GameIcon name="cross" size={16} />
             </button>
           )}
         </div>

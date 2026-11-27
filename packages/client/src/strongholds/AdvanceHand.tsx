@@ -1,5 +1,6 @@
-// The viewer's advance cards, gathered in the bottom-left corner of the board just above
-// "Bài của bạn" (PO 2026-11-18). Collapsed, each card shows only its name; a click opens the full
+// The viewer's advance cards as a small fan of cards next to the hand (PO 2026-11-27 HUD; a coloured
+// band names the deck). Hovering a card lifts it while its neighbours slide aside (the shared
+// `.card-fan`, table.css). Collapsed, each card shows only its name; a click opens the full
 // card (deck, effect, Play / Discard). Buttons are enabled only when getLegalActions contains a
 // matching action; clicking hands those actions to the staged chooser, like the expansion panel.
 import { useEffect, useRef, useState } from 'react';
@@ -8,6 +9,7 @@ import { CARD_TRACK, SH } from '@hexgame/engine';
 import { useI18n } from '../i18n';
 import { Button } from '../ui/Button';
 import { trackName } from './labels';
+import { fanStyle } from '../table/HandPanel';
 import './strongholds.css';
 
 interface AdvanceHandProps {
@@ -113,13 +115,13 @@ export function AdvanceHand({ view, sh, legal, onStart }: AdvanceHandProps) {
         )}
       </div>
       {groups.size > 0 && (
-        <ul className="sh-hand-tabs">
-          {[...groups.entries()].map(([card, n]) => {
+        <ul className="sh-hand-tabs card-fan">
+          {[...groups.entries()].map(([card, n], i) => {
             const track = CARD_TRACK[card];
             const playable = of('sh:play', card).length > 0;
             const droppable = of('sh:discardCard', card).length > 0;
             return (
-              <li key={card}>
+              <li key={card} className={open === card ? 'lifted' : undefined} style={fanStyle(i, groups.size, 7, 3)}>
                 <button
                   type="button"
                   className={`sh-hand-tab sh-reveal-${track ?? 'none'}${playable ? ' playable' : ''}${droppable ? ' droppable' : ''}`}
@@ -128,7 +130,9 @@ export function AdvanceHand({ view, sh, legal, onStart }: AdvanceHandProps) {
                   title={t(`cardfx_${card}`)}
                   onClick={() => setOpen(open === card ? null : card)}
                 >
+                  <span className="sh-hand-tab-deck">{track ? trackName(t, track) : ''}</span>
                   <span className="sh-hand-tab-name">{t(card)}</span>
+                  <span className="sh-hand-tab-fx">{t(`cardfx_${card}`)}</span>
                   {n > 1 && <span className="sh-hand-tab-n">×{n}</span>}
                 </button>
               </li>

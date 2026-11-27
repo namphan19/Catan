@@ -2,7 +2,7 @@
 // Screenshots: full-page, saved to docs/qa/screenshots/ (desktop project) and
 // docs/qa/screenshots/tablet/ (tablet project evidence).
 import { test, expect, type Page } from '@playwright/test';
-import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath, terrainImagesLoaded } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath, terrainImagesLoaded, setPlayers, setSeed } from './helpers';
 
 async function newPage(page: Page, path = '/'): Promise<() => string[]> {
   const errors = captureErrors(page);
@@ -37,8 +37,8 @@ test('4-player hot-seat game seed e2e-1: board, setup, roll, end turn, trade pan
   const project = test.info().project.name;
 
   // Start a 4-player game with the fixed seed.
-  await page.getByLabel(VI.players).selectOption('4');
-  await page.getByLabel(VI.seed).fill('e2e-1');
+  await setPlayers(page, '4');
+  await setSeed(page, 'e2e-1');
   await page.getByRole('button', { name: VI.start }).click();
 
   // Pass-device cover appears before the first reveal and hides the hand behind it.
@@ -90,7 +90,7 @@ test('4-player hot-seat game seed e2e-1: board, setup, roll, end turn, trade pan
   await expect(cover).toContainText(VI.coverTitle);
   await confirmCover(page);
 
-  // Open the trade panel (player trade tab) and screenshot it.
+  // Open the trade dialog and screenshot it.
   await actionButton(page, VI.tradePlayersText).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
@@ -105,8 +105,8 @@ test('6-player game starts on the large board (30 hexes)', async ({ page }) => {
   const errors = await newPage(page);
   const project = test.info().project.name;
 
-  await page.getByLabel(VI.players).selectOption('6');
-  await page.getByLabel(VI.seed).fill('e2e-large');
+  await setPlayers(page, '6');
+  await setSeed(page, 'e2e-large');
   await page.getByRole('button', { name: VI.start }).click();
 
   await confirmCover(page);

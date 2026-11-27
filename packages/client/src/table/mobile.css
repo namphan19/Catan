@@ -1,33 +1,11 @@
-/* Phone layouts for the game table (loaded last, after table.css and home.css).
-   Two disjoint layouts, plus the rules they share:
-   - portrait  (max-width: 640px) and (min-height: 521px): top bar, one row of player tiles,
-     board, a one-row resource dock, and one row of actions with the primary button pinned on
-     the right; the side column is a bottom sheet.
-   - landscape (max-height: 520px) and (max-width: 1000px): board on the left at full height,
-     a right column with top bar, players, hand and actions; the side column slides in from the right.
-   Wider screens keep the desktop / tablet table untouched.
-
-   Player-facing choices (PO 2026-11-23, from phone-game references): every player is a colour
-   band tile with a readable name, the hand is a compact icon dock instead of painted cards, and
-   Roll / End turn is a large button that never scrolls away. */
-
-/* ---------- Desktop defaults for the phone-only controls ---------- */
-.topbar-menu-btn,
-.sheet-toggle,
-.sheet-close,
-.sheet-backdrop {
-  display: none;
-}
-
-.topbar-menu-wrap,
-.topbar-menu {
-  display: contents;
-}
-
-/* Desktop order stays: shell buttons, help, language. */
-.topbar .btn-lang {
-  order: 1;
-}
+/* Phone layouts of the game table (loaded last, after table.css and home.css). Same HUD idea as
+   the desktop (PO 2026-11-27): the board fills the screen, the controls float on its edges.
+   - portrait  (max-width: 640px) and (min-height: 521px): turn + menu on top, one row of portrait
+     medallions, the guidance line; at the foot a fan of cards and one row of round buttons
+     (Build, Trade, ...) with the primary button pinned on the right. Build opens a menu with the
+     build buttons, their names and costs. The expansion panel is a bottom sheet.
+   - landscape (max-height: 520px) and (max-width: 1000px): the desktop arrangement, smaller.
+   Wider screens use table.css only. */
 
 /* ---------- Shared phone rules ---------- */
 @media (max-width: 640px), (max-height: 520px) and (max-width: 1000px) {
@@ -44,805 +22,70 @@
   .btn,
   .tab,
   .res-card,
-  .seat {
+  .seat,
+  .hud-icon {
     touch-action: manipulation;
   }
 
-  /* Top bar: one compact row. The turn sits in a dark chip, so "whose turn" is the first
-     thing the eye finds; shell info follows and truncates. */
-  .topbar {
-    position: relative;
-    z-index: 50;
-    gap: 4px;
-    min-height: calc(44px + env(safe-area-inset-top));
-    padding: env(safe-area-inset-top) 6px 0;
-  }
-
-  .game-title {
-    display: none;
-  }
-
-  .topbar-left {
-    align-items: center;
-    gap: 6px;
-  }
-
-  .turn-label {
-    flex: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 1px 9px;
-    border: 1px solid var(--ink);
-    border-radius: 999px;
-    background: var(--ink);
-    color: var(--parchment);
-    font-size: 0.76rem;
-    line-height: 1.5;
-    white-space: nowrap;
-  }
-
-  .topbar-info {
-    display: block;
-    min-width: 0;
-    overflow: hidden;
-    font-size: 0.72rem;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .topbar .btn-help {
-    order: 0;
-    flex: none;
-    width: 44px;
-    height: 44px;
-    min-height: 44px;
-    padding: 0;
-  }
-
-  .topbar-menu-wrap {
-    display: block;
-    position: relative;
-    order: 1;
-  }
-
-  .topbar .topbar-menu-btn {
-    display: inline-flex;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    min-height: 44px;
-    padding: 0;
-  }
-
-  .topbar-menu {
-    display: none;
+  /* Every expansion panel is a sheet behind the panel button. */
+  .table.hud .sheet-toggle {
+    display: grid;
     position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    z-index: 80;
-    min-width: 210px;
-    flex-direction: column;
-    gap: 6px;
-    padding: 8px;
-    border: 2px solid var(--ink);
-    border-radius: 8px;
-    background: var(--parchment);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    z-index: 21;
   }
-
-  .topbar-menu.open {
-    display: flex;
-  }
-
-  .topbar-menu .topbar-actions {
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .topbar .topbar-menu .btn {
-    order: 0;
-    min-height: 44px;
-    padding: 6px 12px;
-    justify-content: flex-start;
-    font-size: 1rem;
-  }
-
-  /* Board overlays: round buttons on a rail at the left (finger-sized, out of the board's
-     way), the dice in a neat card top-right, the cost list a folded pill at the bottom. */
-  .board-zoom {
-    left: 8px;
-    top: 8px;
-    gap: 5px;
-  }
-
-  .board-zoom .btn {
-    width: 44px;
-    height: 44px;
-    min-height: 44px;
-    padding: 0;
-    justify-content: center;
-    border-radius: 50%;
-    background: rgba(243, 233, 210, 0.94);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
-    font-size: 1rem;
-  }
-
-  .dice-box {
-    top: 8px;
-    right: 8px;
-    padding: 4px 7px;
-    border-radius: 10px;
-    background: rgba(243, 233, 210, 0.94);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
-  }
-
-  .dice-roll {
-    gap: 4px;
-  }
-
-  .dice-box .die {
-    width: 28px;
-    height: 28px;
-  }
-
-  .dice-sum {
-    font-size: 1.15rem;
-  }
-
-  .dice-event {
-    margin-left: 2px;
-    padding-left: 5px;
-  }
-
-  .cost-card {
-    right: 8px;
-    bottom: 8px;
-    border-radius: 999px;
-    background: rgba(243, 233, 210, 0.9);
-    font-size: 0.8rem;
-    max-width: calc(100% - 16px);
-  }
-
-  .cost-card-head {
-    min-height: 44px;
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 0.85rem;
-  }
-
-  .cost-row {
-    grid-template-columns: 22px minmax(64px, auto) 1fr 12px;
-  }
-
-  .board-hint {
-    top: 8px;
-    left: 50px;
-    right: 118px;
-    max-width: none;
-    transform: none;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 3px 8px;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    line-height: 1.25;
-  }
-
-  .board-hint .btn,
-  .sh-pickbar .btn {
-    min-height: 44px;
-    padding: 4px 10px;
-    font-size: 0.82rem;
-  }
-
-  /* Toasts: slim chips at the bottom of the board, above the cost pill and the sheet toggle. */
-  .toast-stack {
-    left: 8px;
-    right: 8px;
-    bottom: 44px;
-    max-width: none;
-    align-items: flex-start;
-    gap: 3px;
-  }
-
-  .toast {
-    max-width: 100%;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: 0.78rem;
-    line-height: 1.3;
-  }
-
-  /* The side column (expansion panels) becomes a sheet over the board. A backdrop makes the
-     open sheet modal on touch: taps cannot accidentally arm a board pick behind it. */
-  .sheet-backdrop {
+  .table.hud .sidecol {
     position: absolute;
-    inset: 0;
-    z-index: 44;
-    border: 0;
-    background: rgba(27, 21, 18, 0.34);
-  }
-
-  .table[data-sheet='open'] .sheet-backdrop {
-    display: block;
-  }
-
-  .sheet-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    position: absolute;
-    left: 8px;
-    bottom: 8px;
-    z-index: 7;
-    min-height: 44px;
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 0.85rem;
-    background: rgba(243, 233, 210, 0.96);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  }
-
-  .sidecol {
-    position: absolute;
-    z-index: 45;
+    z-index: 70;
     width: auto;
-    max-height: none;
     flex: none;
-    overflow-y: auto;
-    border: 2px solid var(--ink);
-    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.3);
+    border: 0;
+    background: var(--parchment-dark);
+    box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.5);
     visibility: hidden;
-    transition:
-      transform 0.2s ease,
-      visibility 0.2s;
+    transition: transform 0.22s ease, visibility 0s linear 0.22s;
   }
-
-  .table[data-sheet='open'] .sidecol {
+  .table.hud[data-sheet='open'] .sidecol {
     transform: none;
     visibility: visible;
+    transition: transform 0.22s ease;
   }
-
-  .sheet-close {
+  .table.hud .sheet-close {
     display: inline-flex;
-    flex: none;
     align-self: flex-end;
     min-height: 44px;
     margin: 6px 8px 0;
-    padding: 4px 12px;
   }
-
-  /* Strongholds advance cards sit one row above the utility pills, so they cannot cover the
-     expansion-sheet toggle or the cost button. */
-  .board-area.has-sh-hand .sh-hand {
-    left: 8px;
-    right: 8px;
-    bottom: 54px;
-    max-width: none;
-  }
-
-  .board-area.has-sh-hand .toast-stack {
-    bottom: 132px;
-  }
-
-  /* The whole sheet scrolls, so the expansion panels show in full (no own max-height). */
-  .sidecol .tl-panel,
-  .sidecol .sh-panel {
-    flex: none;
-    max-height: none;
-    overflow: visible;
-  }
-
-  /* Player tiles: a seat-colour band with portrait, hand badge, VP and a readable name.
-     Up to four players fit one row; five or six use a shallow swipeable rail. */
-  .seat-strip {
-    position: relative;
-    flex: none;
-    border-bottom-width: 2px;
-  }
-
-  .seat-strip .seats,
-  .seat-strip .seats-compact {
-    grid-auto-flow: row;
-    grid-auto-columns: auto;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    overflow: visible;
-    gap: 4px;
-    padding: 3px 4px;
-  }
-
-  .seat-strip .seats[data-n='2'] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .seat-strip .seats[data-n='3'] {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  /* Five and six players keep one shallow rail instead of spending a second tile row on the
-     board. Swipe to the end; each tile snaps into place and the right fade signals more seats. */
-  .seat-strip .seats[data-n='5'],
-  .seat-strip .seats[data-n='6'] {
-    grid-template-columns: none;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(108px, 1fr);
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-  }
-
-  .seat-strip .seats[data-n='5']::-webkit-scrollbar,
-  .seat-strip .seats[data-n='6']::-webkit-scrollbar {
-    display: none;
-  }
-
-  .seat-strip:has(.seats[data-n='5'])::after,
-  .seat-strip:has(.seats[data-n='6'])::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 14px;
-    pointer-events: none;
-    background: linear-gradient(90deg, transparent, var(--parchment-dark));
-  }
-
-  .seat-strip .seats[data-n='5'] .seat,
-  .seat-strip .seats[data-n='6'] .seat {
-    scroll-snap-align: start;
-  }
-
-  .seat,
-  .seats-compact .seat {
-    position: relative;
-    overflow: hidden;
-    min-height: 46px;
-    border: 2px solid var(--ink);
-    border-radius: 8px;
-    padding: 0;
-    background: var(--parchment);
-    /* the tile is re-laid out below; the desktop container queries must not fire */
-    container-type: normal;
-  }
-
-  /* The colour band behind the portrait and the VP: the seat is readable at a glance, and the
-     portrait ring is the same colour, like the phone-game references. */
-  .seat::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 auto;
-    height: 28px;
-    z-index: 0;
-    background: var(--seat);
-    border-bottom: 1px solid var(--ink);
-  }
-
-  .seat .seat-grid {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: 28px minmax(0, 1fr);
-    grid-template-rows: 28px auto;
-    grid-template-areas:
-      'av head'
-      'name name';
-    align-items: center;
-    column-gap: 1px;
-  }
-
-  /* The avatar and the name leave their column, so the name can use the full tile width. */
-  .seat .seat-id {
-    display: contents;
-  }
-
-  .seat .seat-avatar {
-    grid-area: av;
-    justify-self: start;
-    padding-left: 2px;
-  }
-
-  .seat .seat-avatar .avatar {
-    width: 24px !important;
-    height: 24px !important;
-    border: 2px solid var(--parchment);
-    box-shadow: 0 0 0 1px var(--ink);
-  }
-
-  /* The hand count rides on the portrait, leaving the colour band for the VP. */
-  .seat-hand-badge {
-    position: absolute;
-    right: -4px;
-    bottom: -2px;
-    z-index: 2;
-    display: inline-flex;
-    align-items: center;
-    gap: 1px;
-    min-width: 17px;
-    height: 14px;
-    padding: 0 3px;
-    border: 1px solid var(--ink);
-    border-radius: 999px;
-    background: var(--parchment);
-    color: var(--ink);
-    font-size: 0.58rem;
-    font-weight: 800;
-    line-height: 1;
-  }
-
-  .seat-hand-badge.warn {
-    border-color: var(--danger);
-    color: var(--danger);
-  }
-
-  /* The portrait and the colour band already tell the seat; the emblem only crowds it. */
-  .seat-emblem {
-    display: none;
-  }
-
-  .seat .seat-head {
-    grid-area: head;
-    justify-content: flex-end;
-    min-height: 0;
-    padding-right: 5px;
-    gap: 2px;
-  }
-
-  .seat-you,
-  .seat-acting-tag,
-  .seat-cards,
-  .seat-vp small,
-  .stat-supply {
-    display: none;
-  }
-
-  .seat .seat-vp {
-    margin-left: 0;
-    gap: 1px;
-    color: var(--seat-text, var(--ink));
-  }
-
-  .seat-vp svg {
-    width: 13px;
-    height: 13px;
-  }
-
-  .seat-vp strong {
-    font-size: 0.92rem;
-    color: var(--seat-text, var(--ink));
-    text-shadow: none;
-  }
-
-  .seat .seat-name {
-    grid-area: name;
-    width: 100%;
-    min-height: 15px;
-    padding: 1px 2px 0;
-    text-align: center;
-    font-size: 0.72rem;
-    line-height: 1.1;
-    font-weight: 700;
-  }
-
-  .seat.me .seat-name {
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
-  /* The active player: a gold ring (a shape, not colour alone) and a lifted tile. */
-  .seat.acting {
-    background: #fbf5e4;
-    box-shadow:
-      0 0 0 2px var(--gold),
-      0 1px 4px rgba(0, 0, 0, 0.22);
-  }
-
-  .seat.acting .avatar {
-    box-shadow: 0 0 0 1px var(--ink), 0 0 0 3px var(--gold);
-  }
-
-  .seat.acting .seat-name {
-    font-weight: 800;
-  }
-
-  .seat-stats,
-  .seats-compact .seat-stats {
-    gap: 0 5px;
-    margin-top: 0;
-    min-height: 0;
-    font-size: 0.68rem;
-  }
-
-  .seat .seat-cards {
-    grid-area: cards;
-    justify-content: center;
-    padding: 1px 0 0;
-  }
-
-  .seat-stats .stat {
-    gap: 1px;
-  }
-
-  .seat-stats svg,
-  .seat-stats .uiicon {
-    width: 12px;
-    height: 12px;
-  }
-
-  /* Awards sit in the tile's corner, so the counts stay centred. */
-  .seat .seat-assets {
-    position: absolute;
-    right: 2px;
-    bottom: 1px;
-    z-index: 2;
-    padding-left: 0;
-    border-left: 0;
-  }
-
-  .seat-assets:not(:has(.seat-award)) {
-    display: none;
-  }
-
-  .seat-award {
-    width: 14px;
-    height: 14px;
-  }
-
-  /* Hand: a compact icon dock (name and painted card stay for wide screens). Every resource
-     keeps its slot, empty ones dimmed with a 0; a "+N" floats up when a count changes. */
-  .hand {
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 6px;
-    overflow: auto hidden;
-    scrollbar-width: none;
-  }
-
-  .hand::-webkit-scrollbar {
-    display: none;
-  }
-
-  .hand-title,
-  .hand-empty {
-    display: none;
-  }
-
-  .hand-group {
-    flex-direction: row;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .hand-group:first-child {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .hand-res {
-    min-width: 0;
-    gap: 4px;
-  }
-
-  .hand-group + .hand-group {
-    padding-left: 8px;
-    border-left: 1px solid rgba(59, 47, 47, 0.25);
-  }
-
-  .hand-res,
-  .dev-cards {
-    align-items: center;
-    gap: 3px;
-  }
-
-  .res-card {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    width: auto;
-    min-height: 36px;
-    padding: 2px 6px;
-    border: 1px solid rgba(59, 47, 47, 0.4);
-    border-radius: 8px;
-    background: rgba(243, 233, 210, 0.9);
-  }
-
-  .res-card.empty {
-    opacity: 0.5;
-  }
-
-  .res-card-art,
-  .res-card-fallback,
-  .res-card-name {
-    display: none;
-  }
-
-  .res-card-icon {
-    display: inline-flex;
-  }
-
-  .res-card-count {
-    position: static;
-    display: inline;
-    min-width: 0;
-    height: auto;
-    padding: 0;
-    border: 0;
-    border-radius: 0;
-    background: none;
-    color: var(--ink);
-    font-family: var(--font-body);
-    font-size: 0.95rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-
-  .res-card-count.is-zero {
-    display: inline;
-    color: var(--ink-soft);
-    font-weight: 400;
-  }
-
-  .res-delta {
-    top: -6px;
-    left: 60%;
-    font-size: 0.9rem;
-  }
-
-  /* Development cards stay painted but turn into mini chips next to the resources. */
-  .dev-card {
-    flex-direction: row;
-    align-items: center;
-    gap: 3px;
-    width: auto;
-    min-height: 36px;
-    padding: 2px 6px 2px 3px;
-    border: 1px solid rgba(59, 47, 47, 0.4);
-    border-radius: 999px;
-    background: rgba(243, 233, 210, 0.9);
-  }
-
-  .dev-card img,
-  .dev-card-blank {
-    width: 18px;
-    height: 25px;
-    border-radius: 3px;
-    box-shadow: none;
-  }
-
-  .dev-card-name {
-    display: none;
-  }
-
-  .dev-card-new {
-    top: -3px;
-    right: -2px;
-    padding: 0 3px;
-    font-size: 0.5rem;
-  }
-
-  /* Action bar: the secondary buttons (build, buy, trade) scroll sideways in their own strip;
-     the primary Roll / End turn button is pinned on the right, full height, never scrolling. */
-  .actionbar {
-    flex: none;
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: stretch;
-    gap: 5px;
-    overflow: hidden;
-  }
-
-  .act-strip {
-    display: flex;
-    flex: 1 1 auto;
-    min-width: 0;
-    align-items: stretch;
-    gap: 4px;
-    overflow: auto hidden;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-  }
-
-  .act-strip::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* The dice pickers lead the scrolling strip so they stay in view at 320 px. */
-  .actionbar .act-strip .die-pick {
-    order: -1;
-    width: 38px;
-    min-width: 38px;
-    height: auto;
-    padding: 0;
-    justify-content: center;
-    font-size: 1.35rem;
-  }
-
-  .act-strip .act-group {
-    display: contents;
-  }
-
-  /* The action groups use display:contents, so their buttons are layout children of the strip
-     even though they are not direct DOM children. Match both shapes and never shrink a tap
-     target below the accessible minimum. */
-  .act-strip .btn,
-  .act-strip .tipwrap {
-    flex: 0 0 auto;
-    min-width: 46px;
-  }
-
-  .act-strip .tipwrap > .btn {
-    width: 100%;
-    min-width: 44px;
-  }
-
-  .actionbar .btn {
-    position: relative;
-    flex-direction: column;
-    justify-content: flex-start;
-    gap: 2px;
-    min-height: 54px;
-    padding: 4px 2px 3px;
-    font-size: 0.68rem;
-    line-height: 1.1;
-    text-align: center;
-    white-space: normal;
-  }
-
-  .act-strip .btn-play {
-    min-width: 84px;
-  }
-
-  .act-strip .btn .badge {
-    position: absolute;
-    top: 1px;
-    right: 1px;
-    margin: 0;
-  }
-
-  .actionbar .act-primary {
-    flex: 0 0 auto;
+  .table.hud[data-sheet='open'] .sheet-backdrop {
     display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 65;
+    border: 0;
+    background: rgba(10, 16, 18, 0.4);
+  }
+  .table.hud.has-dock {
+    --inset-right: 0px;
   }
 
-  .actionbar .act-primary .btn,
-  .actionbar .act-primary .tipwrap {
-    flex: none;
-    width: 74px;
-    height: 100%;
+  .hud-guide {
+    font-size: 1.02rem;
+  }
+  .hud-guide[data-mine='false'] {
+    font-size: 0.95rem;
+  }
+  .hud-guide .btn {
+    min-height: 36px;
   }
 
-  /* Disabled primary actions carry a tooltip wrapper; its button must fill the pinned box. */
-  .actionbar .act-primary .tipwrap > .btn {
-    width: 100%;
-    min-width: 44px;
+  .toast {
+    font-size: 0.95rem;
+  }
+  .toast:not(:last-child) {
+    font-size: 0.85rem;
   }
 
-  .actionbar .act-primary .btn {
-    justify-content: center;
-    gap: 1px;
-    min-height: 54px;
-    padding: 2px 4px;
-    border-radius: 12px;
-    font-size: 0.76rem;
-    font-weight: 800;
-    box-shadow: 0 3px 0 rgba(59, 47, 47, 0.55);
-  }
-
-  .actionbar > .act-primary .btn .uiicon {
-    width: 22px;
-    height: 22px;
-  }
-
-  .actionbar .lbl-full {
+  .board-zoom {
     display: none;
-  }
-
-  .actionbar .lbl-short {
-    display: inline;
   }
 
   /* Dialogs use the whole screen width. */
@@ -909,199 +152,569 @@
     font-size: 0.72rem;
   }
 
-  .stepper .btn,
-  .trade-grid .stepper .btn {
+  .stepper .btn {
     min-width: 40px;
     min-height: 40px;
     padding: 2px 8px;
   }
 
-  /* The compact trade table may need a sideways swipe inside the dialog; it must never widen
-     the page or hide the pinned game controls. */
-  .trade-grid {
-    min-width: 440px;
-  }
-
   .tipwrap::after {
     max-width: min(240px, calc(100vw - 16px));
+  }
+
+}
+
+/* ---------- Build menu: tablets and phones fold the build buttons behind one "Build" button ---------- */
+@media (max-width: 1180px) {
+  .act-build-toggle {
+    display: inline-flex !important;
+  }
+  .act-build {
+    display: none;
+  }
+  .act-build[data-open='true'] {
+    display: flex;
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 26px);
+    z-index: 45;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    width: max-content;
+    max-width: calc(100vw - 24px);
+    max-height: 60dvh;
+    overflow-y: auto;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(16, 20, 22, 0.94);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+  }
+  /* In the menu each build reads as a row: button, name, cost and why not. */
+  .act-build .build-slot {
+    align-items: center;
+    gap: 12px;
+  }
+  .act-build .build-btn {
+    flex: none;
+    width: 48px;
+    height: 48px;
+  }
+  .act-build .build-tip {
+    position: static;
+    min-width: 0;
+    max-width: 230px;
+    padding: 0;
+    gap: 2px;
+    border-radius: 0;
+    background: none;
+    color: var(--hud-text);
+    box-shadow: none;
+    opacity: 1;
+  }
+  .act-build .build-tip b {
+    font-size: 1rem;
+  }
+  .act-build .build-tip small {
+    color: var(--hud-muted);
+  }
+  .act-build .build-tip .resicon,
+  .act-build .build-tip svg,
+  .act-build .build-tip img {
+    width: 18px;
+    height: 18px;
+  }
+  .act-build .build-tip-why {
+    color: #ffb4a3;
+  }
+  .act-build .build-tip-ok {
+    color: #a8e08a;
+  }
+
+  /* Names under the round buttons of the bottom row. */
+  .hud-round .act-lbl {
+    position: absolute;
+    top: calc(100% + 3px);
+    left: 50%;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    transform: translateX(-50%);
+    color: var(--hud-text);
+    font-size: 0.72rem;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
   }
 }
 
 /* ---------- Portrait phone ---------- */
 @media (max-width: 640px) and (min-height: 521px) {
-  .table-main {
-    position: relative;
-    flex-direction: row;
+  .table.hud {
+    --inset-top: 226px;
+    --inset-right: 0px;
+    --inset-bottom: 232px;
+    --inset-left: 0px;
   }
 
-  .board-area {
-    min-height: 0;
+  .hud-scrim-top {
+    height: 240px;
+    background: linear-gradient(rgba(var(--hud-shade), 0.78) 62%, rgba(var(--hud-shade), 0));
   }
-
-  .sidecol {
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: auto;
-    max-height: 72%;
-    border-width: 2px 0 0;
-    border-radius: 12px 12px 0 0;
-    transform: translateY(105%);
+  .hud-scrim-left,
+  .hud-scrim-right {
+    display: none;
   }
-
-  .table-bottom {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 4px;
-    padding: 2px 6px calc(4px + env(safe-area-inset-bottom));
-  }
-}
-
-/* ---------- Landscape phone ---------- */
-@media (max-height: 520px) and (max-width: 1000px) {
-  .table {
-    position: relative;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) min(46vw, 400px);
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
-    grid-template-areas:
-      'board top'
-      'board seats'
-      'board hand'
-      'board actions';
-  }
-
-  .table-main,
-  .table-bottom {
-    display: contents;
-  }
-
-  .board-area {
-    grid-area: board;
-    min-height: 0;
-    border-right: 2px solid var(--ink);
+  .hud-scrim-bottom {
+    height: 330px;
+    background: linear-gradient(rgba(var(--hud-shade), 0), rgba(var(--hud-shade), 0.85) 45%);
   }
 
   .topbar {
-    grid-area: top;
-    padding-left: max(6px, env(safe-area-inset-left));
-    padding-right: max(6px, env(safe-area-inset-right));
+    justify-content: flex-start;
+    padding: calc(10px + env(safe-area-inset-top)) 108px 0 14px;
+  }
+  .topbar-center {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .topbar-turn {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    white-space: nowrap;
+  }
+  .topbar-info {
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* The scenario name is in its (i) card on phones. */
+  .tl-badge > span:first-child {
+    display: none;
+  }
+  .topbar-info {
+    font-size: 0.8rem;
+  }
+  /* The guidance line sits under the players row (board picks included). */
+  .hud-guide,
+  .hud-guide.board-hint,
+  .hud-guide.sh-pickbar {
+    position: absolute;
+    top: calc(146px + env(safe-area-inset-top));
+    left: 14px;
+    right: 14px;
+    justify-content: flex-start;
+    text-align: left;
+  }
+  .topbar-right {
+    top: calc(8px + env(safe-area-inset-top));
+    right: 10px;
+    gap: 8px;
   }
 
+  .table.hud .sheet-toggle {
+    top: calc(8px + env(safe-area-inset-top));
+    right: 114px;
+  }
+  .table.hud .sidecol {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 78dvh;
+    border-radius: 16px 16px 0 0;
+    transform: translateY(105%);
+  }
+
+  /* Players: one row of medallions. */
   .seat-strip {
-    grid-area: seats;
+    top: calc(54px + env(safe-area-inset-top));
+    left: 0;
+    right: 0;
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: visible;
   }
-
-  /* Same shallow, swipeable rail as portrait; the board keeps its full height in landscape. */
-  .seat-strip .seats[data-n='5'],
-  .seat-strip .seats[data-n='6'] {
-    grid-auto-columns: minmax(104px, 1fr);
+  .seats,
+  .seats-compact {
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 16px;
+    width: max-content;
+    min-width: 100%;
+    padding: 6px 12px 4px;
+    box-sizing: border-box;
   }
-
-  .seat-strip .seats:not([data-n='5']):not([data-n='6']) .stat-supply {
-    display: inline-flex;
+  .seat {
+    flex-direction: column;
+    gap: 4px;
+    max-width: none;
+    padding-top: 6px;
   }
-
-  .hand {
-    grid-area: hand;
-    min-height: 0;
+  .seat.acting {
+    padding-top: 0;
+  }
+  .seat-avatar,
+  .seat.acting .seat-avatar {
+    margin-left: 0;
+  }
+  .seat .avatar,
+  .seats-compact .seat .avatar {
+    width: 46px !important;
+    height: 46px !important;
+  }
+  .seat.acting .avatar,
+  .seats-compact .seat.acting .avatar {
+    width: 56px !important;
+    height: 56px !important;
+  }
+  .seat-vp,
+  .seat.acting .seat-vp {
+    min-width: 24px;
+    height: 24px;
+    right: -8px;
+    bottom: -5px;
+    font-size: 0.82rem;
+  }
+  .seat-emblem {
+    display: none;
+  }
+  .seat-award {
+    width: 22px;
+    height: 22px;
+  }
+  .seat-text {
     align-items: center;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    padding: 6px 8px;
-    background: var(--parchment-dark);
+  }
+  .seat-name,
+  .seat.acting .seat-name {
+    max-width: 96px;
+    font-size: 0.8rem;
+  }
+  .seat.acting .seat-name {
+    color: var(--hud-gold);
+  }
+  .seat-tag,
+  .seat-sub,
+  .sh-seat-levels {
+    display: none !important;
+  }
+  .seats-compact {
+    gap: 10px;
   }
 
-  .hand-res,
-  .dev-cards {
-    flex-wrap: wrap;
+  /* Dice under the menu, on the right of the guidance line. */
+  /* Dice (and the Strongholds raid lane) under the guidance line, right-aligned. */
+  .hud-tr {
+    top: calc(180px + env(safe-area-inset-top));
+    right: 12px;
+    gap: 2px;
+  }
+  .dice-roll {
+    gap: 5px;
+  }
+  .dice-roll .die {
+    width: 30px;
+    height: 30px;
+  }
+  .dice-sum {
+    font-size: 1.25rem;
+  }
+  .dice-event {
+    margin-left: 2px;
+    padding-left: 6px;
   }
 
-  .actionbar {
-    grid-area: actions;
-    padding: 4px max(6px, env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom))
-      max(6px, env(safe-area-inset-left));
-    border-top: 2px solid var(--ink);
-    background: var(--parchment-dark);
+  .toast-stack {
+    bottom: 236px;
+    max-width: calc(100% - 24px);
   }
 
-  /* Above the top bar of the right column, so the close button is never hidden. */
-  .sidecol {
-    z-index: 55;
+  /* Foot: the hand fan on top, the button row under it. */
+  .table-bottom {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 22px;
+    padding: 0 12px calc(26px + env(safe-area-inset-bottom));
+    column-gap: 10px;
+  }
+  .hand {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-self: center;
+    gap: 14px;
+    margin-bottom: 0;
+  }
+  .act-strip {
+    grid-column: 1;
+    grid-row: 2;
+    flex-wrap: nowrap;
+    gap: 10px;
+    min-width: 0;
+  }
+  .act-primary {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+  }
+  .act-primary .btn {
+    min-height: 52px;
+    padding: 0 18px;
+    font-size: 1rem;
+  }
+  .hud-round {
+    width: 52px;
+    height: 52px;
+  }
+  .act-pill {
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 0.9rem;
+  }
+  .act-group {
+    gap: 8px;
+  }
+
+  .hand-res {
+    --cw: 50px;
+    --gap: 8px;
+    --layer: 2px;
+    padding-top: 8px;
+  }
+  .hand-res:has(.first-extra) {
+    --cw: 40px;
+    --gap: 5px;
+  }
+  .res-card-name {
+    display: none;
+  }
+  .res-card-count {
+    min-width: 21px;
+    height: 21px;
+    top: -7px;
+    left: -6px;
+    font-size: 0.75rem;
+  }
+  .dev-card,
+  .dev-card img,
+  .dev-card-blank {
+    width: 40px;
+  }
+  .dev-card {
+    margin-left: -16px;
+  }
+  .dev-card img,
+  .dev-card-blank {
+    height: 56px;
+  }
+  .hand-cards .hand-title {
+    display: none;
+  }
+  /* Small cards on a phone: a tapped card grows more so it can be read. */
+  .card-fan {
+    --fan-lift: -26px;
+    --fan-zoom: 1.6;
+    --fan-push: 16px;
+  }
+  .dev-card-play {
+    min-height: 40px;
+    padding: 0 20px;
+    font-size: 1rem;
+  }
+  .res-delta {
+    font-size: 1rem;
+  }
+
+  /* Online away mode: over the guidance line, clear of the players row. */
+  .afk-banner {
+    top: calc(140px + env(safe-area-inset-top, 0px));
+    width: calc(100% - 24px);
+    padding: 8px 12px;
+  }
+}
+
+/* ---------- Landscape phone: the desktop arrangement, smaller ---------- */
+@media (max-height: 520px) and (max-width: 1000px) {
+  .table.hud {
+    --inset-top: 64px;
+    --inset-right: 60px;
+    --inset-bottom: 96px;
+    --inset-left: 150px;
+  }
+  .topbar {
+    padding: 6px 170px 0;
+  }
+  .topbar-turn {
+    font-size: 0.68rem;
+  }
+  .topbar-right {
+    top: 6px;
+    right: 10px;
+  }
+  .hud-icon {
+    width: 40px;
+    height: 40px;
+  }
+  .table.hud .sheet-toggle {
+    top: 6px;
+    right: 108px;
+  }
+  .table.hud .sidecol {
     top: 0;
     right: 0;
     bottom: 0;
-    width: min(46vw, 400px);
-    height: auto;
-    border-width: 0 0 0 2px;
+    width: min(360px, 60vw);
     transform: translateX(105%);
   }
 
-  .board-hint {
-    right: 112px;
+  .seat-strip {
+    top: 8px;
+    left: 8px;
+    max-height: calc(100% - 100px);
+  }
+  .seats,
+  .seats-compact {
+    gap: 8px;
+    padding: 4px;
+  }
+  .seat {
+    gap: 8px;
+    max-width: 150px;
+  }
+  .seat .avatar,
+  .seats-compact .seat .avatar {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  .seat.acting .avatar,
+  .seats-compact .seat.acting .avatar {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  .seat-vp,
+  .seat.acting .seat-vp {
+    min-width: 22px;
+    height: 22px;
+    font-size: 0.78rem;
+  }
+  .seat-emblem,
+  .seat-tag,
+  .seat-sub,
+  .sh-seat-levels {
+    display: none !important;
+  }
+  .seat-name,
+  .seat.acting .seat-name {
+    max-width: 90px;
+    font-size: 0.85rem;
   }
 
-  /* Landscape has a wide empty area between the hand dock and the actions: the event toasts
-     live there instead of covering the board. */
+  .hud-tr {
+    top: 52px;
+    right: 10px;
+  }
+  .dice-roll .die {
+    width: 28px;
+    height: 28px;
+  }
+  .dice-sum {
+    font-size: 1.2rem;
+  }
+
   .toast-stack {
-    position: fixed;
-    top: auto;
-    left: auto;
-    right: 0;
-    bottom: calc(74px + env(safe-area-inset-bottom));
-    width: min(46vw, 400px);
-    max-width: none;
-    align-items: stretch;
-    padding: 0 10px;
-    pointer-events: none;
+    bottom: 96px;
   }
 
-  .toast {
-    border-radius: 8px;
+  .table-bottom {
+    padding: 0 10px calc(8px + env(safe-area-inset-bottom));
+    column-gap: 10px;
+  }
+  .hand {
+    margin-bottom: -6px;
+    gap: 10px;
+  }
+  .hand-res {
+    --cw: 44px;
+    --gap: 7px;
+    --layer: 2px;
+    padding-top: 8px;
+  }
+  .res-card-name,
+  .hand-cards .hand-title {
+    display: none;
+  }
+  .res-card-count {
+    min-width: 19px;
+    height: 19px;
+    font-size: 0.7rem;
+  }
+  .dev-card,
+  .dev-card img,
+  .dev-card-blank {
+    width: 36px;
+  }
+  .dev-card {
+    margin-left: -14px;
+  }
+  .dev-card img,
+  .dev-card-blank {
+    height: 50px;
+  }
+  .hud-round,
+  .build-btn {
+    width: 44px;
+    height: 44px;
+  }
+  .hud-round .act-lbl {
+    display: none;
+  }
+  .act-primary .btn {
+    min-height: 46px;
+    padding: 0 14px;
+    font-size: 0.95rem;
+  }
+  .act-strip {
+    flex-wrap: nowrap;
+    gap: 8px;
   }
 }
 
 /* ---------- Small phones (360 px class) ---------- */
 @media (max-width: 380px) {
-  .seat-strip .seats,
-  .seat-strip .seats-compact {
-    gap: 3px;
-    padding: 4px;
+  .seats,
+  .seats-compact {
+    gap: 8px;
+    padding-left: 6px;
+    padding-right: 6px;
   }
-
-  .seat .seat-name {
-    font-size: 0.68rem;
+  .seat-name,
+  .seat.acting .seat-name {
+    font-size: 0.74rem;
   }
-
-  .seat-stats,
-  .seats-compact .seat-stats {
-    gap: 0 3px;
-    font-size: 0.64rem;
+  .act-primary .btn {
+    padding: 0 12px;
+    font-size: 0.92rem;
   }
-
-  .actionbar .btn {
-    font-size: 0.64rem;
+  .hud-round {
+    width: 48px;
+    height: 48px;
   }
-
-  .act-strip .btn,
-  .act-strip .tipwrap {
-    min-width: 44px;
-  }
-
-  .actionbar .act-primary .btn,
-  .actionbar .act-primary .tipwrap {
-    width: 66px;
-  }
-
-  .actionbar .act-primary .btn {
-    font-size: 0.7rem;
+  .hand-res {
+    --cw: 46px;
+    --gap: 7px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sidecol,
+  .table.hud .sidecol,
   .toast,
   .res-card.changed,
+  .card-fan > li,
   .dice-roll,
   .hex-produced,
   .btn.pulse {

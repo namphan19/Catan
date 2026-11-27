@@ -1,12 +1,12 @@
 // Player-friendly table (UX2): board hint + player strip (no status banner since 2026-11-17), big board, player cards, hand as cards, dice
 // box, cost card, quick help. Hot-seat, real clicks; runs in the desktop and tablet projects.
 import { test, expect, type Page } from '@playwright/test';
-import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath } from './helpers';
+import { VI, actionButton, captureErrors, clearHover, confirmCover, playSetupUntilRoll, shotPath, setPlayers, setSeed } from './helpers';
 
 async function startGame(page: Page, players: '4' | '6', seed: string): Promise<void> {
   await page.goto('/');
-  await page.getByLabel(VI.players).selectOption(players);
-  await page.getByLabel(VI.seed).fill(seed);
+  await setPlayers(page, players);
+  await setSeed(page, seed);
   await page.getByRole('button', { name: VI.start }).click();
   await confirmCover(page);
 }
@@ -87,9 +87,11 @@ test('board hint, player strip, hand cards and dice box guide the player', async
 
   // Overlays never sit on top of each other.
   expect(await overlaps(page, '.dice-box', '.board-zoom')).toBe(false);
-  expect(await overlaps(page, '.dice-box', '.cost-card')).toBe(false);
+  expect(await overlaps(page, '.dice-box', '.seat-strip')).toBe(false);
   expect(await overlaps(page, '.toast-stack', '.dice-box')).toBe(false);
-  expect(await overlaps(page, '.toast-stack', '.cost-card')).toBe(false);
+  expect(await overlaps(page, '.toast-stack', '.act-primary')).toBe(false);
+  expect(await overlaps(page, '.act-strip', '.hand')).toBe(false);
+  expect(await overlaps(page, '.hand', '.act-primary')).toBe(false);
 
   // The page itself never scrolls: everything fits the viewport.
   const fits = await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1);
@@ -104,9 +106,9 @@ test('the board fills the board area', async ({ page }) => {
   const errors = captureErrors(page);
   const project = test.info().project.name;
   await startGame(page, '4', 'e2e-ux');
-  // Desktop 1440x900: the island must take at least 70% of the board area's height.
-  // Tablet 1024x768 is width-limited by the side column, so the bar is lower there.
-  const min = project === 'tablet' ? 0.5 : 0.7;
+  // HUD (PO 2026-11-27): the board is fitted between the players (left), the turn line (top) and
+  // the hand + buttons (bottom); the island (without its sea ring) takes over half the height.
+  const min = project === 'tablet' ? 0.4 : 0.5;
   const ratio = await islandRatio(page);
   expect(ratio, `island / board-area height = ${ratio.toFixed(2)}`).toBeGreaterThanOrEqual(min);
   expect(ratio).toBeLessThanOrEqual(1);
@@ -124,28 +126,28 @@ test('6 players: six player cards fit without page scroll, no log column', async
   expect(errors()).toEqual([]);
 });
 
-test('cost card collapses and remembers it; quick help opens and closes', async ({ page }) => {
+test('build buttons show name and cost on hover; quick help opens and closes', async ({ page }) => {
   const errors = captureErrors(page);
-  await page.goto('/');
-  await page.evaluate(() => localStorage.setItem('boschtan.costs', 'open'));
-  await startGame(page, '4', 'e2e-ux');
-  // The card folds while the board asks for a pick (since 2026-11-23), so play the setup out
-  // before checking the saved "open" choice.
-  await playSetupUntilRoll(page);
-
-  const card = page.locator('.cost-card');
-  await expect(card.locator('.cost-row')).toHaveCount(4);
-  await card.locator('.cost-card-head').click();
-  await expect(card.locator('.cost-row')).toHaveCount(0);
-  expect(await page.evaluate(() => localStorage.getItem('boschtan.costs'))).toBe('closed');
-
-  // A new page load (new game) keeps it collapsed.
   await startGame(page, '4', 'e2e-ux');
   await playSetupUntilRoll(page);
-  await expect(page.locator('.cost-card')).toBeVisible();
-  await expect(page.locator('.cost-card .cost-row')).toHaveCount(0);
-  await page.locator('.cost-card-head').click();
-  await expect(page.locator('.cost-card .cost-row')).toHaveCount(4);
+
+  // Round icon-only build buttons: road, settlement, city, card. Hovering one shows its name, its
+  // cost (cards you lack dimmed) and, when it is not possible, why.
+  const slots = page.locator('.act-build .build-slot');
+  await expect(slots).toHaveCount(4);
+  const folded = await page.locator('.act-build-toggle').isVisible();
+  if (folded) {
+    // tablets fold the build buttons behind "Xây": the menu lists each with its name and cost
+    await page.locator('.act-build-toggle').click();
+  } else {
+    await expect(slots.first().locator('.build-tip')).toHaveCSS('opacity', '0');
+    await slots.first().hover();
+  }
+  await expect(slots.first().locator('.build-tip')).toHaveCSS('opacity', '1');
+  await expect(slots.first().locator('.build-tip')).toContainText('Xây đường');
+  await expect(slots.first().locator('.build-tip .cost-unit')).toHaveCount(2);
+  await expect(slots.nth(2).locator('.build-tip .cost-unit')).toHaveCount(5);
+  if (folded) await page.keyboard.press('Escape');
 
   // Quick help.
   await page.getByRole('button', { name: 'Hướng dẫn nhanh' }).click();

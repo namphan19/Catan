@@ -67,53 +67,105 @@ Every SVG: viewBox given below, no external refs, no embedded raster, player-col
 The frontend must fall back to simple shapes when an asset file is missing (assets arrive in parallel).
 
 ## Screens
-1. Home ("guild hall", 2026-11-16): a parchment chart on a dark desk. Left: sea-chart medallion
-   (island illustration built from the game's terrain/piece art) + online ticket; right: the new-game
-   ledger (players, seed + randomise, named seats with emblems, wax-sealed start, marginal tip);
-   below: the logbook archive (load a saved log). Two columns at >= 900 px, stacked on tablet/mobile.
-2. Game table (UX2 layout, 2026-11-16; CSS in src/table/table.css): slim top bar (wordmark, turn, "?" quick
-   help, 2D/3D, language); status banner = one sentence "what to do now" (gold when it is the viewer's move,
-   "Đang chờ <name>…" otherwise); board fills the centre (zoom + pan) with overlays: zoom top-left, dice box
-   top-right, collapsible cost card bottom-right (marks what the viewer can pay), toasts bottom-left; player
-   strip on top: one card per player (portrait with the seat emblem as a badge + name on the left, then VP,
-   hand / card / guard counts and pieces left / awards; one line on a wide card, stacked on a narrow one via
-   a container query; acting marker = gold ring); right column only with an expansion (Tidelands /
-   Strongholds panels). PO 2026-11-19: the Log / Trade side panel is removed; events show as toasts, the
-   trade status in the trade dialog. Strongholds advance cards sit bottom-left on the board (AdvanceHand:
-   name tabs, a click opens the full card with Play / Discard). Bottom: own hand as cards (all 5 resources
-   always shown, +N/-N on change, development cards) + action bar (build group, trade group, one large
-   primary button: Roll or End turn). Number tokens carry probability pips; hexes that just produced pulse
-   (2D). Winner overlay.
+1. Home ("hub", PO 2026-11-27; src/shell/HomeScreen.tsx + hub.css): the same world as the game table, a
+   dark sea with words on it and ONE parchment sheet. Header: brand, two tabs (Chơi chung máy | Chơi trực
+   tuyến), language. Top card: "Continue" (the hot-seat game is auto-saved after every move in
+   localStorage `boschtan.autosave`, shell/autosave.ts; Discard forgets it), or on the online tab "Rejoin
+   room" (the last seated room); otherwise a quick game (you + 2 normal bots, base game). Four mode cards
+   with terrain art: base, Strongholds, Tidelands, Highlands - Strongholds and Tidelands combine,
+   Highlands plays alone (2-4 players); Tidelands shows its scenario picker, Highlands its map picker. The
+   sheet: same device = summary (modes, the engine's VP goal, players, bots), player count as round
+   buttons, seats (portrait, name, who plays it), advanced options (seed), Start; online = your name,
+   seats, advanced (VP goal, 5-6 player mode), "Create room · <modes>", or join by code (a pasted invite
+   link fills in the code; ?room=CODE opens this tab). Footer: the logbook (load a saved log) in a
+   dialog, and a tip. The online client creates / joins at once from the tab's choice; its own form
+   stays only as a fallback (errors, kicked).
+   Waiting room (PO mock 2026-11-27; src/shell/Lobby.tsx, lobby part of hub.css): same sea, the room code
+   as the hero (Copy code / Copy invite link, a check while copied), the mode line (modes · goal · seats),
+   the portrait picker (6, first come first served, taken ones dimmed with the owner's name), the room
+   chat inline (no bubble in the lobby; what it shows counts as read for the game's bubble) and ONE
+   parchment sheet: every seat with portrait, connection dot, you / host / bot level, ready state, x for
+   the host to remove it; the first empty seat offers "+ Add bot" with its level; at the foot "I'm ready"
+   (toggle) and the host's "Start game (waiting for N)". Phones: one column, code, mode, sheet, portraits,
+   chat. e2e: lobby.spec.ts answers the WebSocket with a small fake server.
+2. Game table ("HUD" layout, PO 2026-11-27; CSS in src/table/table.css; replaces the UX2 frames):
+   the board fills the whole table and is fitted into the free middle; every control floats over its
+   edges on dark scrims, without boxes. Top centre: turn label (+ shell info) and ONE guidance line
+   ("what to do now", a board pick with Cancel, or "Đang chờ <name>…"); top-right: "?" quick help and a
+   menu (shell buttons: pass device, export log, home; language). Left edge: the players as portrait
+   medallions in turn order (seat-colour ring, wax seal with the VP, emblem badge, award badges, name,
+   hand / card counts; the acting player larger with a gold glow); a click opens the public details
+   (pieces left, guards...). Top-right under the menu: the dice on the sea (no box). Bottom: round
+   icon-only build buttons on the left (road, settlement, city, card; hovering one shows its name, its
+   cost with the missing cards dimmed, and why it is not possible), ONE trade button (bank and player
+   trades are tabs of its dialog), the hand in the middle (PO 2026-11-28): each resource kind is one
+   upright stack of painted cards (more cards = more edges behind it, the count on a corner nothing
+   covers, a kind you have none of is a narrow dashed slot, +N/-N on change); development cards are a
+   small fan where the hovered or tapped card rises and its neighbours slide aside, a playable card
+   has a gold ring and, lifted, a Play button (no "Play a card" pills in the bar) and
+   ONE primary button on the right (Roll or End turn). Events read as a one-line narration over the hand
+   (former toasts). The price card is gone (costs live in the build buttons). Number tokens carry
+   probability pips; hexes that just produced pulse. Winner overlay.
+   Strongholds on the HUD: raid lane under the dice (fleet on a dotted lane, raiders vs defence), the
+   viewer's three improvement tracks on the right edge (a click opens a tray with costs, perks, capitals
+   and Improve buttons), each player's levels under their name, rampart + recruit as build buttons,
+   advance cards as a small fan right of the hand (deck band; a click opens the card with Play /
+   Discard), and a click on one of the viewer's wardens opens its actions around it on the board. The
+   full Strongholds panel is a drawer (panel button, Esc or backdrop closes it).
+   Tidelands on the HUD: scenario + goal in the turn line with an (i) card of the scenario's own rules,
+   each player's progress (landfall, silk, rewards, wonder, coves) under the name, cogs and "move a cog"
+   (plus harbor / warship / wonder actions of the scenario) as round buttons in the build row, and the
+   gold-mine choice as big resource buttons right over the hand (one click for one card, Take for more).
+   Highlands on the HUD: the three tribes as pip groups under each name (active one underlined, declined
+   ones grey), goods as a separate part of the hand fan ("trade only"), the goods-set trade and the award
+   powers (caravan, recall) as round buttons that glow while usable, and a "your tribe has declined" line
+   over the board (fades after ~3 s) while the new tribe is founded.
+   Every expansion panel (and both together: Tidelands + Strongholds) is the same drawer.
+   Drawers and dialogs (PO 2026-11-28, ui/chrome.css, ui/Drawer.tsx): "read on the sea, act on paper".
+   - The drawer is dark like the hub's mode cards: a painted terrain hero (Strongholds quarry, Tidelands
+     harbour, Highlands jungle) with kicker, title and one italic line; gold small-caps section labels;
+     actions as round buttons with their name under them (Tripo badges from art2d/ui and GameIcon, never
+     emoji); players as rows with their portrait (the viewer's row in gold). Strongholds: raid lane with
+     the raid-ship art and two number tiles (raiders / table defence), "Your cities" = one card per track
+     (level pips in the track colour, perk at 3, capital at 4, deck left, an Improve pill showing its cost
+     or "Need N"), warden actions, the table. Tidelands: scenario chips (goal, landfall...), "Your fleet"
+     round buttons, table progress rows, wonders. Tidelands + Strongholds: pill tabs over the hero (a gold
+     dot on the tab that has a legal action); the rail's panel link opens the Strongholds tab. The close
+     button is round, over the hero.
+   - Dialogs are a sheet of parchment: Tripo art (tools/art prompts x-*, build.py `chrome`):
+     art2d/ui/sheet.webp as a 9-slice border image (torn, toasted rim), paper.webp fibres, a wax seal
+     (seal.webp) left of the title and a gold flourish (flourish.webp) under it; pill buttons, the primary
+     one dark leather with a gold ring; tabs as a pill switch. The bank tab shows the painted cards
+     themselves: every kind stays visible, the best rate on each card you can give, the others dimmed
+     with what you hold; the confirm button reads "Trade 2 Wheat for 1 Ore".
+   - The Strongholds chooser prompt is a dark pill over the board (gold hairline), the revealed advance
+     card a parchment card ringed in its deck colour.
+   Tablets (<= 1180 px) fold the build buttons behind "Xây" like phones, so long build rows (Tidelands +
+   Strongholds) never push the hand. Online: room code in the turn line, AFK and leave in the menu, the
+   away banner under the turn line, the chat bubble bottom-right.
    Online extras (2026-11-19, docs/PROTOCOL.md): portraits (6, picked in the lobby, first come first
-   served; hot-seat seats use the portrait matching their emblem), a floating chat bubble (lobby
-   bottom-right, game under the zoom buttons, unread counter), and "Let a bot play for me" (AFK: a
+   served; hot-seat seats use the portrait matching their emblem), a floating chat bubble in the game
+   (bottom-right above the zoom buttons, unread counter; inline in the lobby), and "Let a bot play for me" (AFK: a
    'normal' stand-in bot plays the seat until "I'm back"; the others get a popup).
 3. Hot-seat: "Pass the device to <name>" cover between actors so hands stay hidden.
-4. Phone layout (2026-11-23; CSS in src/table/mobile.css, e2e project "mobile"):
-   - portrait (<= 640 px wide): top bar with the turn in a dark chip + "?" + a menu (shell buttons,
-     language); 2-4 players share one grid row of compact colour tiles (seat-colour band with portrait,
-     hand badge and VP, readable name under it). Five or six players use one shallow swipe/snap rail;
-      tapping any tile opens its public details in a bottom sheet (VP progress, hand / development
-      cards / guards, pieces left, awards).
-     board fills the middle (pinch zoom with two fingers, drag to pan) with a round zoom rail top-left;
-     hand as a compact icon dock (every base resource keeps its slot, count + "+N" pulse); secondary
-     actions scroll sideways while the primary Roll / End turn button stays pinned on the right.
-     Utility controls have 44 px hit areas and fixed bars respect safe-area insets.
-   - landscape (<= 520 px tall): board on the left at full height, right column with top bar, the same
-     player tiles (five or six players use the swipeable rail), the icon hand dock and the actions; event
-     toasts stack in the free space above the actions instead of covering the board.
-   - the side column (Strongholds and Tidelands panels; the base game has none) is a sheet behind the
-     "Bảng mở rộng" button (a content-height bottom sheet in portrait, from the right in landscape);
-     the open sheet has a board backdrop and closes with its button, Esc or a backdrop tap; picking an
-      action in a panel closes it so the board is in view. Strongholds advance cards sit above the
-      utility pills so they cannot cover the sheet toggle or cost button.
+4. Phone layout (HUD, 2026-11-27; CSS in src/table/mobile.css, e2e project "mobile"):
+   - portrait (<= 640 px wide): turn label + "?" + menu on top; one row of portrait medallions (VP seal,
+     name; five or six players swipe); the guidance line under them; dice (and the Strongholds raid lane)
+     right-aligned under that; the board fills the middle (pinch zoom, drag to pan); at the foot the
+     hand fan and one row of round buttons with names under them - "Xây" opens a menu with every build
+     (name, cost, why not), "Đổi bài", Strongholds' "Nâng cấp" - and the primary Roll / End turn button
+     pinned on the right. Controls have 44 px hit areas and respect safe-area insets.
+   - landscape (<= 520 px tall): the desktop arrangement, smaller (players down the left edge).
+   - every expansion panel is a sheet behind the panel button (dark bottom sheet with a grab handle in portrait, from the right
+     in landscape) with a backdrop; it closes with its button, Esc or a backdrop tap, and picking an
+     action in it closes it so the board is in view.
 
 ## Interaction rules
 - The UI never decides legality: buttons, highlights and dialogs come from getLegalActions; disabled
   buttons show the validateAction reason as a tooltip (e.g. "Not enough resources for: city").
 - Pick an action, then click the board: legal vertices / edges / hexes glow; Esc cancels.
 - Dialogs: discard (pick exactly N, counter), steal target, bank/harbor trade (best rate shown),
-  player trade (one table: card | you have | you give | you get, responses list, confirm; an incoming
+  player trade (PO 2026-11-28: two rows of painted cards, "You give" with what you hold and "You get"; a click on a card adds one, the - under it takes one back, the count sits on the card; the counter-offer uses the same rows; offers read as small cards with xN, answers with portraits; responses list, confirm; an incoming
   offer always pops up, also when the viewer lacks the cards - then accept is greyed out with the
   reason), card play (harvest: pick 2, claim: pick 1).
 - Feedback: dice roll animation (< 600 ms), resource chips fly to the receiving player, toasts for
@@ -126,7 +178,7 @@ The frontend must fall back to simple shapes when an asset file is missing (asse
 ## Component structure (packages/client/src)
 ui/ (tokens.css, Button, Panel, Dialog, Toast, Tooltip), board/ (Board, HexTile, Token, Harbor, Piece,
 Highlights), board3d/ (Board3D, terrain, decor, pieces3d, strongholds3d), table/ (GameTable, TopBar, PlayerCards, PlayerDialog,
-ActionBar, CostCard, HandPanel), strongholds/ (Panel, AdvanceHand, BoardExtras, ChoiceDialogs, chooser), dialogs/
-(DiscardDialog, StealDialog, TradeDialog, CardDialog), shell/ (HomeScreen, HomeMap, home.css, OnlineHome, Lobby,
-ChatBubble, HotseatShell, PassDeviceCover), ui/Avatar, i18n/. GameTable takes { view, legal, onAction, events } only, so the online
+ActionBar + BuildSlot, HandPanel), strongholds/ (Panel, Hud: RaidLane / TrackRail / ShLevels / warden ring, AdvanceHand, BoardExtras, ChoiceDialogs, chooser), tidelands/Hud (ScenarioBadge, TlSeatLine, GoldPicker, TlBuildSlots), highlands/Hud (HlSeatLine, HlBuildSlots, FoundMoment), dialogs/
+(DiscardDialog, StealDialog, TradeDialog, CardDialog), shell/ (HomeScreen, home.css (online home fallback), OnlineHome, Lobby,
+ChatBubble, HotseatShell, PassDeviceCover, autosave, hub.css), ui/Avatar, i18n/. GameTable takes { view, legal, onAction, events } only, so the online
 client reuses it.

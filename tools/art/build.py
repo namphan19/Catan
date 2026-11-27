@@ -9,6 +9,8 @@ pieces   p-<id>.png  -> art2d/piece/<id>.webp     trimmed; "white" pieces become
 cards    c-/d-.png   -> art2d/card/<id>.webp      card ratio 5:7 (resources c-, development d-)
 icons    i-<id>.png  -> art2d/icon/<id>.webp      goods icons, 128px with an ink outline
 harbor   t-harbor    -> art2d/terrain/harbor.webp shallow water for the 2D harbor tiles
+ui       ui-<id>.png -> art2d/ui/<id>.webp        button badges (Tripo website art)
+chrome   x-<id>.png  -> art2d/ui/<id>.webp        dialog paper: paper tile, sheet (9-slice), flourish, seal
 """
 import os
 import sys
@@ -190,6 +192,116 @@ def icon(src, name):
     save(Image.alpha_composite(ink, canvas), 'icon', name, quality=92)
 
 
+def clear_grey_checker(img, max_sat=14, min_lum=70):
+    """For art whose baked-in checkerboard also shows through holes the border cannot reach (a ring of arrows,
+    gaps between cards): every nearly colourless pixel becomes transparent, wherever it is. Only for icons made of
+    saturated colours and cream, never of grey (steel, stone)."""
+    img = img.convert('RGBA')
+    r, g, b, a = img.split()
+    mx = ImageChops.lighter(ImageChops.lighter(r, g), b)
+    mn = ImageChops.darker(ImageChops.darker(r, g), b)
+    grey = ImageChops.subtract(mx, mn).point(lambda v: 255 if v <= max_sat else 0)
+    lum = img.convert('L').point(lambda v: 255 if v >= min_lum else 0)
+    bg = ImageChops.multiply(grey, lum).filter(ImageFilter.MaxFilter(3))
+    img.putalpha(ImageChops.subtract(a, bg))
+    return img
+
+
+GREY_CHECKER = ('trade', 'buy-card')
+
+
+def ui(src, name):
+    """Button badge / HUD art (ui-<name>.png -> art2d/ui/<name>.webp): background cleared, trimmed, no extra outline.
+    Round badges (end-turn, roll) are 192px (shown at 58px, 3x for sharp screens); the rest 128px."""
+    img = clear_plain_background(Image.open(src))
+    if name in GREY_CHECKER:
+        img = clear_grey_checker(img)
+    alpha = img.getchannel('A').point(lambda v: 0 if v < 12 else v)
+    img.putalpha(alpha)
+    img = img.crop(alpha.getbbox())
+    box = 192 if name in ('end-turn', 'roll') else 128
+    img.thumbnail((box - 4, box - 4), Image.LANCZOS)
+    canvas = Image.new('RGBA', (box, box), (0, 0, 0, 0))
+    canvas.paste(img, ((box - img.width) // 2, (box - img.height) // 2), img)
+    save(canvas, 'ui', name, quality=92)
+
+
+def tileable(img, blur=6):
+    """Offset blend: the wrap-around seam goes to the middle, where the original takes over."""
+    w, h = img.size
+    shifted = ImageChops.offset(img, w // 2, h // 2)
+    mask = Image.new('L', (w, h))
+    px = mask.load()
+    for y in range(h):
+        for x in range(w):
+            a = 1 - abs(2 * x / (w - 1) - 1)
+            b = 1 - abs(2 * y / (h - 1) - 1)
+            m = min(a, b)
+            px[x, y] = int(255 * m * m * (3 - 2 * m))
+    return Image.composite(img, shifted, mask.filter(ImageFilter.GaussianBlur(blur)))
+
+
+def deckle_mask(w, h, depth=5, seed=7):
+    """Rectangle whose four edges wander by up to `depth` px (torn handmade paper), anti-aliased."""
+    import random
+    rnd = random.Random(seed)
+    ss = 3
+
+    def wander(n):
+        # sum of a few random sine waves + fine jitter, 0..depth
+        import math
+        waves = [(rnd.uniform(0.5, 1.0), rnd.uniform(3, 60), rnd.uniform(0, 6.3)) for _ in range(7)]
+        out = []
+        for i in range(n):
+            v = sum(a * (0.5 + 0.5 * math.sin(i / n * f * 6.283 + p)) for a, f, p in waves) / sum(a for a, _, _ in waves)
+            out.append(depth * ss * min(1.0, max(0.0, v + rnd.uniform(-0.04, 0.04))))
+        return out
+
+    W, H = w * ss, h * ss
+    top, bottom, left, right = wander(W), wander(W), wander(H), wander(H)
+    m = Image.new('L', (W, H), 0)
+    pts = [(x, top[x]) for x in range(0, W, 2)] + [(W - 1 - right[y], y) for y in range(0, H, 2)]
+    pts += [(x, H - 1 - bottom[x]) for x in range(W - 1, -1, -2)] + [(left[y], y) for y in range(H - 1, -1, -2)]
+    ImageDraw.Draw(m).polygon(pts, fill=255)
+    return m.resize((w, h), Image.LANCZOS)
+
+
+def chrome(src, name):
+    """Dialog paper (x-<name>.png -> art2d/ui/<name>.webp), PO 2026-11-28:
+    paper    seamless parchment tile (dialog bodies, big sheets)
+    sheet    one parchment sheet with toasted rim and torn edges, for CSS border-image (9-slice)
+    flourish gold divider on black -> alpha from brightness, trimmed
+    seal     red wax seal on a dark vignette -> round cut-out"""
+    img = Image.open(src).convert('RGB')
+    if name == 'paper':
+        img = tileable(img.resize((512, 512), Image.LANCZOS))
+        save(img, 'ui', 'paper', quality=82)
+    elif name == 'sheet':
+        # The sheet lies on a tan card (x 37..986, y 33..990 in the 1024px render): keep only the sheet.
+        img = img.crop((40, 36, 984, 988)).resize((512, 512), Image.LANCZOS).convert('RGBA')
+        img.putalpha(deckle_mask(512, 512, depth=5))
+        save(img, 'ui', 'sheet', quality=88)
+    elif name == 'flourish':
+        lum = img.convert('L')
+        # Gold strokes are bright; the soft glow around them is dim -> cut it.
+        alpha = lum.point(lambda v: 0 if v < 105 else min(255, (v - 105) * 5))
+        rgba = img.convert('RGBA')
+        rgba.putalpha(alpha)
+        rgba = rgba.crop(alpha.point(lambda v: 255 if v > 40 else 0).getbbox())
+        rgba.thumbnail((600, 600), Image.LANCZOS)
+        save(rgba, 'ui', 'flourish', quality=90)
+    elif name == 'seal':
+        s = img.size[0]
+        cx, cy, r = s // 2, s // 2 - 6, int(s * 0.44)
+        ss = 4
+        m = Image.new('L', (s * ss, s * ss), 0)
+        ImageDraw.Draw(m).ellipse(((cx - r) * ss, (cy - r) * ss, (cx + r) * ss, (cy + r) * ss), fill=255)
+        rgba = img.convert('RGBA')
+        rgba.putalpha(m.resize((s, s), Image.LANCZOS))
+        rgba = rgba.crop((cx - r, cy - r, cx + r, cy + r)).resize((128, 128), Image.LANCZOS)
+        save(rgba, 'ui', 'seal', quality=90)
+
+
 def main(only):
     for f in sorted(os.listdir(SRC)):
         stem, ext = os.path.splitext(f)
@@ -206,6 +318,10 @@ def main(only):
             piece(src, name)
         elif kind == 'i':
             icon(src, name)
+        elif kind == 'ui':
+            ui(src, name)
+        elif kind == 'x':
+            chrome(src, name)
         elif kind in ('c', 'd'):
             card(src, name, plate=(kind == "c"))
 

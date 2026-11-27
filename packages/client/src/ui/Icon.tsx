@@ -50,7 +50,7 @@ export function UiIcon({ name, size = 18 }: { name: UiIconName; size?: number })
  * the same multiply filter (art2d/piece), and the road as the board's flat bar. Falls back to
  * the vector piece art while the sprite is loading or missing.
  */
-export function PieceIcon({ kind, color, size = 18 }: { kind: 'road' | 'settlement' | 'city' | 'ship'; color: string; size?: number }) {
+export function PieceIcon({ kind, color, size = 18 }: { kind: 'road' | 'settlement' | 'city' | 'ship' | 'warden' | 'rampart' | 'caravan'; color: string; size?: number }) {
   const fid = `pi-tint-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const sprite = art2dUrl('piece', kind === 'road' ? 'settlement' : kind === 'ship' ? 'cog' : kind);
   const loaded = useAssets([sprite])[sprite];
@@ -89,7 +89,7 @@ export function PieceIcon({ kind, color, size = 18 }: { kind: 'road' | 'settleme
       </svg>
     );
   }
-  const art = PIECE_ART[kind] ?? null;
+  const art = (PIECE_ART as Record<string, Art | null | undefined>)[kind] ?? null;
   if (!art) {
     return <span className="pieceicon pieceicon-fallback" style={{ width: size, height: size, background: color }} aria-hidden="true" />;
   }
