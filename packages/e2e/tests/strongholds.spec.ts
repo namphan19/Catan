@@ -58,6 +58,9 @@ test('a mid-game position: wardens on the board and the staged chooser', async (
   await expect(page.locator('.act-build button[data-build="rampart"]')).toHaveCount(1);
   await expect(page.locator('.act-build button[data-build="recruit"]')).toHaveCount(1);
   await expect(page.locator('.sh-panel')).toBeHidden();
+  // The closed drawer waits off-screen: it must not widen the page (no white strip, no side scroll).
+  const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, view: window.innerWidth }));
+  expect(widths.page, 'page width').toBeLessThanOrEqual(widths.view);
   await clearHover(page);
   await page.screenshot({ path: shotPath('strongholds-midgame.png', testInfo.project.name), fullPage: true });
 

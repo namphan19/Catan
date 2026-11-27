@@ -20,12 +20,15 @@
   flex-direction: column;
   min-height: 0;
   position: relative;
+  /* The closed drawer waits off-screen to the right: it must never widen the page. */
+  overflow: hidden;
 }
 
 .table-main {
   flex: 1;
   display: flex;
   min-height: 0;
+  min-width: 0;
 }
 
 .board-area {
