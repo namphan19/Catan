@@ -66,15 +66,54 @@ test('card fan: the hovered card rises upright, its neighbours slide aside', asy
   expect(errors()).toEqual([]);
 });
 
-test('card fan: a click lifts a card and shows its name; Esc drops it', async ({ page }) => {
+test('card fan: a click lifts a card and opens its face (name, effect); Esc drops it', async ({ page }) => {
   const errors = captureErrors(page);
   await load(page, 'hand-cards.json');
   const first = page.locator('.dev-cards.card-fan > li').first();
+  await expect(first.locator('.dev-card-face')).toBeHidden();
   await first.locator('.dev-card-btn').click();
   await expect(first).toHaveClass(/lifted/);
   await expect(first.locator('.dev-card-name')).toBeVisible();
+  await expect(first.locator('.dev-card-face')).toBeVisible();
+  await expect(first.locator('.dev-card-face-fx')).not.toBeEmpty();
   await page.keyboard.press('Escape');
   await expect(first).not.toHaveClass(/lifted/);
+  await clearHover(page); // the pointer still rests on the card after the click
+  await expect(first.locator('.dev-card-face')).toBeHidden();
+  expect(errors()).toEqual([]);
+});
+
+test('every development card says what it does before it is played, inside the screen', async ({ page }, testInfo) => {
+  const errors = captureErrors(page);
+  await load(page, 'hand-cards.json');
+  // The fixture holds playable cards, a card bought this turn and a Victory Point card.
+  const expected: Record<string, RegExp> = {
+    guard: /Dời Kẻ cướp.*cướp 1 lá/,
+    freeRoads: /Đặt 2 con đường miễn phí/,
+    harvest: /Lấy 2 tài nguyên tùy chọn/,
+    claim: /mọi người khác đưa bạn toàn bộ/,
+    relic: /1 điểm chiến thắng.*không cần dùng/,
+  };
+  const items = page.locator('.dev-cards.card-fan > li');
+  const n = await items.count();
+  expect(n).toBeGreaterThan(0);
+  const vw = page.viewportSize()!.width;
+  for (let i = 0; i < n; i++) {
+    const item = items.nth(i);
+    const card = (await item.getAttribute('data-card'))!;
+    await item.locator('.dev-card-btn').hover();
+    const face = item.locator('.dev-card-face');
+    await expect(face).toBeVisible();
+    await expect(face.locator('.dev-card-face-fx')).toHaveText(expected[card]);
+    const box = (await face.boundingBox())!;
+    expect(box.x, `${card} face starts inside the screen`).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width, `${card} face ends inside the screen`).toBeLessThanOrEqual(vw);
+    if (card === 'guard') await page.screenshot({ path: shotPath('hand-card-face.png', testInfo.project.name) });
+    // Play only on a playable card; the others say why where there is a reason (bought this turn).
+    const playable = /playable/.test((await item.getAttribute('class')) ?? '');
+    await expect(face.locator('.dev-card-play')).toHaveCount(playable ? 1 : 0);
+  }
+  await clearHover(page);
   expect(errors()).toEqual([]);
 });
 
@@ -101,6 +140,8 @@ test('a playable card has a gold ring and its Play button plays it (no Play pill
   await expect(page.locator('.dev-card[data-card="relic"]')).not.toHaveClass(/playable/);
   await expect(guard.locator('.res-card-count')).toHaveText('3');
   await guard.locator('.dev-card-btn').click();
+  // The effect is on screen next to the button that plays the card.
+  await expect(guard.locator('.dev-card-face-fx')).toBeVisible();
   const play = guard.locator('.dev-card-play');
   await expect(play).toBeVisible();
   await expect(play).toHaveText('Dùng');

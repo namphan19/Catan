@@ -66,3 +66,44 @@ describe('dice cheat', () => {
     expect(lastOf(view.log).action).toEqual({ t: 'roll', player: seat });
   });
 });
+
+describe('roll bonus code', () => {
+  it('is swallowed, and every later roll of that seat gets one of each card', async () => {
+    const s = await start();
+    server = s.server;
+    players = await startRoom(s.url, 2);
+    const roller = await toFirstRoll(players);
+    const other = players.find((p) => p !== roller)!;
+    const seat = (latest(roller).view as PlayerView).viewer!;
+
+    // The code line reaches nobody, not even the sender.
+    const hand0 = { ...((latest(roller).view as PlayerView).players.find((p) => p.id === seat)!.hand ?? {}) };
+    roller.client.send({ type: 'chat', text: '#kie' });
+    other.client.send({ type: 'chat', text: 'hi' });
+    await roller.client.next((m) => m.type === 'chat' && m.message.text === 'hi');
+    expect(roller.client.inbox.some((x) => x.msg.type === 'chat' && x.msg.message.text !== 'hi')).toBe(false);
+    expect(other.client.inbox.some((x) => x.msg.type === 'chat' && x.msg.message.text !== 'hi')).toBe(false);
+
+    const seq = latest(roller).seq;
+    roller.client.send({ type: 'action', action: { t: 'roll', player: seat } });
+    const st = (await roller.client.next((m) => m.type === 'state' && m.seq > seq)) as StateMsg;
+    const view = st.view as PlayerView;
+    const hand = view.players.find((p) => p.id === seat)!.hand ?? {};
+    for (const r of ['timber', 'clay', 'fiber', 'grain', 'stone']) expect(hand[r] ?? 0).toBeGreaterThanOrEqual((hand0[r] ?? 0) + 1);
+    expect(lastOf(view.log).action).toMatchObject({ bonus: true });
+    const theirs = (await other.client.next((m) => m.type === 'state' && m.seq > seq)) as StateMsg;
+    expect(lastOf((theirs.view as PlayerView).log).action).toEqual({ t: 'roll', player: seat });
+  });
+
+  it('a client cannot send the flag without the code', async () => {
+    const s = await start();
+    server = s.server;
+    players = await startRoom(s.url, 2);
+    const roller = await toFirstRoll(players);
+    const seat = (latest(roller).view as PlayerView).viewer!;
+    const seq = latest(roller).seq;
+    roller.client.send({ type: 'action', action: { t: 'roll', player: seat, bonus: true } });
+    const st = (await roller.client.next((m) => m.type === 'state' && m.seq > seq)) as StateMsg;
+    expect(lastOf((st.view as PlayerView).log).action).toEqual({ t: 'roll', player: seat });
+  });
+});

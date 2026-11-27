@@ -1,7 +1,7 @@
 // Hot-seat shell: hides the table behind a "pass the device" cover whenever the acting
 // viewer changes, keeps the export-log feature, and provides player names.
 import { useEffect, useRef, useState } from 'react';
-import { DICE_CHEAT_CODE, normalizeCheat, type Action, type GameEvent, type PlayerId, type PlayerView, type Validation } from '@hexgame/engine';
+import { DICE_CHEAT_CODE, ROLL_BONUS_CODE, normalizeCheat, type Action, type GameEvent, type PlayerId, type PlayerView, type Validation } from '@hexgame/engine';
 import { useI18n } from '../i18n';
 import { NamesProvider, useName } from './names';
 import { PassDeviceCover } from './PassDeviceCover';
@@ -50,6 +50,9 @@ function ShellInner({ names, view, legal, onAction, events, validate, errors, ex
   // choosing the dice for the player whose view is shown.
   const [cheaters, setCheaters] = useState<readonly PlayerId[]>([]);
   const typed = useRef('');
+  // The other code is typed as is (with its '#'); it marks every later roll of that player.
+  const [bonusSeats, setBonusSeats] = useState<readonly PlayerId[]>([]);
+  const raw = useRef('');
   const viewerRef = useRef(view.viewer);
   viewerRef.current = view.viewer;
   useEffect(() => {
@@ -57,10 +60,15 @@ function ShellInner({ names, view, legal, onAction, events, validate, errors, ex
       const el = e.target as HTMLElement | null;
       if (e.key.length !== 1 || el?.closest('input, textarea, select, [contenteditable="true"]')) return;
       typed.current = normalizeCheat(typed.current + e.key).slice(-DICE_CHEAT_CODE.length);
+      raw.current = (raw.current + e.key.toLowerCase()).slice(-ROLL_BONUS_CODE.length);
       const who = viewerRef.current;
       if (typed.current === DICE_CHEAT_CODE && who) {
         typed.current = '';
         setCheaters((c) => (c.includes(who) ? c : [...c, who]));
+      }
+      if (raw.current === ROLL_BONUS_CODE && who) {
+        raw.current = '';
+        setBonusSeats((c) => (c.includes(who) ? c : [...c, who]));
       }
     };
     window.addEventListener('keydown', onKey);
@@ -123,7 +131,7 @@ function ShellInner({ names, view, legal, onAction, events, validate, errors, ex
           }
           view={view}
           legal={legal}
-          onAction={onAction}
+          onAction={(a) => onAction(a.t === 'roll' && bonusSeats.includes(a.player) ? { ...a, bonus: true } : a)}
           events={events}
           validate={validate}
           errors={errors}

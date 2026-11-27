@@ -1102,52 +1102,86 @@
   line-height: 1.5;
 }
 
-/* A card you may play now: a gold ring; lifted (hover, focus, tap) it shows Play above it. The
-   button undoes the card's zoom so it keeps its normal size. */
+/* A card you may play now: a gold ring. */
 .dev-card.playable img,
 .dev-card.playable .dev-card-blank {
   box-shadow: 0 0 0 3px #e8c467, 0 0 14px rgba(232, 196, 103, 0.7), 0 6px 14px rgba(0, 0, 0, 0.5);
 }
-.dev-card-play {
+/* The face of a lifted card (hover, focus, tap): name, effect and Play, in the look of the
+   Strongholds card face. It undoes the card's zoom so it keeps its normal size; its bottom padding
+   is an invisible bridge, so the pointer can travel from the card up to Play without dropping it. */
+.dev-card-face {
   position: absolute;
   left: 50%;
-  bottom: calc(100% + 2px);
+  bottom: 100%;
   z-index: 2;
-  min-height: 32px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 16px;
-  background: linear-gradient(#f3d98c, #e0b54f);
-  box-shadow: 0 0 0 2px #2b211c, 0 4px 10px rgba(0, 0, 0, 0.55);
-  color: #2b211c;
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 700;
-  white-space: nowrap;
-  cursor: pointer;
-  touch-action: manipulation;
-  transform: translateX(-50%) scale(calc(1 / var(--fan-zoom)));
+  width: 230px;
+  max-width: calc(100vw - 24px);
+  padding-bottom: 6px;
+  transform: translateX(var(--face-shift, -50%)) scale(calc(1 / var(--fan-zoom)));
   transform-origin: 50% 100%;
   visibility: hidden;
   opacity: 0;
   transition: opacity 0.12s ease;
 }
-.dev-card.lifted .dev-card-play,
-.dev-card:has(:focus-visible) .dev-card-play {
+.dev-card.lifted .dev-card-face,
+.dev-card:has(:focus-visible) .dev-card-face {
   visibility: visible;
   opacity: 1;
 }
 @media (hover: hover) {
-  .dev-card:hover .dev-card-play {
+  .dev-card:hover .dev-card-face {
     visibility: visible;
     opacity: 1;
   }
+}
+.dev-card-face-box {
+  padding: 10px 14px 12px;
+  border: 3px solid var(--ink-soft);
+  border-radius: 14px;
+  background: var(--parchment);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), inset 0 0 0 4px color-mix(in srgb, var(--ink-soft) 18%, transparent);
+  color: var(--ink);
+  text-align: center;
+}
+.dev-card-face-name {
+  font-family: var(--font-head);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.dev-card-face-fx {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+.dev-card-face-note {
+  margin: 6px 0 0;
+  color: var(--danger);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.dev-card-play {
+  min-height: 34px;
+  margin-top: 10px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 17px;
+  background: linear-gradient(#f3d98c, #e0b54f);
+  box-shadow: 0 0 0 2px #2b211c, 0 4px 10px rgba(0, 0, 0, 0.35);
+  color: #2b211c;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
 }
 .dev-card-play:hover {
   background: linear-gradient(#f8e3a4, #e8c467);
 }
 .dev-card-play:focus-visible {
-  outline: 3px solid #fff6e0;
+  outline: 3px solid var(--ink);
   outline-offset: 2px;
 }
 

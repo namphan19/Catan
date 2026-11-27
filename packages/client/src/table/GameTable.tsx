@@ -22,7 +22,7 @@ import { RaidLane, ShLevels, TrackRail, WardenLayer, WardenMenu, type WardenPick
 import { GoldPicker, ScenarioBadge, TlBuildSlots, TlSeatLine } from '../tidelands/Hud';
 import { FoundMoment, HlBuildSlots, HlSeatLine } from '../highlands/Hud';
 import { HlTradeDialog } from '../highlands/HighlandsPanel';
-import { useI18n, resKey } from '../i18n';
+import { useI18n, resKey, cardKey } from '../i18n';
 import { useName } from '../shell/names';
 import { playerColor, playerEmblem } from '../ui/colors';
 import { Emblem } from '../ui/Emblem';
@@ -38,6 +38,7 @@ import { actorOf, statusOf } from './StatusBanner';
 import { DiceBox } from './DiceBox';
 import { HelpDialog } from './HelpDialog';
 import { HandPanel } from './HandPanel';
+import { devCardEffect } from './cardEffect';
 import { GameIcon } from '../ui/GameIcon';
 import { ActionBar, BuildSlot, type Pending } from './ActionBar';
 import { describeEvent } from './describe';
@@ -176,6 +177,8 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
   viewerRef.current = view.viewer;
   const boardRef = useRef(view.board);
   boardRef.current = view.board;
+  const viewRef = useRef(view);
+  viewRef.current = view;
   const pulseTimer = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (seen.current > events.length) seen.current = 0; // new game: the feed shrank
@@ -203,6 +206,15 @@ export function GameTable({ view, legal, onAction, events, validate, errors, onE
           pushReveal(d.player, d.card);
           continue;
         }
+      }
+      // Likewise a development card: its painted face and what it does in this game.
+      if (ev.e === 'cardPlayed' && ev.player !== viewerRef.current) {
+        pushReveal(ev.player, ev.card, {
+          name: t(cardKey(ev.card)),
+          fx: devCardEffect(ev.card, viewRef.current, t),
+          art: art2dUrl('card', ev.card),
+        });
+        continue;
       }
       const line = describeEvent(ev, t, name);
       if (line) pushToast({ text: line, kind: ev.e === 'won' ? 'gold' : 'info' });

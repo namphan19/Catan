@@ -1,6 +1,6 @@
 // Public engine API. All functions are pure: input states are never mutated; randomness comes only
 // from state.rng; no Date / Math.random / I/O.
-import type { Action, GameEvent, GameInit, GameState, LargeTableMode, LayoutId, PlayerId, Validation } from './types';
+import type { Action, Bag, GameEvent, GameInit, GameState, LargeTableMode, LayoutId, PlayerId, Validation } from './types';
 import type { ApplyCtx, Ctx, Rules, Ruleset } from './ruleset/types';
 import { composeRules } from './ruleset/compose';
 import { baseRuleset } from './rules/base';
@@ -12,6 +12,7 @@ import { generateBoard } from './board/generate';
 import { randInt, seedRng, shuffle } from './rng';
 import { emptyBag } from './bag';
 import { vp } from './rules/base/helpers';
+import { hasRollBonus } from './cheats';
 
 const REGISTRY: Record<string, Ruleset> = {
   base: baseRuleset,
@@ -150,6 +151,8 @@ export function validateAction(state: GameState, action: Action): Validation {
   const ctx = makeCtx(state);
   const def = ctx.rules.actions[action.t];
   if (!def) return { ok: false, code: 'UNKNOWN_ACTION', message: `Unknown action ${action.t}.` };
+  if ((action as { bonus?: unknown }).bonus !== undefined && !hasRollBonus(action))
+    return { ok: false, code: 'BAD_ACTION', message: 'Unexpected field bonus.' };
   const e = def.validate(ctx, action);
   return e ? { ok: false, ...e } : { ok: true };
 }
@@ -181,6 +184,7 @@ export function applyAction(state: GameState, action: Action): { state: GameStat
   const events: GameEvent[] = [];
   const ctx: ApplyCtx = { ...makeCtx(draft), emit: (e) => events.push(e) };
   ctx.rules.actions[action.t].apply(ctx, clone(action));
+  if (hasRollBonus(action)) rollBonus(ctx, action.player, events);
   draft.log.push(logEntry(draft.log.length, action, events));
   if (!draft.winner) {
     const w = ctx.rules.call('checkWinner', ctx, undefined);
@@ -192,6 +196,30 @@ export function applyAction(state: GameState, action: Action): { state: GameStat
     }
   }
   return { state: draft, events };
+}
+
+/** One card of every kind in play (resources, commodities, goods) from the bank, as far as it has them.
+ *  Joined to the roll's own production event when there is one. */
+function rollBonus(ctx: ApplyCtx, id: PlayerId, events: GameEvent[]): void {
+  const { state } = ctx;
+  const p = state.players.find((x) => x.id === id);
+  if (!p) return;
+  const bag: Bag = {};
+  for (const r of ctx.rules.config.resources) {
+    if ((state.bank.hand[r] ?? 0) <= 0) continue;
+    state.bank.hand[r] -= 1;
+    p.hand[r] = (p.hand[r] ?? 0) + 1;
+    bag[r] = 1;
+  }
+  if (!Object.keys(bag).length) return;
+  const prod = [...events].reverse().find((e): e is Extract<GameEvent, { e: 'produced' }> => e.e === 'produced');
+  if (!prod) {
+    events.push({ e: 'produced', gains: { [id]: bag } });
+    return;
+  }
+  const mine: Bag = { ...(prod.gains[id] ?? {}) };
+  for (const r of Object.keys(bag)) mine[r] = (mine[r] ?? 0) + 1;
+  prod.gains = { ...prod.gains, [id]: mine };
 }
 
 /** Every concrete legal action for the player right now (bounded samples for huge spaces).

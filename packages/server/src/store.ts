@@ -17,6 +17,7 @@ export interface PersistedSeat {
   avatar?: AvatarId;
   /** The player unlocked choosing their dice (cheat code in chat). */
   diceCheat?: boolean;
+  rollBonus?: boolean;
 }
 
 export interface PersistedRoom {
@@ -107,7 +108,8 @@ function isPersistedSeat(s: PersistedSeat): boolean {
     (s.bot === undefined || isBotLevel(s.bot)) &&
     (s.afk === undefined || typeof s.afk === 'boolean') &&
     (s.avatar === undefined || isAvatar(s.avatar)) &&
-    (s.diceCheat === undefined || typeof s.diceCheat === 'boolean')
+    (s.diceCheat === undefined || typeof s.diceCheat === 'boolean') &&
+    (s.rollBonus === undefined || typeof s.rollBonus === 'boolean')
   );
 }
 

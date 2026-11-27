@@ -176,8 +176,9 @@ export type BaseAction =
   | { t: 'placeSettlement'; player: PlayerId; v: VertexId }
   | { t: 'placeRoad'; player: PlayerId; e: EdgeId }
   | { t: 'buildCity'; player: PlayerId; v: VertexId }
-  /** `dice`: chosen production dice (dice cheat, see cheats.ts); the server only lets an unlocked seat send it. */
-  | { t: 'roll'; player: PlayerId; dice?: [number, number] }
+  /** `dice`: chosen production dice (dice cheat, see cheats.ts); the server only lets an unlocked seat send it.
+   *  `bonus`: see cheats.ts; only the server / local game sets it. */
+  | { t: 'roll'; player: PlayerId; dice?: [number, number]; bonus?: true }
   | { t: 'discard'; player: PlayerId; bag: Bag }
   | { t: 'moveBlocker'; player: PlayerId; hex: HexId }
   | { t: 'steal'; player: PlayerId; target: PlayerId }
