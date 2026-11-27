@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ScenarioSelect } from './HomeScreen';
 import { HighlandsSelect, type HighlandsMap } from '../highlands/HighlandsSelect';
-import type { RoomOptions } from '../net/protocol';
+import { asLargeTableMode, type LargeTableMode, type RoomOptions } from '../net/protocol';
 import { isValidCode, normalizeCode } from './OnlineShell';
 import { useI18n } from '../i18n';
 import { Button } from '../ui/Button';
@@ -24,7 +24,7 @@ export interface OnlineHomeProps {
 export function OnlineHome({ name, onName, onCreate, onJoin, online, onBack, onLangToggle, notice }: OnlineHomeProps) {
   const { t } = useI18n();
   const [count, setCount] = useState(3);
-  const [mode, setMode] = useState<'paired' | 'extraBuild'>('paired');
+  const [mode, setMode] = useState<LargeTableMode>('normal');
   const [vp, setVp] = useState('');
   const [expansion, setExpansion] = useState(false);
   const [scenario, setScenario] = useState('');
@@ -43,7 +43,8 @@ export function OnlineHome({ name, onName, onCreate, onJoin, online, onBack, onL
     const options: RoomOptions = {};
     if (highlands) options.highlands = highlands;
     else {
-      if (count >= 5) options.largeTableMode = expansion || scenario ? 'paired' : mode;
+      // The expansions have no extra build phase: they fall back to normal turns.
+      if (count >= 5) options.largeTableMode = (expansion || scenario) && mode === 'extraBuild' ? 'normal' : mode;
       if (expansion) options.expansion = 'strongholds';
       if (scenario) options.tidelands = scenario;
     }
@@ -108,12 +109,13 @@ export function OnlineHome({ name, onName, onCreate, onJoin, online, onBack, onL
           <label>
             {t('online_mode')}
             <select
-              value={mode}
-              disabled={count < 5 || expansion || !!scenario}
-              onChange={(e) => setMode(e.target.value === 'extraBuild' ? 'extraBuild' : 'paired')}
+              value={(expansion || !!scenario) && mode === 'extraBuild' ? 'normal' : mode}
+              disabled={count < 5 || !!highlands}
+              onChange={(e) => setMode(asLargeTableMode(e.target.value))}
             >
+              <option value="normal">{t('online_mode_normal')}</option>
               <option value="paired">{t('online_mode_paired')}</option>
-              <option value="extraBuild">{t('online_mode_extraBuild')}</option>
+              {!expansion && !scenario && <option value="extraBuild">{t('online_mode_extraBuild')}</option>}
             </select>
           </label>
           <label className="exp-check">

@@ -4,12 +4,13 @@ import { SCENARIOS, type Action } from '@hexgame/engine';
 
 /** Room options accepted from the client; bounded and passed to createGame. */
 export interface RoomOptions {
-  largeTableMode?: 'paired' | 'extraBuild';
+  /** 5-6 players: 'normal' (default, turns as with 2-4 players), 'paired' or 'extraBuild'. */
+  largeTableMode?: 'normal' | 'paired' | 'extraBuild';
   vpToWin?: number;
-  /** Play with the Strongholds expansion ruleset (5-6 players: paired mode only). */
+  /** Play with the Strongholds expansion ruleset (5-6 players: normal or paired turns, no extraBuild). */
   expansion?: 'strongholds';
   /** Play with the Tidelands (sea) expansion: the scenario id. Combines with strongholds where the
-   *  scenario allows it (5-6 players: paired mode only). */
+   *  scenario allows it (5-6 players: normal or paired turns, no extraBuild). */
   tidelands?: string;
   /** Play the Highlands expansion (tribes rise and decline, 2-4 players): the map mode. Plays alone. */
   highlands?: 'variable' | 'starter';
@@ -37,7 +38,8 @@ export function optionsProblem(o: RoomOptions, playerCount?: number): string | n
     if (!sc) return 'options.tidelands must be a scenario id.';
     if (o.expansion && !sc.strongholds) return 'That scenario cannot be combined with strongholds.';
   }
-  if ((o.expansion || o.tidelands) && o.largeTableMode === 'extraBuild') return 'The expansion needs paired players for 5-6 players.';
+  if ((o.expansion || o.tidelands) && o.largeTableMode === 'extraBuild')
+    return 'The expansion plays 5-6 players with normal or paired turns, not the extra build phase.';
   return null;
 }
 
@@ -196,8 +198,8 @@ function parseCreateRoom(msg: Record<string, unknown>, reqId?: string): ClientMs
     const clean: RoomOptions = {};
     const mode = options.largeTableMode;
     if (mode !== undefined) {
-      if (mode !== 'paired' && mode !== 'extraBuild')
-        throwErr('BAD_MESSAGE', "options.largeTableMode must be 'paired' or 'extraBuild'.");
+      if (mode !== 'normal' && mode !== 'paired' && mode !== 'extraBuild')
+        throwErr('BAD_MESSAGE', "options.largeTableMode must be 'normal', 'paired' or 'extraBuild'.");
       clean.largeTableMode = mode;
     }
     const vp = options.vpToWin;

@@ -4,7 +4,7 @@ import {
   applyAction, baseConfig, getEventsView, getLegalActions, getPlayerView, validateAction,
   type Action, type GameState,
 } from '../../src';
-import { act, autoSetup, blankGame, findPath, graphOf, newGame, pl, setHand } from '../helpers';
+import { act, autoSetup, blankGame, findPath, graphOf, newGame, pl, setHand, withMode } from '../helpers';
 
 const code = (s: GameState, a: Action) => {
   const v = validateAction(s, a);
@@ -118,15 +118,14 @@ describe('D21: extension limits are expressed in config', () => {
 describe('turn-window phase events (RULES.md 8, D8/D9)', () => {
   it('entering the paired phase emits a phase event so clients can follow (5-6 p.3)', () => {
     // RULES.md 8 + D8: after player 1 ends the turn the paired player's phase starts.
-    let s = blankGame(5);
+    let s = withMode(blankGame(5), 'paired');
     s = act(s, { t: 'endTurn', player: 'p1' });
     expect(s.phase).toEqual({ k: 'paired', player: 'p4' });
   });
 
   it('each legacy extra-build window pass emits a phase event so clients can follow the queue', () => {
     // RULES.md 8 + D9 (legacy extraBuild mode): a window advance is a phase change.
-    const s0 = blankGame(5);
-    s0.init.largeTableMode = 'extraBuild';
+    const s0 = withMode(blankGame(5), 'extraBuild');
     let s = act(s0, { t: 'endTurn', player: 'p1' });
     const r = applyAction(s, { t: 'endTurn', player: (s.phase as { queue: string[] }).queue[0] });
     expect(r.events).toContainEqual({ e: 'phase', phase: 'extraBuild' });

@@ -9,7 +9,7 @@ import {
   applyAction, createGame, getLegalActions, satisfiesDistanceRule, validateAction,
   type Action, type GameState, type VertexId,
 } from '../src';
-import { act, blankGame, graphOf, newGame, pl, setHand } from './helpers';
+import { act, blankGame, graphOf, newGame, pl, setHand, withMode } from './helpers';
 
 const code = (s: GameState, a: Action) => {
   const v = validateAction(s, a);
@@ -117,24 +117,25 @@ describe('D1: the first player (base p.5: highest roll starts; engine: RNG pick 
 });
 
 describe('five-six p.3: paired players (D8/D9/D11)', () => {
-  it('the default large-table mode is paired for 5 and 6 players; extraBuild is opt-in', () => {
-    expect(createGame({ seed: 'a', playerCount: 5 }).init.largeTableMode).toBe('paired');
-    expect(createGame({ seed: 'a', playerCount: 6 }).init.largeTableMode).toBe('paired');
-    expect(createGame({ seed: 'a', playerCount: 5, largeTableMode: 'extraBuild' }).init.largeTableMode).toBe('extraBuild');
-    expect(createGame({ seed: 'a', playerCount: 4 }).init.largeTableMode).toBe('extraBuild'); // dummy for 3-4
+  /** A 5-6 player game in the opt-in paired mode. */
+  const paired = (n: number, phase?: GameState['phase']) => withMode(blankGame(n, phase), 'paired');
+
+  it('paired and extraBuild are opt-in for 5-6 players (the default is normal turns)', () => {
+    expect(createGame({ seed: 'a', playerCount: 5, largeTableMode: 'paired' }).init).toMatchObject({ largeTableMode: 'paired', extraBuild: false });
+    expect(createGame({ seed: 'a', playerCount: 5, largeTableMode: 'extraBuild' }).init).toMatchObject({ largeTableMode: 'extraBuild', extraBuild: true });
   });
 
   it('player 2 is the third seat to the left of player 1 (seat index +3 mod n)', () => {
     // five-six p.2/p.3 diagram: "The third player to the left of the first player is player 2."
-    let s5 = blankGame(5);
+    let s5 = paired(5);
     s5 = act(s5, { t: 'endTurn', player: 'p1' });
     expect(s5.phase).toEqual({ k: 'paired', player: 'p4' });
     // With 6 players the pair sits opposite each other (+3 of 6).
-    let s6 = blankGame(6);
+    let s6 = paired(6);
     s6 = act(s6, { t: 'endTurn', player: 'p1' });
     expect(s6.phase).toEqual({ k: 'paired', player: 'p4' });
     // The rule follows the active seat: from p3 (5 players) the third seat left is p1.
-    let s3 = blankGame(5);
+    let s3 = paired(5);
     s3.turn.current = 'p3';
     s3 = act(s3, { t: 'endTurn', player: 'p3' });
     expect(s3.phase).toEqual({ k: 'paired', player: 'p1' });
@@ -142,7 +143,7 @@ describe('five-six p.3: paired players (D8/D9/D11)', () => {
 
   it('player 2 may build, buy, bank-trade and play a card; never trade with players', () => {
     // five-six p.3: "Player 2 may not trade with other players. All other actions remain the same."
-    let s = blankGame(5, { k: 'paired', player: 'p4' });
+    let s = paired(5, { k: 'paired', player: 'p4' });
     setHand(s, 'p4', { timber: 5, clay: 2, fiber: 2, grain: 2, stone: 2 });
     // an own settlement gives player 2 road spots on the empty board
     const v = spreadVertices(s, 1)[0];
@@ -162,7 +163,7 @@ describe('five-six p.3: paired players (D8/D9/D11)', () => {
   });
 
   it('after player 2 ends, the next seat becomes player 1 (five-six p.3: pass left)', () => {
-    let s = blankGame(5);
+    let s = paired(5);
     s = act(s, { t: 'endTurn', player: 'p1' }); // p1 ends -> paired
     expect(s.phase.k).toBe('paired');
     s = act(s, { t: 'endTurn', player: 'p4' }); // player 2 ends -> next seat
@@ -172,7 +173,7 @@ describe('five-six p.3: paired players (D8/D9/D11)', () => {
 
   it('one card per phase: player 1 and player 2 each get one play per paired turn', () => {
     // five-six p.3: both phases allow "Play 1 development card". The lock is per phase.
-    let s = blankGame(5, { k: 'main' });
+    let s = paired(5, { k: 'main' });
     pl(s, 'p1').cards = ['harvest', 'guard'];
     s = act(s, { t: 'playCard', player: 'p1', card: 'harvest', resources: ['timber', 'clay'] });
     expect(s.turn.cardPlayed).toBe(true);
@@ -188,7 +189,7 @@ describe('five-six p.3: paired players (D8/D9/D11)', () => {
   it('a card bought in the paired phase is JUST_BOUGHT there, playable once the phase ends', () => {
     // five-six p.3 note: "Development cards built when you are player 2 may be played as normal
     // when you are player 1 and vice versa" (the bought-lock is per turn, not per phase).
-    let s = blankGame(5, { k: 'paired', player: 'p4' });
+    let s = paired(5, { k: 'paired', player: 'p4' });
     setHand(s, 'p4', { fiber: 1, grain: 1, stone: 1 });
     s.bank.deck.push('guard'); // pin the bought card (the deck top would otherwise be random)
     s = act(s, { t: 'buyCard', player: 'p4' });
@@ -199,7 +200,7 @@ describe('five-six p.3: paired players (D8/D9/D11)', () => {
     expect(pl(s, 'p4').newCards).toEqual([]);
     expect(pl(s, 'p4').cards.length).toBe(1);
     // player 4 as an ordinary player 1 on a later turn may play it as normal
-    const later = blankGame(5, { k: 'main' });
+    const later = paired(5, { k: 'main' });
     later.turn = { ...later.turn, current: 'p4' };
     pl(later, 'p4').cards = ['guard'];
     expect(code(later, { t: 'playCard', player: 'p4', card: 'guard' })).toBe('OK');
@@ -207,7 +208,7 @@ describe('five-six p.3: paired players (D8/D9/D11)', () => {
 
   it('a guard played by player 2 moves the blocker and returns to the paired phase', () => {
     // five-six p.3: "All other actions remain the same" (blocker move + steal work as usual).
-    let s = blankGame(5, { k: 'paired', player: 'p4' });
+    let s = paired(5, { k: 'paired', player: 'p4' });
     pl(s, 'p4').cards = ['guard'];
     s = act(s, { t: 'playCard', player: 'p4', card: 'guard' });
     expect(s.phase).toMatchObject({ k: 'moveBlocker', resume: 'paired', actor: 'p4' });
@@ -218,7 +219,7 @@ describe('five-six p.3: paired players (D8/D9/D11)', () => {
   });
 
   it('freeRoads played by player 2 builds roads and returns to the paired phase', () => {
-    let s = blankGame(5, { k: 'paired', player: 'p4' });
+    let s = paired(5, { k: 'paired', player: 'p4' });
     // an own settlement gives player 2 road spots on the empty board
     const v = spreadVertices(s, 1)[0];
     s.pieces.buildings[v] = { owner: 'p4', kind: 'settlement' };
@@ -234,7 +235,7 @@ describe('five-six p.3: paired players (D8/D9/D11)', () => {
   it('player 2 wins immediately on reaching the VP target in their phase (five-six p.3)', () => {
     // "If player 2 reaches 10 VPs during their part of the paired player turn, the game ends
     // immediately, and they win."
-    let s = blankGame(5, { k: 'paired', player: 'p4' });
+    let s = paired(5, { k: 'paired', player: 'p4' });
     const v = nineVP(s, 'p4');
     setHand(s, 'p4', { grain: 2, stone: 3 });
     const r = applyAction(s, { t: 'buildCity', player: 'p4', v });
@@ -245,7 +246,7 @@ describe('five-six p.3: paired players (D8/D9/D11)', () => {
 
   it('player 1 still wins before player 2 acts (five-six p.3)', () => {
     // "the game ends immediately - even before player 2 takes their Action phase."
-    let s = blankGame(5, { k: 'main' });
+    let s = paired(5, { k: 'main' });
     const v = nineVP(s, 'p1');
     setHand(s, 'p1', { grain: 2, stone: 3 });
     s = act(s, { t: 'buildCity', player: 'p1', v });
@@ -254,11 +255,75 @@ describe('five-six p.3: paired players (D8/D9/D11)', () => {
   });
 
   it('legacy extraBuild mode is unchanged: windows for every other seat in order', () => {
-    let s = blankGame(5);
-    s.init.largeTableMode = 'extraBuild';
+    let s = withMode(blankGame(5), 'extraBuild');
     s = act(s, { t: 'endTurn', player: 'p1' });
     expect(s.phase).toEqual({ k: 'extraBuild', queue: ['p2', 'p3', 'p4', 'p5'] });
     expect(code(s, { t: 'buyCard', player: 'p3' })).toBe('NOT_YOUR_TURN');
+  });
+});
+
+describe('5-6 players, normal turns (the default): played exactly like 2-4 players', () => {
+  it('normal is the default for every player count, without extra build windows', () => {
+    for (const n of [2, 3, 4, 5, 6]) {
+      expect(createGame({ seed: 'a', playerCount: n }).init).toMatchObject({ largeTableMode: 'normal', extraBuild: false });
+    }
+    // 5-6 players still get the large board.
+    expect(createGame({ seed: 'a', playerCount: 6 }).init.layout).toBe('large');
+  });
+
+  it('ending the turn goes straight to the next seat, who rolls their own dice', () => {
+    for (const n of [5, 6]) {
+      let s = blankGame(n);
+      const seats = s.players.map((p) => p.id);
+      for (let i = 0; i < n; i++) {
+        const cur = seats[i];
+        expect(s.turn.current).toBe(cur);
+        s = act(s, { t: 'endTurn', player: cur });
+        // no paired phase, no build windows: the next seat is in preRoll at once
+        const next = seats[(i + 1) % n];
+        expect(s.phase.k).toBe('preRoll');
+        expect(s.turn.current).toBe(next);
+        // only that player may act, and only by rolling (or a card before the roll)
+        for (const other of seats.filter((id) => id !== next)) {
+          expect(getLegalActions(s, other)).toEqual([]);
+          expect(code(s, { t: 'roll', player: other })).toBe('NOT_YOUR_TURN');
+        }
+        expect(getLegalActions(s, next).some((a) => a.t === 'roll')).toBe(true);
+        s = act(s, { t: 'roll', player: next, dice: [3, 5] });
+        expect(s.phase.k).toBe('main');
+        // after the roll the others still cannot build or buy (no window for them)
+        for (const other of seats.filter((id) => id !== next))
+          expect(code(s, { t: 'buyCard', player: other })).toBe('NOT_YOUR_TURN');
+      }
+      expect(s.turn.current).toBe(seats[0]);
+    }
+  });
+
+  it('the other players trade only with the active player, as with 2-4 players', () => {
+    let s = blankGame(5);
+    setHand(s, 'p1', { timber: 1 });
+    setHand(s, 'p4', { grain: 1 });
+    expect(code(s, { t: 'offerTrade', player: 'p1', give: { timber: 1 }, get: { grain: 1 } })).toBe('OK');
+    expect(code(s, { t: 'bankTrade', player: 'p4', give: { grain: 1 }, get: { timber: 1 } })).not.toBe('OK');
+    s = act(s, { t: 'offerTrade', player: 'p1', give: { timber: 1 }, get: { grain: 1 } });
+    expect(code(s, { t: 'respondTrade', player: 'p4', accept: true })).toBe('OK');
+  });
+
+  it('a card bought in the turn is playable from the next own turn (no paired lock carry-over)', () => {
+    let s = blankGame(5);
+    setHand(s, 'p1', { fiber: 1, grain: 1, stone: 1 });
+    s.bank.deck.push('guard');
+    s = act(s, { t: 'buyCard', player: 'p1' });
+    expect(code(s, { t: 'playCard', player: 'p1', card: 'guard' })).toBe('JUST_BOUGHT');
+    s = act(s, { t: 'endTurn', player: 'p1' });
+    expect(pl(s, 'p1').newCards).toEqual([]);
+    expect(pl(s, 'p1').cards).toContain('guard');
+  });
+
+  it('a replay keeps the stored mode (old paired games stay paired)', () => {
+    const s = withMode(blankGame(5), 'paired');
+    expect(createGame({ seed: 'a', playerCount: 5, largeTableMode: s.init.largeTableMode }).init.largeTableMode).toBe('paired');
+    expect(() => createGame({ seed: 'a', playerCount: 5, largeTableMode: 'chaos' as never })).toThrow(/largeTableMode/);
   });
 });
 

@@ -2,7 +2,7 @@
 // the extra build phase).
 import { describe, expect, it } from 'vitest';
 import { validateAction, type Action, type GameState } from '../../src';
-import { act, blankGame, hand, pl, setHand, totalResources } from '../helpers';
+import { act, blankGame, hand, pl, setHand, totalResources, withMode } from '../helpers';
 
 const code = (s: GameState, a: Action) => {
   const v = validateAction(s, a);
@@ -120,8 +120,8 @@ describe('player trade (RULES.md 6, D6)', () => {
     expect(code(pre, { t: 'bankTrade', player: 'p1', give: { timber: 4 }, get: { grain: 1 } })).toBe('WRONG_PHASE');
     expect(code(pre, { t: 'offerTrade', player: 'p1', give: { timber: 1 }, get: { grain: 1 } })).toBe('WRONG_PHASE');
 
-    // Paired mode (the 5-6 default): player 2 (third seat left of p1) may use the bank.
-    let s = blankGame(5);
+    // Paired mode (opt-in for 5-6): player 2 (third seat left of p1) may use the bank.
+    let s = withMode(blankGame(5), 'paired');
     s = act(s, { t: 'endTurn', player: 'p1' });
     expect(s.phase.k).toBe('paired');
     const paired = (s.phase as { player: string }).player;
@@ -130,8 +130,7 @@ describe('player trade (RULES.md 6, D6)', () => {
     expect(code(s, { t: 'offerTrade', player: paired, give: { timber: 1 }, get: { grain: 1 } })).toBe('WRONG_PHASE');
 
     // Legacy extra-build mode keeps the old restriction: no trades at all in the window.
-    const legacy = blankGame(5);
-    legacy.init.largeTableMode = 'extraBuild';
+    const legacy = withMode(blankGame(5), 'extraBuild');
     const leg = act(legacy, { t: 'endTurn', player: 'p1' });
     expect(leg.phase.k).toBe('extraBuild');
     setHand(leg, 'p2', { timber: 4, grain: 4 });

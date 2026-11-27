@@ -7,7 +7,7 @@ import {
   type VertexId,
 } from '../src';
 import { checkInvariants } from '../fuzz/randomGame';
-import { act, autoSetup, findPath, graphOf, hand, newGame, pl, setHand } from './helpers';
+import { act, autoSetup, findPath, graphOf, hand, newGame, pl, setHand, withMode } from './helpers';
 
 const RS = ['base', 'strongholds', 'testdice'];
 /** Event die faces for state.ext.forceDice = [red, yellow, face]. */
@@ -114,11 +114,20 @@ describe('strongholds: setup and components', () => {
     }
   });
 
-  it('5-6 players: 18 commodity cards each and paired players', () => {
+  it('5-6 players: 18 commodity cards each; normal turns by default, paired opt-in, no extra build', () => {
     const s = newGame(6, 'sh-6', { rulesets: RS });
     for (const c of SH.commodities) expect(s.bank.hand[c]).toBe(18);
-    expect(s.init.largeTableMode).toBe('paired');
-    expect(() => newGame(6, 'sh-6', { rulesets: RS, largeTableMode: 'extraBuild' })).toThrow(/paired/);
+    expect(s.init.largeTableMode).toBe('normal');
+    expect(newGame(6, 'sh-6', { rulesets: RS, largeTableMode: 'paired' }).init.largeTableMode).toBe('paired');
+    expect(() => newGame(6, 'sh-6', { rulesets: RS, largeTableMode: 'extraBuild' })).toThrow(/normal" or "paired/);
+  });
+
+  it('5-6 players, normal turns: ending the turn passes to the next seat, who rolls', () => {
+    let s = game(6);
+    s = act(s, { t: 'endTurn', player: 'p1' });
+    expect(s.phase.k).toBe('preRoll');
+    expect(s.turn.current).toBe('p2');
+    expect(getLegalActions(s, 'p4')).toEqual([]);
   });
 });
 
@@ -840,7 +849,7 @@ describe('strongholds: council cards', () => {
 
 describe('strongholds: paired players (5-6) and victory', () => {
   it('player 2 uses expansion actions in the paired phase and wins at 13 VP', () => {
-    let s = game(6);
+    let s = withMode(game(6), 'paired');
     const [a] = spread(s, 1);
     put(s, 'p4', a, 'city');
     x(s).shields.p4 = 10; // 12 VP with the city

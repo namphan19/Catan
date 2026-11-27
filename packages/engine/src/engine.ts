@@ -1,6 +1,6 @@
 // Public engine API. All functions are pure: input states are never mutated; randomness comes only
 // from state.rng; no Date / Math.random / I/O.
-import type { Action, GameEvent, GameInit, GameState, LayoutId, PlayerId, Validation } from './types';
+import type { Action, GameEvent, GameInit, GameState, LargeTableMode, LayoutId, PlayerId, Validation } from './types';
 import type { ApplyCtx, Ctx, Rules, Ruleset } from './ruleset/types';
 import { composeRules } from './ruleset/compose';
 import { baseRuleset } from './rules/base';
@@ -57,11 +57,12 @@ export interface CreateGameOptions {
   layout?: LayoutId;
   rulesets?: string[];
   vpToWin?: number;
-  /** Legacy: extra build phase after each turn. Defaults to true for 5-6 players (used by the
-   *  legacy `largeTableMode: 'extraBuild'`; the official paired mode ignores it). */
+  /** Legacy: extra build phase after each turn. Defaults to true only for 5-6 players with
+   *  `largeTableMode: 'extraBuild'` (the paired mode ignores it). */
   extraBuild?: boolean;
-  /** 5-6 players: 'paired' (official, default) or 'extraBuild' (legacy behaviour). */
-  largeTableMode?: 'paired' | 'extraBuild';
+  /** 5-6 players: 'normal' (default, turns as with 2-4 players), 'paired' (official paired players)
+   *  or 'extraBuild' (legacy extra build phase). Ignored with 2-4 players. */
+  largeTableMode?: LargeTableMode;
   /** Force the first player; default: uniform over the seats from the game RNG (per seed). */
   firstPlayer?: PlayerId;
   /** Ruleset options, e.g. `{ scenario: 'firstLandfall' }` for the tidelands expansion. Plain JSON. */
@@ -82,15 +83,17 @@ export function createGame(opts: CreateGameOptions): GameState {
   const ids: PlayerId[] = Array.from({ length: playerCount }, (_, i) => `p${i + 1}`);
   if (opts.firstPlayer !== undefined && !ids.includes(opts.firstPlayer))
     throw new Error(`firstPlayer must be one of ${ids.join(', ')}`);
-  const largeTableMode: 'paired' | 'extraBuild' =
-    playerCount >= 5 ? opts.largeTableMode ?? 'paired' : 'extraBuild';
+  // A replay passes the stored mode back in, so it is kept as given (only 5-6 players use it).
+  const largeTableMode: LargeTableMode = opts.largeTableMode ?? 'normal';
+  if (!['normal', 'paired', 'extraBuild'].includes(largeTableMode))
+    throw new Error(`unknown largeTableMode ${String(largeTableMode)}`);
   const init: GameInit = {
     seed,
     playerCount,
     layout,
     rulesetIds,
     vpToWin: opts.vpToWin ?? cfg.vpToWin,
-    extraBuild: opts.extraBuild ?? playerCount >= 5,
+    extraBuild: opts.extraBuild ?? (playerCount >= 5 && largeTableMode === 'extraBuild'),
     largeTableMode,
   };
   if (opts.options !== undefined) init.options = clone(opts.options);

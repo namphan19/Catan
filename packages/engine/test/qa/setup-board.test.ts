@@ -133,7 +133,7 @@ describe('setup: 6 players (RULES.md 4, D1)', () => {
     expect(order).toEqual(['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p6', 'p5', 'p4', 'p3', 'p2', 'p1']);
     expect(s.phase.k).toBe('preRoll');
     expect(s.turn).toMatchObject({ n: 1, current: 'p1' });
-    expect(s.init.extraBuild).toBe(true);
+    expect(s.init).toMatchObject({ largeTableMode: 'normal', extraBuild: false }); // turns as with 2-4 players
     for (const p of s.players) expect(p.supply).toMatchObject({ road: 13, settlement: 3, city: 4 });
   });
 

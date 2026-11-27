@@ -21,7 +21,7 @@ and art are Boschtan's own. Interpretations are logged as S-numbers at the end a
 | blocker | Băng cướp | as in the base game, but enters play late |
 
 ## 1. Changes to components and goal
-- **Win: 13 VP** on your own turn (player 2 of a paired turn also wins at once).
+- **Win: 13 VP** on your own turn (with paired players, player 2 of a paired turn also wins at once).
 - The base card deck, buying cards and the largest-force award are **not used**. Longest route stays (2 VP).
 - **Commodities:** 12 cards each (18 with 5-6 players). They are hand cards like resources: they count
   for the 7-card limit, can be stolen, discarded and traded.
@@ -163,5 +163,5 @@ immediately on reaching 13 VP.
 | S8 | Cards without a target | Cards that need a target (plot, turncoat, envoy, toll before the blocker is in play, bazaar when nobody else holds a commodity ...) cannot be played without one; they can only be discarded when over the hand limit. A bazaar offer to a player without a commodity is rejected (`NO_COMMODITY`), it would only fail (playtest 2026-11-17). | lead |
 | S9 | Blocker entry hex | The waste hex the base setup would have used (first one on the large board). | lead |
 | S10 | Wins during pending choices | A win is detected when the interrupted phase resumes, not in the middle of a pending choice. | lead |
-| S11 | Legacy extra build phase | Not supported with this expansion; 5-6 players always use paired players. | lead |
+| S11 | Legacy extra build phase | Not supported with this expansion; 5-6 players use normal turns (default) or paired players. | lead |
 | S12 | With the Tidelands sea expansion | Played together as the 2025 rulebook's "combining with Seafarers" section says: see docs/RULES_TIDELANDS.md section 6. | rulebook |

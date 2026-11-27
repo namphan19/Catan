@@ -37,6 +37,21 @@ describe('heuristic bot', () => {
     }
   }, 120_000);
 
+  it('finishes 6-player games with each expansion in normal turns (the 5-6 default)', () => {
+    const setups: Array<[string[], Record<string, unknown>?]> = [
+      [['base', 'strongholds']],
+      [['base', 'tidelands'], { scenario: 'firstLandfall' }],
+      [['base', 'strongholds', 'tidelands'], { scenario: 'firstLandfall' }],
+    ];
+    const seats: Policy[] = ['hard', 'normal', 'easy', 'hard', 'normal', 'easy'];
+    for (const [rulesets, options] of setups) {
+      expect(createGame({ seed: 'six', playerCount: 6, rulesets, options }).init.largeTableMode).toBe('normal');
+      const r = playArenaGame(`six-${rulesets.join('+')}`, seats, rulesets, 40000, options);
+      expect(r.winner).toBeDefined();
+      expect(r.invalid).toBe(0);
+    }
+  }, 240_000);
+
   it('finishes highlands games at every level (2-4 players)', () => {
     const lineups: Policy[][] = [['hard', 'normal'], ['expert', 'easy', 'random'], ['hard', 'normal', 'easy', 'expert']];
     lineups.forEach((seats, i) => {

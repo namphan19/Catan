@@ -95,6 +95,14 @@ export interface TradeOffer {
 
 export type Resume = 'preRoll' | 'main' | 'paired';
 
+/**
+ * How 5-6 players take turns:
+ * - 'normal' (default): exactly like 2-4 players, every player rolls in their own turn, nothing else;
+ * - 'paired': official paired players (five-six p.3), player 2 acts after player 1 without rolling;
+ * - 'extraBuild': legacy extra build phase, every other player gets a build window after each turn.
+ */
+export type LargeTableMode = 'normal' | 'paired' | 'extraBuild';
+
 export type Phase =
   | { k: 'setup'; idx: number; step: 'settlement' | 'road'; at?: VertexId }
   | { k: 'preRoll' }
@@ -120,8 +128,8 @@ export interface GameInit {
   rulesetIds: string[];
   vpToWin: number;
   extraBuild: boolean;
-  /** 5-6 players only: official paired players, or the legacy extra build phase. */
-  largeTableMode: 'paired' | 'extraBuild';
+  /** How 5-6 players take turns (ignored with 2-4 players): see `LargeTableMode`. */
+  largeTableMode: LargeTableMode;
   /** First player (start of the setup snake and of turn 1); random per seed unless forced. */
   firstPlayer?: PlayerId;
   /** Ruleset options chosen at game creation (e.g. `{ scenario: 'firstLandfall' }`). Plain JSON. */

@@ -15,7 +15,7 @@ import { Button } from '../ui/Button';
 import { Dialog } from '../ui/Dialog';
 import { Avatar, defaultAvatar } from '../ui/Avatar';
 import { art2dUrl } from '../board/assets';
-import { BOT_LEVELS, type BotLevel, type RoomOptions } from '../net/protocol';
+import { BOT_LEVELS, asLargeTableMode, type BotLevel, type LargeTableMode, type RoomOptions } from '../net/protocol';
 import { NAME_KEY, isValidCode, normalizeCode } from './OnlineShell';
 import { forgetSave, readSave, savedRoom, summarize, type SaveSummary } from './autosave';
 import './hub.css';
@@ -144,7 +144,7 @@ export function HomeScreen({ onNew, onLoad, onOnline, onContinue, onLangToggle, 
   });
   const [codeBad, setCodeBad] = useState(false);
   const [vp, setVp] = useState('');
-  const [largeMode, setLargeMode] = useState<'paired' | 'extraBuild'>('paired');
+  const [largeMode, setLargeMode] = useState<LargeTableMode>('normal');
   const [nameMissing, setNameMissing] = useState(false);
   // A share link (?room=CODE) opens the online tab with the code filled in.
   useEffect(() => {
@@ -269,7 +269,8 @@ export function HomeScreen({ onNew, onLoad, onOnline, onContinue, onLangToggle, 
     const options: RoomOptions = {};
     if (hl) options.highlands = hlMap;
     else {
-      if (count >= 5) options.largeTableMode = sh || tl ? 'paired' : largeMode;
+      // The expansions have no extra build phase: they fall back to normal turns.
+      if (count >= 5) options.largeTableMode = (sh || tl) && largeMode === 'extraBuild' ? 'normal' : largeMode;
       if (sh) options.expansion = 'strongholds';
       if (tl) options.tidelands = scenario;
     }
@@ -563,13 +564,14 @@ export function HomeScreen({ onNew, onLoad, onOnline, onContinue, onLangToggle, 
                     <span>{t('online_vp')}</span>
                     <input type="number" min={1} max={100} value={vp} placeholder={vpToWin ? String(vpToWin) : t('online_vp_hint')} onChange={(e) => setVp(e.target.value)} />
                   </label>
-                  {count >= 5 && !sh && !tl && !hl && (
+                  {count >= 5 && !hl && (
                     <label className="hub-field">
                       <span>{t('online_mode')}</span>
                       <span className="hub-select">
-                        <select value={largeMode} onChange={(e) => setLargeMode(e.target.value === 'extraBuild' ? 'extraBuild' : 'paired')}>
+                        <select value={(sh || tl) && largeMode === 'extraBuild' ? 'normal' : largeMode} onChange={(e) => setLargeMode(asLargeTableMode(e.target.value))}>
+                          <option value="normal">{t('online_mode_normal')}</option>
                           <option value="paired">{t('online_mode_paired')}</option>
-                          <option value="extraBuild">{t('online_mode_extraBuild')}</option>
+                          {!sh && !tl && <option value="extraBuild">{t('online_mode_extraBuild')}</option>}
                         </select>
                       </span>
                     </label>
