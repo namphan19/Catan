@@ -27,6 +27,12 @@ select option:checked {
   background-color: var(--parchment-dark);
 }
 
+/* The ink colour above overrides the browser's grey for disabled options: keep them greyed out
+   (e.g. Tidelands scenarios that do not combine with Strongholds). */
+select option:disabled {
+  color: GrayText;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
