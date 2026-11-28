@@ -267,6 +267,34 @@ test('landscape: board at full height, controls on its edges, sheet closable', a
   expect(errors()).toEqual([]);
 });
 
+// Feedback 2026-11-28: with advance cards in hand (Strongholds, also with Tidelands) the resource
+// stacks were pushed into the corner, on top of the button strip.
+for (const [fixtureName, shot] of [
+  ['strongholds-game.json', 'mobile-landscape-advance.png'],
+  ['tidelands-scatteredIsles-both.json', 'mobile-landscape-advance-tidelands.png'],
+] as const) {
+  test(`landscape: resources and advance cards do not sit on the buttons (${fixtureName})`, async ({ page }, testInfo) => {
+    const errors = captureErrors(page);
+    await page.setViewportSize({ width: 844, height: 390 });
+    await loadFixture(page, fixtureName);
+    await expectFitsScreen(page);
+    await clearHover(page);
+    await page.screenshot({ path: shotPath(shot, testInfo.project.name) });
+
+    const strip = await box(page, '.act-strip');
+    const hand = await box(page, '.hand-res');
+    const primary = await box(page, '.act-primary');
+    expect(hand.x, 'resources start right of the button strip').toBeGreaterThanOrEqual(strip.x + strip.width - 1);
+    expect(hand.x + hand.width, 'resources end left of the primary button').toBeLessThanOrEqual(primary.x + 1);
+    if (await page.locator('.sh-hand-tab').count()) {
+      const tab = await box(page, '.sh-hand-tab');
+      expect(tab.x, 'advance cards right of the resources').toBeGreaterThanOrEqual(hand.x + hand.width - 1);
+      expect(tab.x + tab.width, 'advance cards left of the primary button').toBeLessThanOrEqual(primary.x + 1);
+    }
+    expect(errors()).toEqual([]);
+  });
+}
+
 test('narrow landscape: board and controls still fit without page overflow', async ({ page }, testInfo) => {
   const errors = captureErrors(page);
   await page.setViewportSize({ width: 568, height: 320 });

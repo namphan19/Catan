@@ -510,8 +510,7 @@
   .sh-tray-grid { grid-template-columns: 1fr; gap: 14px; }
   .hud-tray { padding: 14px 16px calc(18px + env(safe-area-inset-bottom)); max-height: 80dvh; overflow-y: auto; }
   .hud-tray-note { display: none; }
-  .sh-hand { grid-column: 2; grid-row: 1; justify-self: end; margin-bottom: 0; }
-  .table-bottom:has(.sh-hand) .hand { grid-column: 1; justify-self: start; }
+  .sh-hand { margin-bottom: 0; }
   .sh-hand-head { font-size: 0.72rem; }
   .sh-hand-tab { width: 46px; height: 64px; }
   .table.hud .hand-res:has(.first-extra) { --cw: 34px; --gap: 4px; }
@@ -522,6 +521,11 @@
   .sh-hand-face { width: min(280px, calc(100vw - 24px)); left: auto; right: 0; transform: none; bottom: calc(100% + 30px); }
 }
 @media (max-width: 640px) and (min-height: 521px) {
+  /* Portrait phone: the foot is a 2-column grid (hand row, then buttons). Landscape keeps the
+     4-column grid (build | hand | advance cards | primary), so the hand must not be pushed into
+     column 1, where it would sit on top of the button strip. */
+  .sh-hand { grid-column: 2; grid-row: 1; justify-self: end; }
+  .table-bottom:has(.sh-hand) .hand { grid-column: 1; justify-self: start; }
   .table.hud.has-sh { --inset-top: 250px; }
 }
 @media (prefers-reduced-motion: reduce) {
